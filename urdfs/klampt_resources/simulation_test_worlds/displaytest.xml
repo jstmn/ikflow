@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world>
+  <terrain file="../terrains/block.off" />
+<!-- The table -->
+  <terrain file="../terrains/cube.off" scale="0.6 0.6 0.03" translation="0.3 -0.175 0.615">
+     <display color="1 1 1 1" texture="hauser.bmp" texture_projection="xy"/>
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.3 0.3 0.5" translation="-1.0 -1.0 0">
+     <display color="1 0 0" texture="gradient" texture_projection="z"/>
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.3 0.3 0.5" translation="1.0 -1.0 0">
+     <display texture="colorgradient" texture_projection="z"/>
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.3 0.3 0.5" translation="-1.0 1.0 0">
+     <display texture="noise"/>
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.1 0.1 0.4" translation="1.05 1.05 0">
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.3 0.3 0.5" translation="1.0 1.0 0">
+     <display faceColor="1 1 1 0.5" edgeColor="0 0 0 1" />
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.1 0.1 0.4" translation="1.15 1.15 0">
+  </terrain>
+
+  <terrain file="../terrains/cube.off" scale="0.3 0.3 0.5" translation="1.4 1.0 0">
+     <display faceColor="1 1 1 0.5" edgeColor="0 0 0 1" silhouette="0"/>
+  </terrain>
+
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.4 -0.1 0.75" />
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.6 -0.1 0.75" >
+    <display faceColor="1 0 0 0.5" pointSize="3" pointColor="0 0 0 1" />
+  </rigidObject>
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.8 -0.1 0.75" >
+    <display silhouette="0.01  1 1 0 0.5" />
+  </rigidObject>
+
+  <!--
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.4 0.1 0.75" />
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.6 0.1 0.75" />
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.8 0.1 0.75" />
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.4 0.3 0.75" />
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.6 0.3 0.75" />
+  <rigidObject name="srimug" file="../objects/srimugsmooth.obj"  position="0.8 0.3 0.75" />
+  -->
+
+  <simulation>
+     <globals maxContacts="5" />
+  </simulation>
+</world>

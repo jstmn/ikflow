@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "kinpy"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+numpy = "^1.18.0"
+scipy = "^1.6.0"
+transformations = "^2020.1.1"
+absl-py = "^0.11.0"
+lxml = "^4.6.2"
+PyYAML = "^5.4.1"
+vtk = "^9.0.1"
+
+[tool.poetry.dev-dependencies]
+twine = "^3.3.0"
+isort = "^5.9.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools"]
+build-backend = "poetry.core.masonry.api"

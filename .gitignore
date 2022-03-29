@@ -1,0 +1,96 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+*.jar
+
+# Executables
+*.exe
+*.out
+*.app
+*.pyc
+models/urdf-viz
+
+# Pycache
+__pycache__/
+src/mdn/mdn/__pycache__/
+
+# Virtual Environments
+venv/
+venv2/
+venv/\*.*
+dukecs_venv/
+conda_env/
+py36_venv/
+
+# IDE Config
+idea/
+.idea/\*.*
+.idea/misc.xml
+.idea/nn_ik.iml
+.idea/
+.vscode/
+
+.ipynb_checkpoints/
+
+# Pickle files
+\*.pkl
+/*.pkl
+*.pkl
+*.pickle
+*.hdf5
+
+figures/evaluation_results/*.hdf5
+
+
+# Numpy files
+*.npy
+
+# Third party folders
+wandb/
+artifacts/
+scripts/results/
+
+# Certain robot models / portions of robot models
+models/hubo/
+models/kuka_11dof/urdf/info.md
+models/kuka_festo/
+models/robonaut2/nasa-urdf-robots-master/
+models/robonaut2/urdf/r2_description/
+models/robosimian/robosim.gv
+models/ur5/urdf/universal-robot-ur5.pdf
+models/ur5/urdf/ur5robot_old.urdf
+models/valkyrie/urdf/val_description/
+models/valkyrie/urdf/valkyrie_sim.urdf
+
+# Unit testing generated files
+_tests/models/
+
+# grid.ai configs
+gridai_configs/*.yml
+
+# Pytl training data
+lightning_logs/
+
+
+# Figures
+*.pdf
+*.png

@@ -1,0 +1,6 @@
+[submodule "src/mdn"]
+	path = src/mdn
+	url = https://github.com/tonyduan/mdn.git
+[submodule "src/FrEIA"]
+	path = src/FrEIA
+	url = https://github.com/VLL-HD/FrEIA.git

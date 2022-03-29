@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world>
+  <robot name="tx90pr2" file="../robots/tx90pr2.rob" />
+  <terrain name="floor" file="../terrains/block.off" />
+  <!-- The table -->
+  <terrain name="table" file="../terrains/cube.off" scale="0.6 0.6 0.03" translation="0.3 -0.175 0.615">
+     <display color="0.4 0.2 0.1"/>
+  </terrain>
+
+  <!-- The "drawer" -->
+  <rigidObject name="drawer"  position="1 0.125 0.9600000">
+     <geometry mesh="../objects/cube.off" scale="0.400000 0.500000 0.100000" translation="-0.20000 -0.250000 -0.050000" />
+     <physics mass="1.000000" automass="1" kRestitution="0.2000000" kFriction="0.500000" kStiffness="inf" kDamping="inf" />
+  </rigidObject>
+  <rigidObject name="handle"  position="0.75 0.125 0.96">
+     <geometry mesh="../objects/cube.off" scale="0.02 0.1 0.02" translation="-0.01 -0.05 -0.01" />
+     <physics mass="0.02" automass="1" kRestitution="0.2000000" kFriction="0.500000" kStiffness="inf" kDamping="inf" />
+  </rigidObject> 
+
+  <!-- The "cabinet" -->
+  <rigidObject name="cabinet_door1"  position="0.5 0.275 0.800000">
+     <geometry mesh="../objects/cube.off" scale="0.02 0.3 0.4" translation="-0.01 -0.15 -0.1" />
+     <physics mass="1.000000" automass="1" kRestitution="0.2000000" kFriction="0.500000" kStiffness="inf" kDamping="inf" />
+  </rigidObject>
+  <rigidObject name="cabinet_door2"  position="0.5 -0.05 0.800000">
+     <geometry mesh="../objects/cube.off" scale="0.02 0.3 0.4" translation="-0.01 -0.15 -0.1" />
+     <physics mass="1.000000" automass="1" kRestitution="0.2000000" kFriction="0.500000" kStiffness="inf" kDamping="inf" />
+  </rigidObject>
+
+  <simulation>
+     <globals maxContacts="5" />
+      <joint type="slider" axis="1 0 0" min="-0.35" max="0" friction="1.5">
+       <rigidObject name="drawer" />
+     </joint> 
+     <joint type="fixed">
+       <rigidObject name="handle" />
+       <rigidObject name="drawer" />
+     </joint>
+     <joint type="hinge" axis="0 0 1" point="0.5 0.425 0" friction="0.2">
+       <rigidObject name="cabinet_door1" />
+     </joint>
+     <joint type="hinge" axis="0 0 1" point="0.5 -0.2 0" friction="0.2">
+       <rigidObject name="cabinet_door2" />
+     </joint>
+  </simulation>
+</world>

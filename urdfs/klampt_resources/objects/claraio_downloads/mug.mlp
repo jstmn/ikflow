@@ -1,0 +1,24 @@
+<!DOCTYPE MeshLabDocument>
+<MeshLabProject>
+ <MeshGroup>
+  <MLMesh visible="1" label="mug.obj" filename="mug.off">
+   <MLMatrix44>
+1 0 0 0 
+0 1 0 0 
+0 0 1 0 
+0 0 0 1 
+</MLMatrix44>
+   <RenderingOption solidColor="192 192 192 255" wireColor="64 64 64 255" boxColor="234 234 234 255" pointSize="3" pointColor="131 149 69 255" wireWidth="1">101001000000010000000100000001010101010010100000110100111011100000001001</RenderingOption>
+  </MLMesh>
+  <MLMesh visible="1" label="mug.off" filename="mug.off">
+   <MLMatrix44>
+1 0 0 0 
+0 1 0 0 
+0 0 1 0 
+0 0 0 1 
+</MLMatrix44>
+   <RenderingOption solidColor="192 192 192 255" wireColor="64 64 64 255" boxColor="234 234 234 255" pointSize="3" pointColor="131 149 69 255" wireWidth="1">001111000000010000000100000000000000000010100000110100111011110000001101</RenderingOption>
+  </MLMesh>
+ </MeshGroup>
+ <RasterGroup/>
+</MeshLabProject>
