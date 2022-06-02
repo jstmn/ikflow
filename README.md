@@ -1,5 +1,9 @@
+# Note: this repo is still in development. Trained models, benchmaking code, visualizations, and usage examples will be added when im back from travelling.
+I ('@jstmn') am travelling until July 28, 2022. This repo will be updated when im back :)
+
 # IKFlow
 Normalizing flows for Inverse Kinematics. Open source implementation to the paper "IKFlow: Generating Diverse Inverse Kinematics Solutions"
+
 
 ### Setup
 
@@ -26,6 +30,4 @@ cd src/FrEIA; python setup.py develop
 
 # (optional) Add venv to jupyter notebook
 pip install ipykernel; python -m ipykernel install --user --name=venv
-
-# 
 ```
