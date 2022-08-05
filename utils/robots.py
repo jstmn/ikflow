@@ -1712,19 +1712,22 @@ PLANAR_3DOF = Planar3DofArm.name
 RAILY_CHAIN3 = RailYChain3.name
 
 ROBOT_NAMES = [
-    ATLAS, ATLAS_ARM, KUKA_11DOF,
+    ATLAS,
+    ATLAS_ARM,
+    KUKA_11DOF,
     ROBONAUT,
     ROBONAUT_ARM,
-    ROBOSIMIAN ,
-    UR5 ,
+    ROBOSIMIAN,
+    UR5,
     PANDA,
-    PR2 ,
+    PR2,
     VALKYRIE,
     VALKYRIE_ARM,
     VALKYRIE_ARM_SHOULDER,
     PLANAR_3DOF,
-    RAILY_CHAIN3
+    RAILY_CHAIN3,
 ]
+
 
 def get_all_3d_robots() -> List[KlamptRobotModel]:
     """

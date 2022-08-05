@@ -67,12 +67,15 @@ def save_dataset_to_disk(
     INTERNAL_BATCH_SIZE = 5000
 
     assert solver in ["klampt", "kinpy", "batch_fk"]
-    assert training_set_size % INTERNAL_BATCH_SIZE == 0, f"Datset size must be divisble by {INTERNAL_BATCH_SIZE} (because I am lazy programmer)"
-
+    assert (
+        training_set_size % INTERNAL_BATCH_SIZE == 0
+    ), f"Datset size must be divisble by {INTERNAL_BATCH_SIZE} (because I am lazy programmer)"
 
     dir_exists = os.path.isdir(dataset_directory)
     if return_if_existing_dir and dir_exists:
-        print(f"save_dataset_to_disk(): '{dataset_directory}' exists already and return_if_existing_dir is enabled, returning")
+        print(
+            f"save_dataset_to_disk(): '{dataset_directory}' exists already and return_if_existing_dir is enabled, returning"
+        )
         return
     if dir_exists:
         print(f"Warning, directory '{dataset_directory}' already exists. Overwriting")
@@ -145,7 +148,6 @@ def save_dataset_to_disk(
         f.write(f"  training_set_size: {training_set_size}\n")
         f.write(f"  test_set_size:     {test_set_size}\n")
         f.write(f"  solver:            {solver}\n")
-        
 
         # Sanity check arrays.
         print_tensor_stats(samples_tr, writable=f, name="samples_tr")

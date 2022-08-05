@@ -17,9 +17,11 @@ from pytorch_lightning.core.lightning import LightningModule
 zeros_noise_scale = 0.0001
 device = "cuda"
 
+
 def _datetime_str() -> str:
     now = datetime.now()
     return now.strftime("%b.%d.%Y_%I:%-M:%p")
+
 
 def checkpoint_dir(robot_name: str) -> str:
     if wandb.run is not None:
@@ -31,7 +33,6 @@ def checkpoint_dir(robot_name: str) -> str:
 
 
 class IkfLitModel(LightningModule):
-
     def __init__(
         self,
         model_wrapper: IkflowModel,
@@ -128,7 +129,7 @@ class IkfLitModel(LightningModule):
         del batch_idx
         t0 = time()
         loss, loss_data, force_log = self.ml_loss_fn(batch)
-        
+
         if (self.global_step % self.log_every == 0 and self.global_step > 0) or force_log:
             log_data = {"tr/loss": loss.item(), "tr/time_p_batch": time() - t0}
             log_data.update(loss_data)

@@ -12,19 +12,12 @@ import torch
 
 
 class IkfLitDataset(LightningDataModule):
-    def __init__(
-        self,
-        robot_name: str,
-        batch_size: int,
-        val_set_size: int = 500,
-        prepare_data_per_node= True
-    ):
+    def __init__(self, robot_name: str, batch_size: int, val_set_size: int = 500, prepare_data_per_node=True):
         self._robot_name = robot_name
         self._batch_size = batch_size
         self._val_set_size = val_set_size
         self.prepare_data_per_node = prepare_data_per_node
         self._log_hyperparams = True
-
 
         dataset_directory = get_dataset_directory(self._robot_name)
         assert os.path.isdir(

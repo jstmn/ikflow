@@ -1,10 +1,9 @@
 # IKFlow
-Normalizing flows for Inverse Kinematics. Open source implementation to the paper "IKFlow: Generating Diverse Inverse Kinematics Solutions"
-
+Normalizing flows for Inverse Kinematics. Open source implementation to the paper ["IKFlow: Generating Diverse Inverse Kinematics Solutions"](https://ieeexplore.ieee.org/abstract/document/9793576)
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
-### Setup - Ubuntu
+## Setup - Ubuntu
 
 TODO: Add instructions for running on Mac
 
@@ -39,19 +38,23 @@ cd thirdparty/FrEIA && python setup.py develop && cd ../../
 ```
 
 
+*Build datasets* 
+"""
+python build_dataset.py --robot_name=panda_arm --training_set_size=2500000
+"""
 
 
-XXXXXXXXXXXXXXX
 
-pip install torch numpy klampt matplotlib pytorch_lightning tqdm wandb kinpy pandas
-pip freeze > requirments.txt
-
-git submodule add https://github.com/tonyduan/mdn.git thirdparty/mdn
-git submodule add https://github.com/VLL-HD/FrEIA.git thirdparty/FrEIA
-
-[submodule "src/mdn"]
-	path = src/mdn
-	url = https://github.com/tonyduan/mdn.git
-[submodule "src/FrEIA"]
-	path = src/FrEIA
-	url = https://github.com/VLL-HD/FrEIA.git
+## Citation
+```
+@ARTICLE{9793576,
+  author={Ames, Barrett and Morgan, Jeremy and Konidaris, George},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={IKFlow: Generating Diverse Inverse Kinematics Solutions}, 
+  year={2022},
+  volume={7},
+  number={3},
+  pages={7177-7184},
+  doi={10.1109/LRA.2022.3181374}
+}
+```

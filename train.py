@@ -16,7 +16,7 @@ from pytorch_lightning import Trainer, callbacks, seed_everything
 
 import torch
 
-DEFAULT_MAX_EPOCHS=5000
+DEFAULT_MAX_EPOCHS = 5000
 SEED = 0
 seed_everything(SEED, workers=True)
 
@@ -160,6 +160,6 @@ if __name__ == "__main__":
         val_check_interval=args.eval_every,
         gpus=1,
         log_every_n_steps=args.log_every,
-        max_epochs=DEFAULT_MAX_EPOCHS
+        max_epochs=DEFAULT_MAX_EPOCHS,
     )
     trainer.fit(model, data_module)
