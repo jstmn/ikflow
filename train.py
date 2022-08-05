@@ -78,7 +78,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog="cinn w/ softflow CLI")
 
-
     # Model parameters
     parser.add_argument("--coupling_layer", type=str, default=DEFAULT_COUPLING_LAYER)
     parser.add_argument("--rnvp_clamp", type=float, default=DEFAULT_RNVP_CLAMP)
@@ -90,7 +89,6 @@ if __name__ == "__main__":
     parser.add_argument("--coeff_fn_internal_size", type=int, default=DEFAULT_COEFF_FN_INTERNAL_SIZE)
     parser.add_argument("--y_noise_scale", type=float, default=DEFAULT_Y_NOISE_SCALE)
     parser.add_argument("--zeros_noise_scale", type=float, default=DEFAULT_ZEROS_NOISE_SCALE)
-
 
     # Training parameters
     parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE)
@@ -149,13 +147,9 @@ if __name__ == "__main__":
             gradient_clip=args.gradient_clip_val,
             lambd=args.lambd,
         )
-        trainer = Trainer(
-            callbacks=[],
-            val_check_interval=args.eval_every,
-            gpus=1,
-            log_every_n_steps=args.log_every)
+        trainer = Trainer(callbacks=[], val_check_interval=args.eval_every, gpus=1, log_every_n_steps=args.log_every)
         trainer.fit(model, data_module)
-        
+
     else:
         # Setup wandb logging
         if args.disable_wandb:
@@ -167,7 +161,9 @@ if __name__ == "__main__":
             cfg.update(base_hparams.__dict__)
             wandb_logger.experiment.config.update(cfg)
 
-        data_module = IkfLitDataset(robot.name, args.batch_size, use_small_dataset=False, val_set_size=args.val_set_size)
+        data_module = IkfLitDataset(
+            robot.name, args.batch_size, use_small_dataset=False, val_set_size=args.val_set_size
+        )
         model = IkfLitModel(
             model_wrapper=model_wrapper,
             base_hparams=base_hparams,

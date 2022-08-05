@@ -1,0 +1,4 @@
+python -m black *.py --line-length=120
+python -m black utils/*.py --line-length=120
+python -m black training/*.py --line-length=120
+python -m black tests/*.py --line-length=120

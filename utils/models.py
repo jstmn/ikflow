@@ -304,8 +304,7 @@ class ModelWrapper:
         latent_noise_distribution: str = "gaussian",
         latent_noise_scale: float = 1,
     ) -> Tuple[torch.Tensor, float]:
-        """ Similar to `make_samples()` but multiple target poses are passed in. `ys` should be [n x 7]
-        """
+        """Similar to `make_samples()` but multiple target poses are passed in. `ys` should be [n x 7]"""
         raise NotImplementedError()
 
     def plot_distribution(

@@ -12,12 +12,12 @@ import torch
 
 
 def _get_dataset_directory(robot: str, is_small: bool):
-    """ Return the path of the directory
-    """
+    """Return the path of the directory"""
     subdir_name = f"{robot}"
     if is_small:
-        subdir_name += "__SMALL" 
-    return os.path.join(config.DATASET_DIR, subdir_name) 
+        subdir_name += "__SMALL"
+    return os.path.join(config.DATASET_DIR, subdir_name)
+
 
 class IkfLitDataset(LightningDataModule):
     def __init__(
@@ -33,7 +33,9 @@ class IkfLitDataset(LightningDataModule):
         self._val_set_size = val_set_size
 
         dataset_directory = _get_dataset_directory(self._robot_name, self._use_small_dataset)
-        assert os.path.isdir(dataset_directory), f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet?"
+        assert os.path.isdir(
+            dataset_directory
+        ), f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet?"
 
         self._samples_tr = torch.load(os.path.join(dataset_directory, "samples_tr.pt")).to("cuda:0")
         self._endpoints_tr = torch.load(os.path.join(dataset_directory, "endpoints_tr.pt")).to("cuda:0")

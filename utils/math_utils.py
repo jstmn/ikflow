@@ -34,9 +34,9 @@ def MMD_multiscale(x, y, c_list, a_list, reduce=True):
     XY = torch.zeros(xx.shape).to(config.device)
 
     for C, a in zip(c_list, a_list):
-        XX += C ** a * ((C + dxx) / a) ** -a
-        YY += C ** a * ((C + dyy) / a) ** -a
-        XY += C ** a * ((C + dxy) / a) ** -a
+        XX += C**a * ((C + dxx) / a) ** -a
+        YY += C**a * ((C + dyy) / a) ** -a
+        XY += C**a * ((C + dxy) / a) ** -a
 
     if reduce:
         return torch.mean(XX + YY - 2.0 * XY)
@@ -82,9 +82,9 @@ def quaternion_to_rpy_batch(q: torch.Tensor, device=None) -> torch.Tensor:
     p = torch.asin(2 * (q0 * q2 - q3 * q1))
 
     rpy = torch.zeros((batch, 3)).to(device)
-    rpy[:, 0] = torch.atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1 ** 2 + q2 ** 2))
+    rpy[:, 0] = torch.atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1**2 + q2**2))
     rpy[:, 1] = p
-    rpy[:, 2] = torch.atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 ** 2 + q3 ** 2))
+    rpy[:, 2] = torch.atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2**2 + q3**2))
     return rpy
 
 

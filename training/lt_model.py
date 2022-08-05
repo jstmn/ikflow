@@ -21,7 +21,6 @@ device = "cuda"
 CHECKPOINT_BASE_DIR = "~/Projects/data/ikflow/training_checkpoints/"
 
 
-
 def _datetime_str() -> str:
     now = datetime.now()
     return now.strftime("%b%d_%Y_%I:%-M:%p")
@@ -113,7 +112,7 @@ class IkfLitModel(LightningModule):
         conditional = torch.cat([y, torch.zeros((batch_size, 1)).to(device)], dim=1)
 
         output, jac = self.nn_model.forward(x, c=conditional, jac=True)
-        zz = torch.sum(output ** 2, dim=1)
+        zz = torch.sum(output**2, dim=1)
         neg_log_likeli = 0.5 * zz - jac
         loss = torch.mean(neg_log_likeli)
 
