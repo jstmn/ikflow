@@ -17,35 +17,25 @@ from pytorch_lightning.core.lightning import LightningModule
 zeros_noise_scale = 0.0001
 device = "cuda"
 
-
-CHECKPOINT_BASE_DIR = "~/Projects/data/ikflow/training_checkpoints/"
-
-
 def _datetime_str() -> str:
     now = datetime.now()
-    return now.strftime("%b%d_%Y_%I:%-M:%p")
+    return now.strftime("%b.%d.%Y_%I:%-M:%p")
 
-
-def checkpoint_dir(verbose=True) -> str:
+def checkpoint_dir(robot_name: str) -> str:
     if wandb.run is not None:
-        ckpt_dir_name = f"{_datetime_str()}__{wandb.run.name}/"
+        ckpt_dir_name = f"{robot_name}--{_datetime_str()}--wandb-run-name:{wandb.run.name}/"
     else:
-        ckpt_dir_name = f"{_datetime_str()}__None/"
-    dir_filepath = os.path.join(CHECKPOINT_BASE_DIR, ckpt_dir_name)
-    if verbose:
-        print(f"checkpoint_dir(): Directory: '{dir_filepath}'")
+        ckpt_dir_name = f"{robot_name}--{_datetime_str()}/"
+    dir_filepath = os.path.join(config.TRAINING_LOGS_DIRECTORY, ckpt_dir_name)
     return dir_filepath
 
 
 class IkfLitModel(LightningModule):
 
-    AVAILABLE_LOSSES = ["ml"]
-
     def __init__(
         self,
         model_wrapper: IkflowModel,
         base_hparams: IkflowModelParameters,
-        loss_fn: str,
         learning_rate: float,
         checkpoint_every: int,
         gamma: float = 0.975,
@@ -54,7 +44,6 @@ class IkfLitModel(LightningModule):
         gradient_clip: float = float("inf"),
         lambd: float = 1,
     ):
-        assert loss_fn in IkfLitModel.AVAILABLE_LOSSES
         # `learning_rate`, `gamma`, `samples_per_pose`, etc. saved to self.hparams
 
         super().__init__()
@@ -65,7 +54,7 @@ class IkfLitModel(LightningModule):
         self.dim_x = self.model_wrapper.robot_model.dim_x
         self.dim_tot = self.base_hparams.dim_latent_space
         self.checkpoint_every = checkpoint_every
-        self.checkpoint_dir = checkpoint_dir(verbose=self.checkpoint_every > 0)
+        self.checkpoint_dir = checkpoint_dir(self.model_wrapper.robot.name)
         if self.checkpoint_every > 0:
             safe_mkdir(self.checkpoint_dir)
         self.log_every = log_every
@@ -73,7 +62,7 @@ class IkfLitModel(LightningModule):
         self.save_hyperparameters(ignore=["model_wrapper"])
 
     def _checkpoint(self):
-        filename = f"training_checkpoint__epoch:{self.current_epoch}__batch:{self.global_step}.pkl"
+        filename = f"epoch:{self.current_epoch}_batch:{self.global_step}.pkl"
         filepath = os.path.join(self.checkpoint_dir, filename)
         state = {
             "nn_model_type": self.model_wrapper.nn_model_type,
@@ -86,11 +75,13 @@ class IkfLitModel(LightningModule):
         torch.save(state, filepath)
 
         # Upload to wandb
-        artifact_name = wandb.run.name
-        artifact = wandb.Artifact(artifact_name, type="model", description="checkpoint")
-        artifact.add_file(filepath)
-        wandb.log_artifact(artifact)
-        artifact.wait()
+        # TODO: will this work when wandb is enabled?
+        if self.logger is not None:
+            artifact_name = wandb.run.name
+            artifact = wandb.Artifact(artifact_name, type="model", description="checkpoint")
+            artifact.add_file(filepath)
+            wandb.log_artifact(artifact)
+            artifact.wait()
 
     def safe_log_metrics(self, vals: Dict):
         assert isinstance(vals, dict)
@@ -136,11 +127,8 @@ class IkfLitModel(LightningModule):
     def training_step(self, batch, batch_idx):
         del batch_idx
         t0 = time()
-        if self.hparams.loss_fn == "ml":
-            loss, loss_data, force_log = self.ml_loss_fn(batch)
-        else:
-            raise ValueError("I shouldn't be here")
-
+        loss, loss_data, force_log = self.ml_loss_fn(batch)
+        
         if (self.global_step % self.log_every == 0 and self.global_step > 0) or force_log:
             log_data = {"tr/loss": loss.item(), "tr/time_p_batch": time() - t0}
             log_data.update(loss_data)
@@ -171,8 +159,6 @@ class IkfLitModel(LightningModule):
     def validation_step(self, batch, batch_idx):
         del batch_idx
         x, y = batch
-        if self.hparams.loss_fn == "l2-multi":
-            y = y[:, 0:7]
         ee_pose_target = y.cpu().detach().numpy()[0]
         # TODO(@jeremysm): Move this error calculation to evaluation.py
         samples, model_runtime = self.make_samples(ee_pose_target, self.hparams.samples_per_pose)

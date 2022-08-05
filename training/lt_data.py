@@ -2,7 +2,7 @@ from typing import Optional
 import os
 
 import config
-from utils.utils import get_sum_joint_limit_range
+from utils.utils import get_sum_joint_limit_range, get_dataset_directory
 
 from torch.utils.data import DataLoader, random_split
 from pytorch_lightning.core.datamodule import LightningDataModule
@@ -11,28 +11,22 @@ import wandb
 import torch
 
 
-def _get_dataset_directory(robot: str, is_small: bool):
-    """Return the path of the directory"""
-    subdir_name = f"{robot}"
-    if is_small:
-        subdir_name += "__SMALL"
-    return os.path.join(config.DATASET_DIR, subdir_name)
-
-
 class IkfLitDataset(LightningDataModule):
     def __init__(
         self,
         robot_name: str,
         batch_size: int,
-        use_small_dataset: bool = False,
         val_set_size: int = 500,
+        prepare_data_per_node= True
     ):
         self._robot_name = robot_name
         self._batch_size = batch_size
-        self._use_small_dataset = use_small_dataset
         self._val_set_size = val_set_size
+        self.prepare_data_per_node = prepare_data_per_node
+        self._log_hyperparams = True
 
-        dataset_directory = _get_dataset_directory(self._robot_name, self._use_small_dataset)
+
+        dataset_directory = get_dataset_directory(self._robot_name)
         assert os.path.isdir(
             dataset_directory
         ), f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet?"

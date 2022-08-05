@@ -1695,6 +1695,37 @@ class ValkyrieArmShoulder(KlamptRobotModel):
         )
 
 
+ATLAS = Atlas.name
+ATLAS_ARM = AtlasArm.name
+KUKA_11DOF = Kuka11dof.name
+ROBONAUT = Robonaut2.name
+ROBONAUT_ARM = Robonaut2Arm.name
+ROBOSIMIAN = Robosimian.name
+UR5 = Ur5.name
+PANDA = PandaArm.name
+PR2 = Pr2.name
+VALKYRIE = Valkyrie.name
+VALKYRIE_ARM = ValkyrieArm.name
+VALKYRIE_ARM_SHOULDER = ValkyrieArmShoulder.name
+
+PLANAR_3DOF = Planar3DofArm.name
+RAILY_CHAIN3 = RailYChain3.name
+
+ROBOT_NAMES = [
+    ATLAS, ATLAS_ARM, KUKA_11DOF,
+    ROBONAUT,
+    ROBONAUT_ARM,
+    ROBOSIMIAN ,
+    UR5 ,
+    PANDA,
+    PR2 ,
+    VALKYRIE,
+    VALKYRIE_ARM,
+    VALKYRIE_ARM_SHOULDER,
+    PLANAR_3DOF,
+    RAILY_CHAIN3
+]
+
 def get_all_3d_robots() -> List[KlamptRobotModel]:
     """
     Return all implemented 3d robots
@@ -1760,7 +1791,7 @@ def get_robot(name: str, verbosity: int = 0) -> Union[KlamptRobotModel, RobotMod
         return ValkyrieArm(verbosity=verbosity)
     if name == ValkyrieArmShoulder.name:
         return ValkyrieArmShoulder(verbosity=verbosity)
-    raise ValueError(f"unrecognized robot: {name}")
+    raise ValueError(f"Unrecognized robot '{name}'.\nAvailable robots: '{ROBOT_NAMES}'")
 
 
 def robot_name_to_fancy_robot_name(name: str) -> str:
@@ -1787,22 +1818,6 @@ def robot_name_to_fancy_robot_name(name: str) -> str:
         if cls.name == name:
             return cls.formal_robot_name
 
-
-ATLAS = Atlas.name
-ATLAS_ARM = AtlasArm.name
-KUKA_11DOF = Kuka11dof.name
-ROBONAUT = Robonaut2.name
-ROBONAUT_ARM = Robonaut2Arm.name
-ROBOSIMIAN = Robosimian.name
-UR5 = Ur5.name
-PANDA = PandaArm.name
-PR2 = Pr2.name
-VALKYRIE = Valkyrie.name
-VALKYRIE_ARM = ValkyrieArm.name
-VALKYRIE_ARM_SHOULDER = ValkyrieArmShoulder.name
-
-PLANAR_3DOF = Planar3DofArm.name
-RAILY_CHAIN3 = RailYChain3.name
 
 if __name__ == "__main__":
 

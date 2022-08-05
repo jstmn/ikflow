@@ -1,79 +1,28 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-*.jar
-
-# Executables
-*.exe
-*.out
-*.app
-*.pyc
-models/urdf-viz
-
 # Pycache
 __pycache__/
 thirdparty/mdn/mdn/__pycache__/
 
 # Virtual Environments
 venv/
-venv_38/
-venv_310/
 
 # IDE Config
-idea/
-.idea/\*.*
-.idea/misc.xml
-.idea/nn_ik.iml
-.idea/
 .vscode/
-
-.ipynb_checkpoints/
-
-# Pickle files
-\*.pkl
-/*.pkl
-*.pkl
-*.pickle
-*.hdf5
-
-# Numpy files
-*.npy
 
 # Third party folders
 wandb/
 artifacts/
-scripts/results/
 
 # Unit testing generated files
 _tests/models/
 
-# grid.ai configs
-gridai_configs/*.yml
-
 # Pytl training data
-lightning_logs/
-
+checkpoints/
+training_logs/
 old/
 
 # Figures
 *.pdf
 *.png
+
+# Datasets
+datasets/*/

@@ -3,7 +3,7 @@ import argparse
 import config
 from training.training_parameters import IkflowModelParameters
 from utils.models import IkflowModel
-from utils.robots import get_robot
+from utils.robots import get_robot, KlamptRobotModel
 from training.lt_model import IkfLitModel
 from training.lt_data import IkfLitDataset
 from utils.utils import boolean_string
@@ -16,7 +16,7 @@ from pytorch_lightning import Trainer, callbacks, seed_everything
 
 import torch
 
-
+DEFAULT_MAX_EPOCHS=5000
 SEED = 0
 seed_everything(SEED, workers=True)
 
@@ -54,21 +54,23 @@ Example usage
 
 # real
 python3 train.py \
+    --robot_name=panda_arm \
     --batch_size=512 \
     --learning_rate=0.0005 \
     --log_every=1000 \
     --eval_every=5000 \
     --val_set_size=500
 
-# Dev
+# Smoke testing
 python train.py \
+    --robot_name=panda_arm \
     --batch_size=5 \
     --learning_rate=0.0005 \
     --log_every=5 \
     --eval_every=100 \
     --val_set_size=100 \
+    --checkpoint_every=100 \
     --disable_wandb
-
 
 
 """
@@ -77,6 +79,7 @@ python train.py \
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog="cinn w/ softflow CLI")
+    parser.add_argument("--robot_name", type=str, required=True)
 
     # Model parameters
     parser.add_argument("--coupling_layer", type=str, default=DEFAULT_COUPLING_LAYER)
@@ -105,14 +108,13 @@ if __name__ == "__main__":
     parser.add_argument("--log_every", type=int, default=DEFAULT_LOG_EVERY)
     parser.add_argument("--checkpoint_every", type=int, default=DEFAULT_CHECKPOINT_EVERY)
     parser.add_argument("--disable_wandb", action="store_true")
-    parser.add_argument("--smoke_test", action="store_true")
 
     args = parser.parse_args()
 
     assert 0 <= args.lambd and args.lambd <= 1
 
     # Load model
-    robot = get_robot("robosimian")
+    robot = get_robot(args.robot_name)
     base_hparams = IkflowModelParameters()
     base_hparams.coupling_layer = args.coupling_layer
     base_hparams.nb_nodes = args.nb_nodes
@@ -127,58 +129,37 @@ if __name__ == "__main__":
 
     model_wrapper = IkflowModel(base_hparams, robot)
 
+    assert isinstance(robot, KlamptRobotModel), "Only 3d robots are supported for training currently"
     robot.assert_batch_fk_equal()
+
     torch.autograd.set_detect_anomaly(True)
 
-    if args.smoke_test:
-        data_module = IkfLitDataset(
-            robot.name,
-            args.batch_size,
-            use_small_dataset=True,
-            val_set_size=args.val_set_size,
-        )
-        model = IkfLitModel(
-            model_wrapper,
-            base_hparams,
-            args.loss_fn,
-            args.learning_rate,
-            args.checkpoint_every,
-            log_every=args.log_every,
-            gradient_clip=args.gradient_clip_val,
-            lambd=args.lambd,
-        )
-        trainer = Trainer(callbacks=[], val_check_interval=args.eval_every, gpus=1, log_every_n_steps=args.log_every)
-        trainer.fit(model, data_module)
-
+    # Setup wandb logging
+    if args.disable_wandb:
+        wandb_logger = None
     else:
-        # Setup wandb logging
-        if args.disable_wandb:
-            wandb_logger = None
-        else:
-            wandb_logger = WandbLogger(project=PROJECT, save_dir=config.WANDB_CACHE_DIR)
-            cfg = {"robot": robot.name}
-            cfg.update(args.__dict__)
-            cfg.update(base_hparams.__dict__)
-            wandb_logger.experiment.config.update(cfg)
+        wandb_logger = WandbLogger(save_dir=config.WANDB_CACHE_DIR)
+        cfg = {"robot": robot.name}
+        cfg.update(args.__dict__)
+        cfg.update(base_hparams.__dict__)
+        wandb_logger.experiment.config.update(cfg)
 
-        data_module = IkfLitDataset(
-            robot.name, args.batch_size, use_small_dataset=False, val_set_size=args.val_set_size
-        )
-        model = IkfLitModel(
-            model_wrapper=model_wrapper,
-            base_hparams=base_hparams,
-            loss_fn=args.loss_fn,
-            learning_rate=args.learning_rate,
-            checkpoint_every=args.checkpoint_every,
-            log_every=args.log_every,
-            gradient_clip=args.gradient_clip_val,
-            lambd=args.lambd,
-        )
-        trainer = Trainer(
-            logger=wandb_logger,
-            callbacks=[],
-            val_check_interval=args.eval_every,
-            gpus=1,
-            log_every_n_steps=args.log_every,
-        )
-        trainer.fit(model, data_module)
+    data_module = IkfLitDataset(robot.name, args.batch_size, val_set_size=args.val_set_size)
+    model = IkfLitModel(
+        model_wrapper=model_wrapper,
+        base_hparams=base_hparams,
+        learning_rate=args.learning_rate,
+        checkpoint_every=args.checkpoint_every,
+        log_every=args.log_every,
+        gradient_clip=args.gradient_clip_val,
+        lambd=args.lambd,
+    )
+    trainer = Trainer(
+        logger=wandb_logger,
+        callbacks=[],
+        val_check_interval=args.eval_every,
+        gpus=1,
+        log_every_n_steps=args.log_every,
+        max_epochs=DEFAULT_MAX_EPOCHS
+    )
+    trainer.fit(model, data_module)
