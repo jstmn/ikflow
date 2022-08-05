@@ -1,10 +1,12 @@
 # IKFlow
 Normalizing flows for Inverse Kinematics. Open source implementation to the paper "IKFlow: Generating Diverse Inverse Kinematics Solutions"
 
+[![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
+
+
 ### Setup - Ubuntu
 
 TODO: Add instructions for running on Mac
-
 
 *Install base ubuntu dependencies*
 ```
@@ -41,7 +43,7 @@ cd thirdparty/FrEIA && python setup.py develop && cd ../../
 
 XXXXXXXXXXXXXXX
 
-pip install torch numpy klampt matplotlib pytorch_lightning tqdm wandb kinpy
+pip install torch numpy klampt matplotlib pytorch_lightning tqdm wandb kinpy pandas
 pip freeze > requirments.txt
 
 git submodule add https://github.com/tonyduan/mdn.git thirdparty/mdn

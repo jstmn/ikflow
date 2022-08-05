@@ -31,7 +31,7 @@ models/urdf-viz
 
 # Pycache
 __pycache__/
-src/mdn/mdn/__pycache__/
+thirdparty/mdn/mdn/__pycache__/
 
 # Virtual Environments
 venv/
@@ -72,6 +72,7 @@ gridai_configs/*.yml
 # Pytl training data
 lightning_logs/
 
+old/
 
 # Figures
 *.pdf

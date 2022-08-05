@@ -1,15 +1,9 @@
-"""Global configuration for the experiments"""
+"""Global configuration"""
 import torch
-import os
 
 # /
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-# device = "cpu"
 
-git_branch = "master"
-# print(f"device: {device}")
-
-robot_models_directory = "./urdfs"
-
-is_ubuntu_dev_machine = os.path.isdir("/home/jeremysmorgan/")
+URDFS_DIRECTORY = "./urdfs"
 WANDB_CACHE_DIR = "./wandb/"
+DATASET_DIR = "./datasets/"

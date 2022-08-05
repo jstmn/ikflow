@@ -9,7 +9,7 @@ device = "cuda:0" if torch.cuda.is_available() else "cpu"
 git_branch = "master"
 # print(f"device: {device}")
 
-robot_models_directory = "./urdfs"
+URDFS_DIRECTORY = "./urdfs"
 
 is_ubuntu_dev_machine = os.path.isdir("/home/jeremysmorgan/")
 WANDB_CACHE_DIR = "./wandb/"

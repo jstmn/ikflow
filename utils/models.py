@@ -6,10 +6,11 @@ from time import time
 
 from FrEIA.framework.graph_inn import GraphINN
 
-from src.mdn.mdn.models import MixtureDensityNetwork
-from src import config, robot_models
-from src.robot_models import KlamptRobotModel
-from src.training_parameters import MDNParameters, IkflowModelParameters, MultiCINN_Parameters, IResNetParameters
+from thirdparty.mdn.mdn.models import MixtureDensityNetwork
+import config
+from utils import robots
+from utils.robots import KlamptRobotModel
+from training.training_parameters import MDNParameters, IkflowModelParameters
 
 import numpy as np
 from wandb.wandb_run import Run
@@ -18,12 +19,10 @@ import FrEIA.modules as Fm
 import torch
 import torch.nn as nn
 
-
-# Need to call this when running on cluster. otherwise will get "tkinter.TclError: no display name and no $DISPLAY environment variable"
-if config.is_cluster:
-    import matplotlib
-
-    matplotlib.use("Agg")
+# CALL THE FOLLOWING CODE IF RUNNING ON A MACHINE THAT HAS NO DISPLAY. If not run, will get "tkinter.TclError: no display name and no $DISPLAY environment variable"
+# if config.is_cluster:
+#     import matplotlib
+#     matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
@@ -129,7 +128,7 @@ COUPLING_BLOCKS = {
 }
 
 
-def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, robot_model: robot_models.RobotModel):
+def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, robot_model: robots.RobotModel):
     """
     Build a nn_model consisting of a sequence of Glow coupling layers
     """
@@ -177,7 +176,7 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
     return model
 
 
-def mdn_model(n_components: int, robot_model: robot_models.RobotModel):
+def mdn_model(n_components: int, robot_model: robots.RobotModel):
     """Build and return a Mixture Density Network. See https://publications.aston.ac.uk/id/eprint/373/1/NCRG_94_004.pdf. Implementation from https://github.com/tonyduan/mdn
 
     Args:
@@ -209,7 +208,7 @@ class ModelWrapper:
         self,
         nn_model_type: str,
         nn_model: Union[MixtureDensityNetwork, Ff.ReversibleGraphNet],
-        robot_model: robot_models.RobotModel,
+        robot_model: robots.RobotModel,
         cuda_out_of_memory=False,
     ):
         """Initialize a ModelWrapper.
@@ -378,7 +377,7 @@ class IkflowModel(ModelWrapper):
 
     nn_model_type = "ikflow"
 
-    def __init__(self, hyper_parameters: IkflowModelParameters, robot_model: robot_models.RobotModel):
+    def __init__(self, hyper_parameters: IkflowModelParameters, robot_model: robots.RobotModel):
         """Initialize a IkflowModel."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
 
@@ -476,7 +475,7 @@ class ModelWrapper_MDN(ModelWrapper):
 
     nn_model_type = "mdn"
 
-    def __init__(self, hyper_parameters: MDNParameters, robot_model: robot_models.RobotModel):
+    def __init__(self, hyper_parameters: MDNParameters, robot_model: robots.RobotModel):
         """Initialize a ModelWrapper_MDN object"""
         assert isinstance(hyper_parameters, MDNParameters)
         nn_model = mdn_model(hyper_parameters.n_components, robot_model)

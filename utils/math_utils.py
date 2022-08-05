@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from src import config
+import config
 
 
 def MMD_multiscale(x, y, c_list, a_list, reduce=True):

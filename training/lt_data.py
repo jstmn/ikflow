@@ -1,11 +1,8 @@
 from typing import Optional
 import os
 
-from src.dataset import Dataset
-from src import config
-from src.dataset_tags import DATASET_TAGS
-from src.dataset_utils import get_artifact_name
-from src.utils import get_sum_joint_limit_range
+import config
+from utils.utils import get_sum_joint_limit_range
 
 from torch.utils.data import DataLoader, random_split
 from pytorch_lightning.core.datamodule import LightningDataModule
@@ -14,8 +11,13 @@ import wandb
 import torch
 
 
-DATASET_DIR = "~/Projects/data/ikflow/datasets/model_refinement"
-
+def _get_dataset_directory(robot: str, is_small: bool):
+    """ Return the path of the directory
+    """
+    subdir_name = f"{robot}"
+    if is_small:
+        subdir_name += "__SMALL" 
+    return os.path.join(config.DATASET_DIR, subdir_name) 
 
 class IkfLitDataset(LightningDataModule):
     def __init__(
@@ -23,7 +25,6 @@ class IkfLitDataset(LightningDataModule):
         robot_name: str,
         batch_size: int,
         use_small_dataset: bool = False,
-        tag: Optional[str] = None,
         val_set_size: int = 500,
     ):
         self._robot_name = robot_name
@@ -31,19 +32,13 @@ class IkfLitDataset(LightningDataModule):
         self._use_small_dataset = use_small_dataset
         self._val_set_size = val_set_size
 
-        if (not tag is None) and len(tag) > 0:
-            assert tag in DATASET_TAGS
+        dataset_directory = _get_dataset_directory(self._robot_name, self._use_small_dataset)
+        assert os.path.isdir(dataset_directory), f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet?"
 
-        if len(tag) == 0:
-            print("Warning: tag is empty. Assuming the default dataset is being requested. Setting `tag` to None")
-            tag = None
-
-        artifact_name = get_artifact_name(self._robot_name, self._use_small_dataset, tag)
-
-        self._samples_tr = torch.load(os.path.join(DATASET_DIR, artifact_name, "samples_tr.pt")).to("cuda:0")
-        self._endpoints_tr = torch.load(os.path.join(DATASET_DIR, artifact_name, "endpoints_tr.pt")).to("cuda:0")
-        self._samples_te = torch.load(os.path.join(DATASET_DIR, artifact_name, "samples_te.pt")).to("cuda:0")
-        self._endpoints_te = torch.load(os.path.join(DATASET_DIR, artifact_name, "endpoints_te.pt")).to("cuda:0")
+        self._samples_tr = torch.load(os.path.join(dataset_directory, "samples_tr.pt")).to("cuda:0")
+        self._endpoints_tr = torch.load(os.path.join(dataset_directory, "endpoints_tr.pt")).to("cuda:0")
+        self._samples_te = torch.load(os.path.join(dataset_directory, "samples_te.pt")).to("cuda:0")
+        self._endpoints_te = torch.load(os.path.join(dataset_directory, "endpoints_te.pt")).to("cuda:0")
 
         self._sum_joint_limit_range = get_sum_joint_limit_range(self._samples_tr)
 

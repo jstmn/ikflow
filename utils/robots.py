@@ -233,7 +233,7 @@ class KlamptRobotModel(RobotModel):
             self.joint_chain,
             self.actuated_joints,
             print_init=False,
-            l2_loss_pts=self.l2_loss_pts,
+            l2_loss_pts=[],
         )
 
         self.world_model = klampt.WorldModel()
@@ -296,6 +296,7 @@ class KlamptRobotModel(RobotModel):
         """
         Test that kinpy, klampt, and batch_fk all return the same poses
         """
+        raise NotImplementedError("l2 loss points are not ready for use yet")
         n_samples = 10
         samples = self.sample(n_samples)
         fk_klampt = self.forward_kinematics_klampt(samples, with_l2_loss_pts=True)
@@ -378,6 +379,7 @@ class KlamptRobotModel(RobotModel):
 
     def forward_kinematics_klampt(self, x: np.array, with_l2_loss_pts=False) -> np.array:
         """Forward kinematics using the klampt library"""
+        assert with_l2_loss_pts is False, "l2_loss_pts not ready for use"
         if with_l2_loss_pts:
             assert len(self.l2_loss_pts) > 0
             return klampt_fk_w_l2_loss_pts(self._klampt_robot, self._klampt_ee_link, self.x_to_qs(x), self.l2_loss_pts)
@@ -390,6 +392,7 @@ class KlamptRobotModel(RobotModel):
     def forward_kinematics_batch(
         self, x: torch.tensor, device=config.device, with_l2_loss_pts=False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        assert with_l2_loss_pts is False, "l2_loss_pts not ready for use"
         if with_l2_loss_pts:
             assert len(self.l2_loss_pts) > 0
             return self.batch_fk_calc.batch_fk_w_l2_loss_pts(x, device=device)
@@ -760,7 +763,7 @@ class Atlas(KlamptRobotModel):
 
         dim_x = len(actuated_joints)
         end_effector_link_name = "l_hand"
-        urdf_filepath = f"{config.robot_models_directory}/atlas/atlas.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/atlas/atlas.urdf"
 
         poses_for_dist_plots = [
             [
@@ -831,7 +834,7 @@ class AtlasArm(KlamptRobotModel):
 
         dim_x = len(actuated_joints)
         end_effector_link_name = "l_hand"
-        urdf_filepath = f"{config.robot_models_directory}/atlas/atlas_arm.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/atlas/atlas_arm.urdf"
 
         poses_for_dist_plots = [
             [
@@ -903,7 +906,7 @@ class Baxter(KlamptRobotModel):
         joint_chain = ["left_s0", "left_s1", "left_e0", "left_e1", "left_w0", "left_w1", "left_w2", "left_hand"]
         dim_x = len(actuated_joints)
         end_effector_link_name = "left_hand"
-        urdf_filepath = f"{config.robot_models_directory}/baxter/baxter.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/baxter/baxter.urdf"
 
         poses_for_dist_plots = [
             [
@@ -980,7 +983,7 @@ class Kuka11dof(KlamptRobotModel):
             "lwr_arm_6_joint",
         ]
 
-        urdf_filepath = f"{config.robot_models_directory}/kuka_11dof/urdf/model.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/kuka_11dof/urdf/model.urdf"
         end_effector_link_name = "lwr_arm_7_link"
 
         KlamptRobotModel.__init__(
@@ -1026,7 +1029,7 @@ class PandaArm(KlamptRobotModel):
             "panda_hand_joint",
         ]
 
-        urdf_filepath = f"{config.robot_models_directory}/panda_arm/panda.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm/panda.urdf"
         end_effector_link_name = "panda_hand"
 
         end_poses_to_plot_solution_dists_for = [
@@ -1092,7 +1095,7 @@ class Pr2(KlamptRobotModel):
         end_effector_link_name = "l_gripper_palm_link"
 
         dim_x = len(actuated_joints)
-        urdf_filepath = f"{config.robot_models_directory}/pr2/pr2.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/pr2/pr2.urdf"
         
         end_poses_to_plot_solution_dists_for = [
             np.array([0.5, 0.65, 0.65, 1, 0, 0, 0]),
@@ -1161,7 +1164,7 @@ class Robonaut2(KlamptRobotModel):
         ]
         dim_x = len(actuated_joints)
         end_effector_link_name = "r2/left_palm"
-        urdf_filepath = f"{config.robot_models_directory}/robonaut2/r2b.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/robonaut2/r2b.urdf"
 
         poses_for_dist_plots = [
             [
@@ -1249,7 +1252,7 @@ class Robonaut2Arm(KlamptRobotModel):
         ]
         dim_x = len(actuated_joints)
         end_effector_link_name = "r2/left_palm"
-        urdf_filepath = f"{config.robot_models_directory}/robonaut2/r2b_arm.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/robonaut2/r2b_arm.urdf"
 
         poses_for_dist_plots = [
             [
@@ -1331,7 +1334,7 @@ class Robosimian(KlamptRobotModel):
             "limb1_joint7",
         ]
 
-        urdf_filepath = f"{config.robot_models_directory}/robosimian/robosimian.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/robosimian/robosimian.urdf"
         end_effector_link_name = "limb1_link7"
 
         poses_for_dist_plots = [
@@ -1430,7 +1433,7 @@ class Ur5(KlamptRobotModel):
             ),
         ]
 
-        urdf_filepath = f"{config.robot_models_directory}/ur5/ur5.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/ur5/ur5.urdf"
         end_effector_link_name = "ee_link"
 
         KlamptRobotModel.__init__(
@@ -1492,7 +1495,7 @@ class Valkyrie(KlamptRobotModel):
 
         dim_x = len(actuated_joints)
         end_effector_link_name = "leftPalm"
-        urdf_filepath = f"{config.robot_models_directory}/valkyrie/valkyrie.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie.urdf"
 
         poses_for_dist_plots = [
             [
@@ -1561,7 +1564,7 @@ class ValkyrieArm(KlamptRobotModel):
 
         dim_x = len(actuated_joints)
         end_effector_link_name = "leftPalm"
-        urdf_filepath = f"{config.robot_models_directory}/valkyrie/valkyrie_arm.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie_arm.urdf"
 
         poses_for_dist_plots = [
             [
@@ -1646,7 +1649,7 @@ class ValkyrieArmShoulder(KlamptRobotModel):
 
         dim_x = len(actuated_joints)
         end_effector_link_name = "leftPalm"
-        urdf_filepath = f"{config.robot_models_directory}/valkyrie/valkyrie_arm_shoulder.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie_arm_shoulder.urdf"
 
         poses_for_dist_plots = [
             [

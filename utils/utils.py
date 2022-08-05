@@ -6,10 +6,10 @@ import random
 from time import time
 import pickle
 
-from src.robot_models import RobotModel, get_robot
-from src import config
-from src.model import IkflowModel, ModelWrapper_MultiCINN, ModelWrapper
-from src.training_parameters import IkflowModelParameters, MultiCINN_Parameters
+from utils.robots import RobotModel, get_robot
+import config
+from utils.models import IkflowModel, ModelWrapper
+from training.training_parameters import IkflowModelParameters, MultiCINN_Parameters
 
 import numpy as np
 import pandas as pd

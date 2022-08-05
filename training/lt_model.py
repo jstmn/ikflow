@@ -3,10 +3,10 @@ import os
 from typing import Tuple, Dict
 from time import time, sleep
 
-from src import config
-from src.model import IkflowModel, draw_latent_noise
-from src.training_parameters import IkflowModelParameters
-from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
+import config
+from utils.models import IkflowModel, draw_latent_noise
+from training.training_parameters import IkflowModelParameters
+from utils.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from utils.utils import grad_stats, non_private_dict, safe_mkdir
 
 import wandb

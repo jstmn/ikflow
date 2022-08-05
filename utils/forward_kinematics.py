@@ -5,14 +5,13 @@ from xml.etree.ElementTree import Element
 import torch
 import numpy as np
 
-# import kinpy as kp
-import src.kinpy.kinpy as kp
+import kinpy as kp
 from klampt.math import so3, se3
 import klampt
 
-from src import config
-from src.math_utils import R_from_rpy_batch, R_from_axis_angle
-from src.kinpy.kinpy.chain import Chain
+import config
+from utils.math_utils import R_from_rpy_batch, R_from_axis_angle
+from kinpy.chain import Chain
 
 # from kinpy.chain import Chain
 
