@@ -20,9 +20,5 @@ checkpoints/
 training_logs/
 old/
 
-# Figures
-*.pdf
-*.png
-
 # Datasets
 datasets/*/

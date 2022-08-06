@@ -1,5 +1,6 @@
 # IKFlow
 Normalizing flows for Inverse Kinematics. Open source implementation to the paper ["IKFlow: Generating Diverse Inverse Kinematics Solutions"](https://ieeexplore.ieee.org/abstract/document/9793576)
+
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
@@ -9,15 +10,15 @@ TODO: Add instructions for running on Mac
 
 **Install base ubuntu dependencies**
 
-- If running Ubuntu `< 21.0`
+- If running Ubuntu `< 21.0`:
 ```
-sudo apt-get install build-essential qtcreator qt5-default python3.8-dev python3.8-pip python3.8-venv  
+sudo apt-get install build-essential qtcreator qt5-default python3.8-dev python3.8-pip python3.8-venv  git-lfs
 ```
 
-- Else if running Ubuntu `> 21.0+`
+- Else if running Ubuntu `> 21.0+`:
 Note: `qt5-default` is not in the apt repository for Ubuntu 21.0+ and thus cannot be installed. See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04
 ```
-sudo apt-get install build-essential qtcreator python3.8-dev python3-pip python3.8-venv 
+sudo apt-get install build-essential qtcreator python3.8-dev python3-pip python3.8-venv git-lfs 
 sudo apt-get install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 ```
 
