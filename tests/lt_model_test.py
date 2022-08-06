@@ -4,11 +4,11 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from src import config
-from src.model import IkflowModel
-from src.robot_models import get_robot
-from src.model_refinement.lt_model import IkfLitModel
-from src.training_parameters import IkflowModelParameters
+import config
+from utils.ik_solvers import IkflowSolver
+from utils.robots import get_robot
+from training.lt_model import IkfLitModel
+from training.training_parameters import IkflowModelParameters
 
 import torch
 
@@ -22,13 +22,12 @@ class LitModelTest(unittest.TestCase):
     def setUp(self) -> None:
 
         self.hps = IkflowModelParameters()
-        self.model_wrapper = IkflowModel(self.hps, ROBOT_MODEL)
+        self.ik_solver = IkflowSolver(self.hps, ROBOT_MODEL)
 
         self.model = IkfLitModel(
-            self.model_wrapper,
-            self.model_wrapper.nn_model,
+            self.ik_solver,
+            self.ik_solver.nn_model,
             self.hps,
-            loss_fn="l2",
             learning_rate=1,
             checkpoint_every=-1,
             log_every=5e10,
@@ -37,11 +36,11 @@ class LitModelTest(unittest.TestCase):
     def test_gradient_calculated(self):
         batch_size = 16
         batch = (
-            torch.randn((batch_size, self.model_wrapper.dim_x)).to(config.device),
-            torch.randn((batch_size, self.model_wrapper.dim_y)).to(config.device),
+            torch.randn((batch_size, self.ik_solver.dim_x)).to(config.device),
+            torch.randn((batch_size, self.ik_solver.dim_y)).to(config.device),
         )
-        fixed_latent_noise = torch.randn((5, self.model_wrapper.dim_tot)).to(config.device)
-        zero_response0 = self.model_wrapper.make_samples([0] * 7, m=5, latent_noise=fixed_latent_noise)
+        fixed_latent_noise = torch.randn((5, self.ik_solver.dim_tot)).to(config.device)
+        zero_response0 = self.ik_solver.make_samples([0] * 7, m=5, latent_noise=fixed_latent_noise)
         optimizer = torch.optim.Adadelta(self.model.nn_model.parameters(), lr=self.model.hparams.learning_rate)
 
         self.model.zero_grad()
@@ -51,7 +50,7 @@ class LitModelTest(unittest.TestCase):
             print(name, p.grad is None)
 
         optimizer.step()
-        zero_response_f = self.model_wrapper.make_samples([0] * 7, m=5, latent_noise=fixed_latent_noise)
+        zero_response_f = self.ik_solver.make_samples([0] * 7, m=5, latent_noise=fixed_latent_noise)
 
         print("zero_response0")
         print(zero_response0)

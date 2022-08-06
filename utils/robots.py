@@ -250,7 +250,7 @@ class KlamptRobotModel(RobotModel):
         ), f"# of active joints in urdf {self._klampt_robot.numDrivers()} doesn't equal `dim_x`: {self.dim_x}"
 
         self._active_dofs = self.get_active_dofs()
-        self.assert_fk_functions_equal()
+        self.assert_fk_functions_equal(verbosity)
         # TODO(@jeremysm): Update batch_fk so that it works for baxter and kuka11dof
         # self.assert_batch_fk_equal()
 
@@ -268,7 +268,7 @@ class KlamptRobotModel(RobotModel):
         return self._klampt_robot
 
     # Tests
-    def assert_fk_functions_equal(self):
+    def assert_fk_functions_equal(self, verbosity=0):
         """
         Test that kinpy, klampt, and batch_fk all return the same poses
         """
@@ -277,10 +277,11 @@ class KlamptRobotModel(RobotModel):
         kinpy_fk, klampt_fk = get_fk_poses(self, samples, batch=False)
         assert_endpose_position_almost_equal(kinpy_fk, klampt_fk)
         assert_endpose_rotation_almost_equal(kinpy_fk, klampt_fk)
-        print(f"klampt, kinpy fk functions match for {self.name}")
+        if verbosity > 0:
+            print(f"klampt, kinpy fk functions match for {self.name}")
 
     # Tests
-    def assert_batch_fk_equal(self):
+    def assert_batch_fk_equal(self, verbosity=0):
         """
         Test that kinpy, klampt, and batch_fk all return the same poses
         """
@@ -290,7 +291,8 @@ class KlamptRobotModel(RobotModel):
         assert_endpose_position_almost_equal(kinpy_fk, klampt_fk)
         assert_endpose_rotation_almost_equal(kinpy_fk, klampt_fk)
         assert_endpose_position_almost_equal(kinpy_fk, batch_fk_t)
-        print("assert_batch_fk_equal(): klampt, kinpy, batch_fk functions match")
+        if verbosity > 0:
+            print("assert_batch_fk_equal(): klampt, kinpy, batch_fk functions match")
 
     def assert_l2_loss_pts_equal(self):
         """
@@ -1095,7 +1097,7 @@ class Pr2(KlamptRobotModel):
         end_effector_link_name = "l_gripper_palm_link"
 
         dim_x = len(actuated_joints)
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/pr2/pr2.urdf"
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/pr2/pr2.urdf"  # this is pr2_out.urdf in nn_ik repo
 
         end_poses_to_plot_solution_dists_for = [
             np.array([0.5, 0.65, 0.65, 1, 0, 0, 0]),

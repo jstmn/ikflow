@@ -4,7 +4,7 @@ from typing import Tuple, Dict
 from time import time, sleep
 
 import config
-from utils.models import IkflowModel, draw_latent_noise
+from utils.ik_solvers import IkflowSolver, draw_latent_noise
 from training.training_parameters import IkflowModelParameters
 from utils.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from utils.utils import grad_stats, non_private_dict, safe_mkdir
@@ -35,7 +35,7 @@ def checkpoint_dir(robot_name: str) -> str:
 class IkfLitModel(LightningModule):
     def __init__(
         self,
-        model_wrapper: IkflowModel,
+        ik_solver: IkflowSolver,
         base_hparams: IkflowModelParameters,
         learning_rate: float,
         checkpoint_every: int,
@@ -49,26 +49,26 @@ class IkfLitModel(LightningModule):
 
         super().__init__()
 
-        self.model_wrapper = model_wrapper
-        self.nn_model = model_wrapper.nn_model
+        self.ik_solver = ik_solver
+        self.nn_model = ik_solver.nn_model
         self.base_hparams = base_hparams
-        self.dim_x = self.model_wrapper.robot_model.dim_x
+        self.dim_x = self.ik_solver.robot_model.dim_x
         self.dim_tot = self.base_hparams.dim_latent_space
         self.checkpoint_every = checkpoint_every
-        self.checkpoint_dir = checkpoint_dir(self.model_wrapper.robot.name)
+        self.checkpoint_dir = checkpoint_dir(self.ik_solver.robot.name)
         if self.checkpoint_every > 0:
             safe_mkdir(self.checkpoint_dir)
         self.log_every = log_every
 
-        self.save_hyperparameters(ignore=["model_wrapper"])
+        self.save_hyperparameters(ignore=["ik_solver"])
 
     def _checkpoint(self):
         filename = f"epoch:{self.current_epoch}_batch:{self.global_step}.pkl"
         filepath = os.path.join(self.checkpoint_dir, filename)
         state = {
-            "nn_model_type": self.model_wrapper.nn_model_type,
-            "model": self.model_wrapper.nn_model.state_dict(),
-            "robot_model": self.model_wrapper.robot_model.name,
+            "nn_model_type": self.ik_solver.nn_model_type,
+            "model": self.ik_solver.nn_model.state_dict(),
+            "robot_model": self.ik_solver.robot_model.name,
             "hparams": non_private_dict(self.hparams.__dict__),
             "epoch": self.current_epoch,
             "batch_nb": self.global_step,
@@ -163,8 +163,8 @@ class IkfLitModel(LightningModule):
         ee_pose_target = y.cpu().detach().numpy()[0]
         # TODO(@jeremysm): Move this error calculation to evaluation.py
         samples, model_runtime = self.make_samples(ee_pose_target, self.hparams.samples_per_pose)
-        ee_pose_ikflow = self.model_wrapper.robot_model.forward_kinematics(
-            samples[:, 0 : self.model_wrapper.robot_model.dim_x].cpu().detach().numpy()
+        ee_pose_ikflow = self.ik_solver.robot_model.forward_kinematics(
+            samples[:, 0 : self.ik_solver.robot_model.dim_x].cpu().detach().numpy()
         )
         # Positional Error
         pos_l2errs = np.linalg.norm(ee_pose_ikflow[:, 0:3] - ee_pose_target[0:3], axis=1)
@@ -223,7 +223,7 @@ class IkfLitModel(LightningModule):
         assert len(y) == 7
 
         # Note: No code change required here to handle using/not using softflow.
-        conditional = torch.zeros(m, self.model_wrapper.dim_cond)
+        conditional = torch.zeros(m, self.ik_solver.dim_cond)
         # (:, 0:3) is x, y, z
         conditional[:, 0:3] = torch.FloatTensor(y[:3])
         # (:, 3:7) is quat

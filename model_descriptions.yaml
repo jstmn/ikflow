@@ -1,0 +1,32 @@
+
+atlas:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       15
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  softflow_enabled:       True
+  robot_name:             'atlas'
+  model_weights_filepath: 'pretrained_models/atlas.pkl'
+
+panda_arm:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       9
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'panda_arm'
+  model_weights_filepath: 'pretrained_models/panda_arm.pkl'
+
+# AssertionError: # of active joints in urdf 39 doesn't equal `dim_x`: 8
+# pr2:
+#   coupling_layer:         'glow'
+#   nb_nodes:               8
+#   dim_latent_space:       15
+#   coeff_fn_config:        3
+#   coeff_fn_internal_size: 1024
+#   rnvp_clamp:             2.5
+#   robot_name:             'pr2'
+#   model_weights_filepath: 'pretrained_models/pr2.pkl'

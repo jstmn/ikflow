@@ -45,49 +45,7 @@ class IkflowModelParameters(Config):
         Config.__init__(self, "IkflowModelParameters")
 
 
-class MultiCINN_Parameters(Config):
-    def __init__(self):
-        self.coupling_layer = "glow"
-        self.subnet_nb_nodes = 5
-        self.subnet_network_width = 10
-        self.subnet_coeff_fn_depth = 3
-        self.subnet_coeff_fn_width = 512
-
-        # Only the first column of a `sample` tensor will have joint values. Fill the rest with a sample from a normal
-        # gaussian multiplied by `non_joint_sample_noise`
-        self.non_joint_sample_noise = 1e-3
-
-        # ___ Loss parameters
-        self.lambd_predict = 1.0  # Fit Loss lambda
-
-        # Initialization scale
-        self.init_scale = -1
-        self.rnvp_clamp = 2.5
-
-        self.softflow_noise_scale = -1
-        self.softflow_enabled = False
-
-        Config.__init__(self, "CompositeNetParameters")
-
-
-class IResNetParameters(Config):
-    def __init__(self):
-        self.nb_nodes = 6
-        self.n_internal_layers = 3
-        self.coeff_fn_internal_size = 256
-        self.jacobian_iterations = 20
-        self.hutchinson_samples = 1
-        self.fixed_point_iterations = 50
-        self.lipschitz_iterations = 10
-        self.lipschitz_batchsize = 10
-        self.spectral_norm_max = 0.8
-        self.iresnet_loss_fn = 1
-
-        Config.__init__(self, "IResNetParameters")
-
-
 class MDNParameters(Config):
     def __init__(self):
         self.n_components = 1
-
         Config.__init__(self, "MDNParameters")

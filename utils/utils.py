@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Optional, Callable
+from typing import Tuple, Union, Optional, Callable, Dict
 import csv
 import pathlib
 import os
@@ -8,8 +8,8 @@ import pickle
 
 from utils.robots import RobotModel, get_robot
 import config
-from utils.models import IkflowModel, ModelWrapper
-from training.training_parameters import IkflowModelParameters, MultiCINN_Parameters
+from utils.ik_solvers import IkflowSolver, GenerativeIKSolver
+from training.training_parameters import IkflowModelParameters
 
 import numpy as np
 import pandas as pd
@@ -17,12 +17,8 @@ import torch
 import wandb
 from wandb.wandb_run import Run
 
-MODEL_DOWNLOAD_DIR = "~/Projects/data/ikflow/saved_models"
-
 # _______________________
 # Dataset utilities
-
-
 def get_dataset_directory(robot: str):
     """Return the path of the directory"""
     return os.path.join(config.DATASET_DIR, robot)
@@ -32,76 +28,32 @@ def get_dataset_directory(robot: str):
 # Model loading utilities
 
 
-def load_model_from_wandb(
-    run_name: str, wandb_run: Optional[Run]
-) -> Tuple[str, Union[IkflowModelParameters, MultiCINN_Parameters]]:
-    """Querry wandb for the saved model from the specified run. Return the robot, and hyperparameters used for the model."""
+def get_ik_solver(
+    model_weights_filepath: str, robot_name: str, model_hyperparameters: Dict
+) -> Tuple[GenerativeIKSolver, IkflowModelParameters]:
+    """Build and return a `IkflowSolver` using the model weights saved in the file `model_weights_filepath` for the
+    given robot and with the given hyperparameters
 
-    # Load Run
-    if wandb_run is None:
-        wandb_run = wandb.init(project="nnik", tags=["SAFE_TO_DELETE", "FROM_DEMO_PY"])
+    Args:
+        model_weights_filepath (str): The filepath for the model weights
+        robot_name (str): The name of the robot that the model is for
+        model_hyperparameters (Dict): The hyperparameters used for the NN
 
-    # artifact_name = f"{run_name}:v0"
-    artifact_name = f"{run_name}:latest"
-    artifact = wandb_run.use_artifact(artifact_name)
-    run = artifact.logged_by()
-    robot = run.config["robot"]
-    print(f"Run config: {run.config}")
+    Returns:
+        Tuple[GenerativeIKSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
+                                                            `IkflowModelParameters` parameters object
+    """
+    assert os.path.isfile(
+        model_weights_filepath
+    ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
+    robot_model = get_robot(robot_name)
 
-    # Download saved model
-    t0 = time()
-    run_download_dir = os.path.join(MODEL_DOWNLOAD_DIR, run_name)
-    artifact.download(root=run_download_dir)
-    print(f"Downloaded nn state_dict for '{run_name}' in {round(time() - t0, 3)} seconds")
-
-    # Set hyperparameters. Note: this will set the training values aswell. They'll be ignored so it doesn't matter
-    assert run.config["model_type"] in ["ikflow", "multi_cinn"]
-    if run.config["model_type"] == "ikflow":
-        hyper_parameters = IkflowModelParameters()
-    elif run.config["model_type"] == "multi_cinn":
-        hyper_parameters = MultiCINN_Parameters()
-
-    for k, v in run.config.items():
-        hyper_parameters.__dict__[k] = v
-
-    # Hack: Save run config so don't need to querry wandb in future runs
-    run_config = {"hyper_parameters": hyper_parameters, "robot": robot}
-    with open(os.path.join(run_download_dir, "run_config.pkl"), "wb") as f:
-        pickle.dump(run_config, f)
-
-    return robot, hyper_parameters
-
-
-def get_model_wrapper(run_name, wandb_run: Optional[Run] = None) -> Tuple[ModelWrapper, IkflowModelParameters]:
-    """Load a robot"""
-    model_dir = os.path.join(MODEL_DOWNLOAD_DIR, run_name)
-    model_filepath = os.path.join(model_dir, "model.pkl")
-    run_config_filepath = os.path.join(model_dir, "run_config.pkl")
-
-    if os.path.isfile(model_filepath) and os.path.isfile(run_config_filepath):
-        print(f"Model found on disk, skipping download")
-        with open(run_config_filepath, "rb") as f:
-            cfg = pickle.load(f)
-            robot = cfg["robot"]
-            hyper_parameters = cfg["hyper_parameters"]
-    else:
-        robot, hyper_parameters = load_model_from_wandb(run_name, wandb_run=wandb_run)
-
-    robot_model = get_robot(robot)
-
-    # Build ModelWrapper and set weights
-    if isinstance(hyper_parameters, IkflowModelParameters):
-        model_wrapper = IkflowModel(hyper_parameters, robot_model)
-    elif isinstance(hyper_parameters, MultiCINN_Parameters):
-        model_wrapper = ModelWrapper_MultiCINN(hyper_parameters, robot_model)
-    else:
-        raise RuntimeError("Unknown model")
-
-    # torch.load(model_filepath, map_location="cpu")
-    # model_wrapper.load_state_dict(torch.load(model_filepath, map_location=torch.device('cpu')))
-    model_wrapper.load_state_dict(model_filepath)
-
-    return model_wrapper, hyper_parameters
+    # Build GenerativeIKSolver and set weights
+    hyper_parameters = IkflowModelParameters()
+    hyper_parameters.__dict__.update(model_hyperparameters)
+    ik_solver = IkflowSolver(hyper_parameters, robot_model)
+    ik_solver.load_state_dict(model_weights_filepath)
+    return ik_solver, hyper_parameters
 
 
 # _____________
@@ -116,6 +68,7 @@ def set_seed(seed=0):
     np.random.seed(seed)
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(0)
+    print("set_seed() - random int: ", torch.randint(0, 1000, (1, 1)).item())
 
 
 def cuda_info():

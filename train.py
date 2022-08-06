@@ -2,7 +2,7 @@ import argparse
 
 import config
 from training.training_parameters import IkflowModelParameters
-from utils.models import IkflowModel
+from utils.ik_solvers import IkflowSolver
 from utils.robots import get_robot, KlamptRobotModel
 from training.lt_model import IkfLitModel
 from training.lt_data import IkfLitDataset
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     base_hparams.zeros_noise_scale = args.zeros_noise_scale
     base_hparams.softflow_enabled = boolean_string(args.softflow_enabled)
 
-    model_wrapper = IkflowModel(base_hparams, robot)
+    ik_solver = IkflowSolver(base_hparams, robot)
 
     assert isinstance(robot, KlamptRobotModel), "Only 3d robots are supported for training currently"
     robot.assert_batch_fk_equal()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     data_module = IkfLitDataset(robot.name, args.batch_size, val_set_size=args.val_set_size)
     model = IkfLitModel(
-        model_wrapper=model_wrapper,
+        ik_solver=ik_solver,
         base_hparams=base_hparams,
         learning_rate=args.learning_rate,
         checkpoint_every=args.checkpoint_every,

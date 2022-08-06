@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 VERBOSE = False
 
 
-def glow_subnet(internal_size: int, n_layers: int, ch_in: int, ch_out: int):
+def subnet_constructor(internal_size: int, n_layers: int, ch_in: int, ch_out: int):
     """Create a coefficient network"""
 
     assert n_layers in [1, 2, 3, 4, 5, 6, 7], "Number of layers `n_layers` must be in [1, ..., 7]"
@@ -133,8 +133,8 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
     Build a nn_model consisting of a sequence of Glow coupling layers
     """
 
-    def glow_subnet_wrapper(ch_in: int, ch_out: int):
-        return glow_subnet(params.coeff_fn_internal_size, params.coeff_fn_config, ch_in, ch_out)
+    def subnet_constructor_wrapper(ch_in: int, ch_out: int):
+        return subnet_constructor(params.coeff_fn_internal_size, params.coeff_fn_config, ch_in, ch_out)
 
     # Input Node
     input_node = Ff.InputNode(ndim_tot, name="input")
@@ -152,6 +152,24 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
 
     coupling_block = COUPLING_BLOCKS[params.coupling_layer]
 
+    """ Note: Changes were made to `coupling_layers.py` in the Freia library after February 2021 that were not backwards
+    compatabile. Specificaly, the calculation for the dimensionality of sub networks for coupling layers changed. 
+    Following this change, the values for `split_len1`, `split_len2` (defined in `_BaseCouplingLayer` in 
+    thirdparty/FrEIA/FrEIA/modules/coupling_layers.py) are different when the total network width is odd. The pretrained 
+    models that are released with this repo were trained using a version of Freia from before this change was made, thus
+    we manually set the `split_len1`, `split_len2` using the old calculation 
+    
+    See https://github.com/VLL-HD/FrEIA/commits/master/FrEIA/modules/coupling_layers.py for the git history of this 
+    file. I believe commit `af72941f2867f18ea6155239413964a252c551e9` broke this compatability. Unit tests should have 
+    been written to prevent this, but hey, this is research code after all ¯\_(ツ)_/¯
+    
+    The original `split_len1/2` calculation is as follows:
+
+        self.split_len1 = self.channels // 2
+        self.split_len2 = self.channels - self.channels // 2
+    """
+    split_dimension = ndim_tot // 2  # // is a floor division operator
+
     permute_random = True
     if "permute_random_enabled" in params.__dict__:
         permute_random = params.permute_random_enabled
@@ -165,10 +183,13 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
         glow_node = Ff.Node(
             nodes[-1].out0,
             coupling_block,
-            {"subnet_constructor": glow_subnet_wrapper, "clamp": params.rnvp_clamp},
+            {
+                "subnet_constructor": subnet_constructor_wrapper,
+                "clamp": params.rnvp_clamp,
+                "split_len": split_dimension,
+            },
             conditions=cond,
         )
-
         nodes.append(glow_node)
 
     model = Ff.ReversibleGraphNet(nodes + [cond, Ff.OutputNode([nodes[-1].out0], name="output")], verbose=VERBOSE)
@@ -201,7 +222,7 @@ def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, la
         return 2 * latent_noise_scale * torch.rand(shape).to(config.device) - latent_noise_scale
 
 
-class ModelWrapper:
+class GenerativeIKSolver:
     """Superclass to represent ModelWrappers around nn's. Provides a standard set of functions that will be implemented by subclasses"""
 
     def __init__(
@@ -211,13 +232,12 @@ class ModelWrapper:
         robot_model: robots.RobotModel,
         cuda_out_of_memory=False,
     ):
-        """Initialize a ModelWrapper.
+        """Initialize a GenerativeIKSolver.
 
         Args:
             nn_model_type (str): The type of the model. One of ["ikflow", "mdn"]
-
         """
-        assert nn_model_type in ["ikflow", "mdn", "iresnet", "multi_cinn"]
+        assert nn_model_type in ["ikflow", "mdn"]
 
         self.nn_model_type = nn_model_type
         self.nn_model = nn_model
@@ -225,22 +245,13 @@ class ModelWrapper:
         self.dim_x = self.robot_model.dim_x
         self.dim_y = robot_model.dim_y
 
-        # TODO(@jeremysm): Clean up this tech. debts
-        self.n_parameters = -1
-
-        # Check to see if the gpu is out of memory after building the inn. Return uninitialized if so.
+        # Check to see if the gpu is out of memory after building the NN. Return uninitialized if so.
         self.cuda_out_of_memory = cuda_out_of_memory
         if self.cuda_out_of_memory:
-            print("ModelWrapper ERROR: Cuda is out of memory. created object will be uninitilized")
+            print("GenerativeIKSolver ERROR: Cuda is out of memory. created object will be uninitilized")
             return
 
-        if self.nn_model_type == "multi_cinn":
-            self.n_parameters = 0
-            for model in self.nn_model:
-                self.n_parameters = self.n_parameters + sum(p.numel() for p in model.parameters())
-        else:
-            self.n_parameters = sum(p.numel() for p in self.nn_model.parameters())
-
+        self.n_parameters = sum(p.numel() for p in self.nn_model.parameters())
         print(f"Created model of type '{self.nn_model_type}' ( w/ {self.n_parameters} parameters)")
 
     @property
@@ -251,7 +262,6 @@ class ModelWrapper:
         """
         Load the parameters given the `artifact_name` where the model is saved under in wandb
         """
-
         artifact = wandb_run.use_artifact(artifact_name + ":latest")
         download_path = artifact.download()
         state_dict_filepath = os.path.join(download_path, "model.pkl")
@@ -366,38 +376,39 @@ class ModelWrapper:
         plt.close()
 
     def __str__(self):
-        s = f"ModelWrapper('{self.nn_model_type}')\n"
+        s = f"GenerativeIKSolver('{self.nn_model_type}')\n"
         s += "  robot:" + self.robot_model.__str__()
         return s
 
 
-class IkflowModel(ModelWrapper):
-    """A ModelWrapper subclass for a conditional invertible neural network with softflow. That's a mouthful"""
+class IkflowSolver(GenerativeIKSolver):
+    """A GenerativeIKSolver subclass for a conditional invertible neural network with softflow. That's a mouthful"""
 
     nn_model_type = "ikflow"
 
     def __init__(self, hyper_parameters: IkflowModelParameters, robot_model: robots.RobotModel):
-        """Initialize a IkflowModel."""
+        """Initialize a IkflowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
 
+        print(hyper_parameters)
         if hyper_parameters.softflow_enabled:
             self.dim_cond = robot_model.dim_y + 1
         else:
             self.dim_cond = robot_model.dim_y
 
-        # TODO(@jeremysm): Add `dim_tot` as a member value to ModelWrapper
+        # TODO(@jeremysm): Add `dim_tot` as a member value to GenerativeIKSolver
         self.dim_tot = max(hyper_parameters.dim_latent_space, robot_model.dim_x)
         cuda_out_of_memory = False
         nn_model = None
         try:
             nn_model = glow_nn_model(hyper_parameters, self.dim_cond, self.dim_tot, robot_model)
         except RuntimeError as e:
-            print(f"IkflowModel() caught error '{e}' in __init__() function.")
+            print(f"IkflowSolver() caught error '{e}' in __init__() function.")
             if "out of memory" in str(e) and "CUDA" in str(e):
                 cuda_out_of_memory = True
 
-        ModelWrapper.__init__(
-            self, IkflowModel.nn_model_type, nn_model, robot_model, cuda_out_of_memory=cuda_out_of_memory
+        GenerativeIKSolver.__init__(
+            self, IkflowSolver.nn_model_type, nn_model, robot_model, cuda_out_of_memory=cuda_out_of_memory
         )
 
     def make_samples(
@@ -469,16 +480,16 @@ class IkflowModel(ModelWrapper):
         return output_rev[:, 0 : self.dim_x], time() - t0
 
 
-class ModelWrapper_MDN(ModelWrapper):
-    """A ModelWrapper subclass for a"""
+class MDNSolver(GenerativeIKSolver):
+    """A GenerativeIKSolver subclass which calls a Mixture Density Network"""
 
     nn_model_type = "mdn"
 
     def __init__(self, hyper_parameters: MDNParameters, robot_model: robots.RobotModel):
-        """Initialize a ModelWrapper_MDN object"""
+        """Initialize a MDNSolver object"""
         assert isinstance(hyper_parameters, MDNParameters)
         nn_model = mdn_model(hyper_parameters.n_components, robot_model)
-        ModelWrapper.__init__(self, ModelWrapper_MDN.nn_model_type, nn_model, robot_model)
+        GenerativeIKSolver.__init__(self, MDNSolver.nn_model_type, nn_model, robot_model)
 
     def make_samples(
         self, y: List[float], m: int, rev_inputs: Optional[torch.Tensor] = None
