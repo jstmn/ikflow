@@ -19,6 +19,7 @@ _tests/models/
 checkpoints/
 training_logs/
 old/
+notes_to_self
 
 # Datasets
 datasets/*/

@@ -1,5 +1,9 @@
+# Note: 'tpm' is short for 'Top performing model'.
 
-atlas:
+# Average L2 error:      3.738 mm
+# Average angular error: 0.6555 deg
+# Average runtime:       6.5912 +/- 0.0003 ms (for 100 samples)
+atlas_tpm:
   coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       15
@@ -8,9 +12,12 @@ atlas:
   rnvp_clamp:             2.5
   softflow_enabled:       True
   robot_name:             'atlas'
-  model_weights_filepath: 'pretrained_models/atlas.pkl'
+  model_weights_filepath: 'pretrained_models/atlas_desert-sweep-6.pkl'
 
-panda_arm:
+# Average L2 error:      7.5699 mm
+# Average angular error: 6.6687 deg
+# Average runtime:       6.5532 +/- 0.0002 ms (for 100 samples)
+panda_tpm:
   coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       9
@@ -18,15 +25,33 @@ panda_arm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'panda_arm'
-  model_weights_filepath: 'pretrained_models/panda_arm.pkl'
+  model_weights_filepath: 'pretrained_models/panda_lucky-pond-7642.pkl'
 
-# AssertionError: # of active joints in urdf 39 doesn't equal `dim_x`: 8
-# pr2:
-#   coupling_layer:         'glow'
-#   nb_nodes:               8
-#   dim_latent_space:       15
-#   coeff_fn_config:        3
-#   coeff_fn_internal_size: 1024
-#   rnvp_clamp:             2.5
-#   robot_name:             'pr2'
-#   model_weights_filepath: 'pretrained_models/pr2.pkl'
+# Note: from joint limit test. Update with smaller model
+# Average L2 error:      6.8762 mm
+# Average angular error: 7.5261 deg
+# Average runtime:       8.7148 +/- 0.0011 ms (for 100 samples)
+robonaut2_16layers:
+  coupling_layer:         'glow'
+  nb_nodes:               16
+  dim_latent_space:       15
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  softflow_enabled:       True
+  robot_name:             'robonaut2'
+  model_weights_filepath: 'pretrained_models/robonaut2_cosmic-sound-9761.pkl'
+
+# Average L2 error:      3.6971 mm
+# Average angular error: 0.6621 deg
+# Average runtime:       6.5306 +/- 0.0004 ms (for 100 samples)
+valkyrie_tpm:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       9
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  permute_random_enabled: True
+  rnvp_clamp:             2.5
+  softflow_enabled:       True
+  robot_name:             'valkyrie'
+  model_weights_filepath: 'pretrained_models/valkyrie_vital-sweep-16.pkl'

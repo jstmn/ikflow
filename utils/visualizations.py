@@ -2,8 +2,9 @@ from typing import List, Callable, Any
 from time import time, sleep
 from dataclasses import dataclass
 
-from src.model import ModelWrapper
-from src import config, robot_models
+from utils.ik_solvers import GenerativeIKSolver
+import config
+from utils import robots
 
 from klampt.model import coordinates, trajectory
 from klampt import vis
@@ -19,9 +20,9 @@ import torch.optim
 
 
 class _3dDemo:
-    def __init__(self, model_wrapper: ModelWrapper):
-        self.model_wrapper = model_wrapper
-        self.robot_model: robot_models.KlamptRobotModel = self.model_wrapper.robot_model
+    def __init__(self, ik_solver: GenerativeIKSolver):
+        self.ik_solver = ik_solver
+        self.robot_model: robots.KlamptRobotModel = self.ik_solver.robot_model
         self.endeff_link_name: str = self.robot_model._klampt_ee_link.getName()
 
     def _run_demo(
@@ -134,7 +135,7 @@ class _3dDemo:
             vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
 
         target_pose = np.array([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0])
-        rev_input = torch.zeros(1, self.model_wrapper.dim_tot).to(config.device)
+        rev_input = torch.zeros(1, self.ik_solver.dim_tot).to(config.device)
 
         @dataclass
         class DemoState:
@@ -142,12 +143,12 @@ class _3dDemo:
 
         def loop_fn(worlds, _demo_state):
 
-            # for i in range(self.model_wrapper.dim_tot):
+            # for i in range(self.ik_solver.dim_tot):
             for i in range(5):
                 rev_input[0, i] = 0.25 * np.cos(_demo_state.counter / 25) - 0.1 * np.cos(_demo_state.counter / 250)
 
             # Get solutions to pose of random sample
-            sampled_solutions = self.model_wrapper.make_samples(target_pose, 1, latent_noise=rev_input)[0]
+            sampled_solutions = self.ik_solver.make_samples(target_pose, 1, latent_noise=rev_input)[0]
             qs = self.robot_model.x_to_qs(sampled_solutions)
             worlds[1].robot(0).setConfig(qs[0])
 
@@ -169,9 +170,9 @@ class _3dDemo:
         initial_target_pose = np.array([0, 0.5, 0.25, 1.0, 0.0, 0.0, 0.0])
         time_p_loop = 0.01
         title = "Solutions for oscillating target pose"
-        rev_inputs = None
+        latent = None
         if fixed_latent_noise:
-            rev_inputs = torch.randn((nb_sols, self.model_wrapper.dim_tot)).to(config.device)
+            latent = torch.randn((nb_sols, self.ik_solver.dim_tot)).to(config.device)
 
         def setup_fn(worlds):
             vis.add("coordinates", coordinates.manager())
@@ -209,8 +210,8 @@ class _3dDemo:
             # _demo_state.target_pose[1] = y
 
             # Get solutions to pose of random sample
-            sampled_solutions = self.model_wrapper.make_samples(
-                _demo_state.target_pose, nb_sols, latent_noise=rev_inputs
+            sampled_solutions = self.ik_solver.make_samples(
+                _demo_state.target_pose, nb_sols, latent_noise=latent
             )[0]
             qs = self.robot_model.x_to_qs(sampled_solutions)
             for i in range(nb_sols):
@@ -251,7 +252,7 @@ class _3dDemo:
             target_pose = self.robot_model.forward_kinematics_klampt(random_sample)[0]
 
             # Get solutions to pose of random sample
-            sampled_solutions = self.model_wrapper.make_samples(target_pose, nb_sols)[0]
+            sampled_solutions = self.ik_solver.make_samples(target_pose, nb_sols)[0]
             qs = self.robot_model.x_to_qs(sampled_solutions)
             for i in range(nb_sols):
                 worlds[i + 1].robot(0).setConfig(qs[i])

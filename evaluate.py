@@ -20,7 +20,6 @@ set_seed()
 with open("model_descriptions.yaml", "r") as f:
     MODEL_DESCRIPTIONS = yaml.safe_load(f)
 
-
 def error_stats(
     ik_solver: GenerativeIKSolver,
     testset: np.ndarray,
@@ -81,7 +80,7 @@ def error_stats(
 python evaluate.py \
     --samples_per_pose=50 \
     --testset_size=25 \
-    --model_name=atlas
+    --model_name=atlas_tpm 
 
 python evaluate.py \
     --samples_per_pose=50 \
@@ -90,7 +89,7 @@ python evaluate.py \
 """
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="cinn w/ softflow CLI")
+    parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument("--samples_per_pose", default=50, type=int)
     parser.add_argument("--testset_size", default=500, type=int)
     parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in pretrained_models/")
@@ -132,13 +131,14 @@ if __name__ == "__main__":
 
         # Calculate average runtime for 100 samples
         sample_times = []
+        n_samples = 100
         with torch.inference_mode():
             for i in range(50):
                 pose = np.random.random(7)
                 sample_times.append(
                     ik_solver.make_samples(
                         pose,
-                        100,
+                        n_samples,
                         latent_noise_distribution=latent_noise_distribution,
                         latent_noise_scale=latent_noise_scale,
                     )[1]
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         print(f"\n\tAverage L2 error:      {round(ave_l2_error, 4)} mm")
         print(f"\tAverage angular error: {round(ave_angular_error, 4)} deg")
         print(
-            f"\tAverage runtime:       {round(sample_time_100, 4)} +/- {round(sample_time_100_std, 4)} ms (for 100 samples)"
+            f"\tAverage runtime:       {round(sample_time_100, 4)} +/- {round(sample_time_100_std, 4)} ms (for {n_samples} samples)"
         )
 
     print("Done")
