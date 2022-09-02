@@ -210,9 +210,7 @@ class _3dDemo:
             # _demo_state.target_pose[1] = y
 
             # Get solutions to pose of random sample
-            sampled_solutions = self.ik_solver.make_samples(
-                _demo_state.target_pose, nb_sols, latent_noise=latent
-            )[0]
+            sampled_solutions = self.ik_solver.make_samples(_demo_state.target_pose, nb_sols, latent_noise=latent)[0]
             qs = self.robot_model.x_to_qs(sampled_solutions)
             for i in range(nb_sols):
                 worlds[i].robot(0).setConfig(qs[i])

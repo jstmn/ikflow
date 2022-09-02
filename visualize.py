@@ -45,5 +45,3 @@ if __name__ == "__main__":
     demo = _3dDemo(ik_solver)
     # demo.oscillate_joints()
     demo.oscillating_target_pose()
-
-

@@ -20,6 +20,7 @@ set_seed()
 with open("model_descriptions.yaml", "r") as f:
     MODEL_DESCRIPTIONS = yaml.safe_load(f)
 
+
 def error_stats(
     ik_solver: GenerativeIKSolver,
     testset: np.ndarray,
