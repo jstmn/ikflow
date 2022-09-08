@@ -61,6 +61,17 @@ python3 train.py \
     --eval_every=5000 \
     --val_set_size=500
 
+
+# Smoke testing
+python train.py \
+    --robot_name=panda_arm \
+    --batch_size=5 \
+    --learning_rate=0.0005 \
+    --log_every=5 \
+    --eval_every=100 \
+    --val_set_size=100 \
+    --checkpoint_every=100
+
 # Smoke testing
 python train.py \
     --robot_name=panda_arm \

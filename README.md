@@ -8,7 +8,7 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 
 TODO: Add instructions for running on Mac
 
-**Install python3.8 (if on ubuntu 22+**
+**Install python3.8 (for ubuntu 22+**)
 ```
 sudo apt update && sudo apt upgrade
 sudo apt install software-properties-common -y
@@ -19,7 +19,7 @@ sudo apt install python3.8 -y
 
 **Install base ubuntu dependencies**
 
-Note: `qt5-default` is not in the apt repository for Ubuntu 21.0+ and thus cannot be installed. 
+Note: `qt5-default` is not in the apt repository for Ubuntu 21.0+ so can't be installed. 
 See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04. Therefor, if running Ubuntu `> 21.0`:
 ```
 sudo apt-get install -y build-essential qtcreator python3.8-dev python3-pip python3.8-venv git-lfs 
@@ -40,12 +40,8 @@ python3.8 -m venv venv
 source venv/bin/activate
 pip install wheel
 python -m pip install -r requirements.txt
-
-# Install git submodules
-git submodule init; git submodule update
-
-# Install thirdparty libraries
-cd thirdparty/FrEIA && python setup.py develop && cd ../../
+git submodule init; git submodule update # Install git submodules
+cd thirdparty/FrEIA && python setup.py develop && cd ../../ # Install thirdparty libraries
 ```
 
 **Build datasets**
@@ -71,9 +67,25 @@ python visualize.py --model_name=panda_tpm
 ```
 ![alt text](../media/panda_tpm_oscillate_x-2022-08-26.gif?raw=true)
 
+## Training new models
+
+The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to setup and perform the training and [Weights and Biases](https://wandb.ai/) ('wandb') to track training runs and experiments. WandB isn't required for training but it's what this project is designed around. Changing the code to use Tensorboard should be straightforward (so feel free to put in a pull request for this if you want it :)).
+
+Typical workflow:
+```
+# Login to wandb account - Only needs to be run once
+wandb login
+
+# Set wandb project name and entity
+PROJECT=ikflow 
+ENTITY=<your wandb entity name>
+
+```
+
+
 ## Common errors
 
-1. Pickle error when loading a pretrained model from gitlfs. This happens when the pretrained models haven't been downloaded completely by gitlfs. For example, they may be 134 bytes (they should be 100+ mb). Run `git lfs pull origin master` 
+1. Pickle error when loading a pretrained model from gitlfs. This happens when the pretrained models haven't been downloaded by gitlfs. For example, they may be 134 bytes (they should be 100+ mb). Run `git lfs pull origin master` 
 ```
 Traceback (most recent call last):
   File "evaluate.py", line 117, in <module>
