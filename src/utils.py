@@ -161,7 +161,6 @@ def print_tensor_stats(
         ]
     ] = None,
 ):
-
     if writable is None:
         writable = lambda _s: None
 

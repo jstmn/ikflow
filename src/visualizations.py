@@ -43,7 +43,6 @@ class _3dDemo:
         vis.setWindowTitle(title)
         vis.show()
         while vis.shown():
-
             # Modify the world here. Do not modify the internal state of any visualization items outside of the lock
             vis.lock()
 
@@ -76,7 +75,6 @@ class _3dDemo:
         from klampt.math import so3
 
         def loop_fn(worlds, _demo_state):
-
             x_random = self.robot_model.sample(1)
             q_random = self.robot_model.x_to_qs(x_random)
             worlds[0].robot(0).setConfig(q_random[0])
@@ -120,7 +118,6 @@ class _3dDemo:
         title = "Fixed end pose with oscillation through the latent space"
 
         def setup_fn(worlds):
-
             vis.add(f"robot_goal", worlds[0].robot(0))
             vis.setColor(f"robot_goal", 0.5, 1, 1, 0)
             vis.setColor((f"robot_goal", self.endeff_link_name), 0, 1, 0, 0.7)
@@ -142,7 +139,6 @@ class _3dDemo:
             counter: int
 
         def loop_fn(worlds, _demo_state):
-
             # for i in range(self.ik_solver.dim_tot):
             for i in range(5):
                 rev_input[0, i] = 0.25 * np.cos(_demo_state.counter / 25) - 0.1 * np.cos(_demo_state.counter / 250)
@@ -196,7 +192,6 @@ class _3dDemo:
             target_pose: np.ndarray
 
         def loop_fn(worlds, _demo_state):
-
             # TODO(@jeremysm): Implement a method to easily change end pose arcs
 
             # Update target pose
@@ -271,7 +266,6 @@ class _3dDemo:
             vis.setColor("robot", 1, 1, 1, 1)
 
         def loop_fn(worlds, _demo_state):
-
             # Get random sample
             random_sample = self.robot_model.sample(1)
             q = self.robot_model.x_to_qs(random_sample)

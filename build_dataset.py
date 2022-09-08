@@ -38,7 +38,6 @@ def print_saved_datasets_stats(robots: Optional[RobotModel] = []):
 
     # For each child directory (for each robot) in config.DATASET_DIR:
     for dataset_directory, dirs, files in os.walk(config.DATASET_DIR):
-
         # Ignore the config.DATASET_DIR itself. os.walk returns the parent direcory followed by all child
         # directories
         if len(dirs) > 0:
@@ -74,7 +73,8 @@ def save_dataset_to_disk(
     dir_exists = os.path.isdir(dataset_directory)
     if return_if_existing_dir and dir_exists:
         print(
-            f"save_dataset_to_disk(): '{dataset_directory}' exists already and return_if_existing_dir is enabled, returning"
+            f"save_dataset_to_disk(): '{dataset_directory}' exists already and return_if_existing_dir is enabled,"
+            " returning"
         )
         return
     if dir_exists:
@@ -171,7 +171,6 @@ python build_dataset.py --robot_name=planar_3dof --training_set_size=100000
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--robot_name", type=str)
     parser.add_argument("--training_set_size", type=int, default=int(2.5 * 1e6))

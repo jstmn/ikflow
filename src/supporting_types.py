@@ -207,11 +207,13 @@ class ModelAccuracyResults(Config):
         )
         ret_str += f" max_angular_err:   {round(self.max_angular_err, rnd)}" + nl
         ret_str += (
-            f" ave_max_angular_err: {round(self.ave_max_angular_err, rnd)} \t (std: {round(self.std_max_angular_errs, rnd)})"
+            f" ave_max_angular_err: {round(self.ave_max_angular_err, rnd)} \t (std:"
+            f" {round(self.std_max_angular_errs, rnd)})"
             + nl
         )
         ret_str += (
-            f" mean model runtime: {round(self.ave_model_runtime, 3)} \t ({self.test_set_size} target poses in testset, {self.samples_per_endpoint} samples generated per pose)"
+            f" mean model runtime: {round(self.ave_model_runtime, 3)} \t ({self.test_set_size} target poses in testset,"
+            f" {self.samples_per_endpoint} samples generated per pose)"
             + nl
         )
         return ret_str

@@ -17,7 +17,6 @@ python visualize.py --model_name=panda_tpm
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in model_descriptions.yaml")
     parser.add_argument("--visualization_program", type=str, help="One of [---TODO---]")

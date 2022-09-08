@@ -19,7 +19,6 @@ ROBOT_MODEL = get_robot("panda_arm")
 
 class LitModelTest(unittest.TestCase):
     def setUp(self) -> None:
-
         self.hps = IkflowModelParameters()
         self.ik_solver = IkflowSolver(self.hps, ROBOT_MODEL)
 
@@ -63,5 +62,4 @@ class LitModelTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

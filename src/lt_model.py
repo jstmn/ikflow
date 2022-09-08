@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 from time import time, sleep
 
 import config
@@ -13,6 +13,8 @@ import wandb
 import numpy as np
 import torch
 from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.callbacks import Callback
+import pytorch_lightning as pl
 
 zeros_noise_scale = 0.0001
 device = "cuda"
@@ -76,7 +78,6 @@ class IkfLitModel(LightningModule):
         torch.save(state, filepath)
 
         # Upload to wandb
-        # TODO: will this work when wandb is enabled?
         if self.logger is not None:
             artifact_name = wandb.run.name
             artifact = wandb.Artifact(artifact_name, type="model", description="checkpoint")
@@ -144,7 +145,6 @@ class IkfLitModel(LightningModule):
         return loss
 
     def on_after_backward(self):
-
         torch.nn.utils.clip_grad_value_(self.parameters(), self.hparams.gradient_clip)
 
         if self.trainer.global_step % self.log_every == 0:
@@ -179,7 +179,6 @@ class IkfLitModel(LightningModule):
         return {"l2_errs": pos_l2errs, "angular_errs": angular_rad_errs, "model_runtime": model_runtime}
 
     def validation_epoch_end(self, validation_step_outputs):
-
         spp = self.hparams.samples_per_pose
         n_val_steps = len(validation_step_outputs)
         l2_errs = np.zeros(n_val_steps * spp)

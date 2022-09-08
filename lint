@@ -1,3 +1,3 @@
-python -m black *.py --line-length=120
-python -m black src/*.py --line-length=120
-python -m black tests/*.py --line-length=120
+python -m black *.py --line-length=120 --preview
+python -m black src/*.py --line-length=120 --preview
+python -m black tests/*.py --line-length=120 --preview

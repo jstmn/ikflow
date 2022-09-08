@@ -93,7 +93,6 @@ def parse_urdf(urdf_name, print_joints=False) -> Tuple[List[Joint], List[Link]]:
                 for subelem in child:
                     subelem: Element
                     if subelem.tag == "origin":
-
                         try:
                             origin_rpy = list_from_str(subelem.attrib["rpy"])
                         except KeyError:
@@ -104,7 +103,8 @@ def parse_urdf(urdf_name, print_joints=False) -> Tuple[List[Joint], List[Link]]:
                             origin_xyz = list_from_str(subelem.attrib["xyz"])
                         except RuntimeError:
                             raise ValueError(
-                                f"Error: joint <joint name='{child.get('name')}'> has no xyz attribute, or it's illformed"
+                                f"Error: joint <joint name='{child.get('name')}'> has no xyz attribute, or it's"
+                                " illformed"
                             )
                     elif subelem.tag == "axis":
                         axis_xyz = list_from_str(subelem.attrib["xyz"])
@@ -175,15 +175,16 @@ class BatchFK:
             child_link_name = joint.child
             if joint_plus1.parent != child_link_name:
                 raise ValueError(
-                    f"Error: joint_{i}['{joint.name}'].child('{child_link_name}') != joint_{i + 1}.parent('{child_link_name}')"
+                    f"Error: joint_{i}['{joint.name}'].child('{child_link_name}') !="
+                    f" joint_{i + 1}.parent('{child_link_name}')"
                 )
 
         final_joint_name = self.joint_chain[-1]
         final_joint_child_link_name = self.joints_dict[final_joint_name].child
         if self.links_dict[final_joint_child_link_name].name != self.end_effector_link_name:
             raise ValueError(
-                f"Error: the final joint in joints_chain's['{final_joint_name}'] child['{final_joint_child_link_name}'] != "
-                f"end_effector_link_name['{self.end_effector_link_name}']"
+                f"Error: the final joint in joints_chain's['{final_joint_name}'] child['{final_joint_child_link_name}']"
+                f" != end_effector_link_name['{self.end_effector_link_name}']"
             )
 
         # Cache fixed rotations between links
@@ -228,7 +229,6 @@ class BatchFK:
         # Iterate through each joint in the joint chain
         x_i = 0
         for joint_name_i in self.joint_chain:
-
             joint = self.joints_dict[joint_name_i]
             t = t + torch.matmul(R, torch.tensor(joint.origin_xyz, device=device))
 

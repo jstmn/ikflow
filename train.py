@@ -1,5 +1,6 @@
 import argparse
 
+import os
 import config
 from src.training_parameters import IkflowModelParameters
 from src.ik_solvers import IkflowSolver
@@ -12,8 +13,9 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer import Trainer
 
 # sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
-from pytorch_lightning import Trainer, callbacks, seed_everything
+from pytorch_lightning import Trainer, seed_everything
 
+import wandb
 import torch
 
 DEFAULT_MAX_EPOCHS = 5000
@@ -52,25 +54,29 @@ DEFAULT_CHECKPOINT_EVERY = 250000
 _____________
 Example usage
 
-# real
+# Real
 python3 train.py \
     --robot_name=panda_arm \
-    --batch_size=512 \
-    --learning_rate=0.0005 \
+    --nb_nodes=12 \
+    --coeff_fn_internal_size=1024 \
+    --coeff_fn_config=3 \
+    --batch_size=64 \
+    --learning_rate=0.00025 \
     --log_every=1000 \
     --eval_every=5000 \
-    --val_set_size=500
+    --val_set_size=500 \
 
 
-# Smoke testing
+# Smoke testing - w/ wandb
 python train.py \
     --robot_name=panda_arm \
-    --batch_size=5 \
+    --batch_size=64 \
     --learning_rate=0.0005 \
-    --log_every=5 \
+    --log_every=50 \
     --eval_every=100 \
-    --val_set_size=100 \
-    --checkpoint_every=100
+    --val_set_size=250 \
+    --checkpoint_every=500
+
 
 # Smoke testing
 python train.py \
@@ -82,13 +88,10 @@ python train.py \
     --val_set_size=100 \
     --checkpoint_every=100 \
     --disable_wandb
-
-
 """
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(prog="cinn w/ softflow CLI")
     parser.add_argument("--robot_name", type=str, required=True)
 
@@ -149,7 +152,22 @@ if __name__ == "__main__":
     if args.disable_wandb:
         wandb_logger = None
     else:
-        wandb_logger = WandbLogger(save_dir=config.WANDB_CACHE_DIR)
+        assert os.getenv("WANDB_PROJECT") is not None, (
+            "The 'WANDB_PROJECT' environment variable is not set. Either set it with the appropriate wandb project name"
+            " (`export WANDB_PROJECT=<your wandb project name>`), or add '--disable_wandb'"
+        )
+        assert os.getenv("WANDB_ENTITY") is not None, (
+            "The 'WANDB_ENTITY' environment variable is not set. Either set it with the appropriate wandb entity"
+            " (`export WANDB_ENTITY=<your wandb username>`), or add '--disable_wandb'"
+        )
+
+        # Call `wandb.init` before creating a `WandbLogger` object so that runs have randomized names. Without this
+        # call, the run names are all set to the project name. See this article for further information: https://lightrun.com/answers/lightning-ai-lightning-wandblogger--use-random-name-instead-of-project-as-default-name
+        wandb.init(project=os.getenv("WANDB_PROJECT"))
+
+        wandb_logger = WandbLogger(
+            save_dir=config.WANDB_CACHE_DIR, project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"]
+        )
         cfg = {"robot": robot.name}
         cfg.update(args.__dict__)
         cfg.update(base_hparams.__dict__)

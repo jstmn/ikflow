@@ -175,7 +175,6 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
         permute_random = params.permute_random_enabled
 
     for i in range(params.nb_nodes):
-
         if permute_random:
             permute_node = Ff.Node([nodes[-1].out0], Fm.PermuteRandom, {"seed": i})
             nodes.append(permute_node)
@@ -223,7 +222,8 @@ def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, la
 
 
 class GenerativeIKSolver:
-    """Superclass to represent ModelWrappers around nn's. Provides a standard set of functions that will be implemented by subclasses"""
+    """Superclass to represent ModelWrappers around nn's. Provides a standard set of functions that will be implemented by subclasses
+    """
 
     def __init__(
         self,

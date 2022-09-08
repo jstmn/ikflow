@@ -54,7 +54,6 @@ def assert_endpose_rotation_almost_equal(endpoints1: np.array, endpoints2: np.ar
 
 
 def get_fk_poses(robot, samples: np.array, verbose=False, batch=True):
-
     """Return fk solutions calculated by kinpy, klampt, and batch_fk"""
     kinpy_fk = robot.forward_kinematics_kinpy(samples)
     klampt_fk = robot.forward_kinematics_klampt(samples)
@@ -85,7 +84,6 @@ class RobotModel:
         verbosity: int = 1,
         end_poses_to_plot_solution_dists_for=[],
     ):
-
         self.name = robot_name
         self.actuated_joints_limits = actuated_joints_limits
         self.dim_x = dim_x
@@ -121,7 +119,6 @@ class RobotModel:
         # TODO(@jeremysm): Create a standalone function for getting updated joint limits
         # Change the joint limits
         if abs(limit_increase) > 1e-3:
-
             for i in range(self.dim_x):
                 joint_limits[i][0] -= limit_increase
                 joint_limits[i][1] += limit_increase
@@ -450,7 +447,6 @@ class KlamptRobotModel(RobotModel):
         for sol_i in n_solutions_iterator:
             solution_found = False
             for retry_i in range(n_tries_per_pose):
-
                 solver = IKSolver(self._klampt_robot)
                 solver.add(obj)
                 solver.setActiveDofs(self._active_dofs)
@@ -548,13 +544,11 @@ class RobotModel2d(RobotModel):
             return np.reshape(y, (2, 1))
 
         for sol_i in range(n_solutions):
-
             # Reshape q to (dim_x x 1)
             q = np.reshape(self.sample(1), (self.dim_x, 1))
             sol_found = False
 
             for j in range(max_n_steps):
-
                 y = fk(q)
 
                 # (2 x 1)
@@ -1059,7 +1053,6 @@ class Pr2(KlamptRobotModel):
     formal_robot_name = "PR2"
 
     def __init__(self, verbosity=0):
-
         actuated_joints_limits = [
             (0, 0.33),
             (-0.7146018366025517, 2.2853981633974483),
@@ -1800,7 +1793,6 @@ def get_robot(name: str, verbosity: int = 0) -> Union[KlamptRobotModel, RobotMod
 
 
 def robot_name_to_fancy_robot_name(name: str) -> str:
-
     robot_cls = [
         RailYChain3,
         Planar3DofArm,
@@ -1825,9 +1817,7 @@ def robot_name_to_fancy_robot_name(name: str) -> str:
 
 
 if __name__ == "__main__":
-
     for robot in get_all_3d_robots():
-
         print(f"visualizeing robot: {robot.name}")
         robot.visualize()
         try:

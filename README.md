@@ -77,9 +77,8 @@ Typical workflow:
 wandb login
 
 # Set wandb project name and entity
-PROJECT=ikflow 
-ENTITY=<your wandb entity name>
-
+export WANDB_PROJECT=ikflow 
+export WANDB_ENTITY=<your wandb entity name>
 ```
 
 

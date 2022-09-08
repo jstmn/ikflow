@@ -46,7 +46,6 @@ def error_stats(
     ang_errs: List[List[float]] = []
 
     with torch.inference_mode():
-
         for i in range(testset.shape[0]):
             ee_pose_target = testset[i]
             samples, _ = ik_solver.make_samples(
@@ -106,7 +105,6 @@ if __name__ == "__main__":
 
     results = []
     for model_name in model_names:
-
         print("\n-------------")
         print(f"Evaluating model '{model_name}'")
 
@@ -150,7 +148,8 @@ if __name__ == "__main__":
         print(f"\n\tAverage L2 error:      {round(ave_l2_error, 4)} mm")
         print(f"\tAverage angular error: {round(ave_angular_error, 4)} deg")
         print(
-            f"\tAverage runtime:       {round(sample_time_100, 4)} +/- {round(sample_time_100_std, 4)} ms (for {n_samples} samples)"
+            f"\tAverage runtime:       {round(sample_time_100, 4)} +/- {round(sample_time_100_std, 4)} ms (for"
+            f" {n_samples} samples)"
         )
 
     print("Done")
