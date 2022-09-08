@@ -5,17 +5,16 @@ import sys
 sys.path.append(os.getcwd())
 
 import config
-from utils.ik_solvers import IkflowSolver
-from utils.robots import get_robot
-from training.lt_model import IkfLitModel
-from training.training_parameters import IkflowModelParameters
+from src.ik_solvers import IkflowSolver
+from src.robots import get_robot
+from src.lt_model import IkfLitModel
+from src.training_parameters import IkflowModelParameters
 
 import torch
 
 torch.manual_seed(0)
 
 ROBOT_MODEL = get_robot("panda_arm")
-print("\n___\n")
 
 
 class LitModelTest(unittest.TestCase):
@@ -60,8 +59,7 @@ class LitModelTest(unittest.TestCase):
 
     def test_lit_model_has_params(self):
         n_parameters = len(list(self.model.parameters()))
-        # print("self.model n_parameters:                 ", n_parameters)
-        self.assertGreater(len(list(self.model.parameters())), 0)
+        self.assertGreater(n_parameters, 0)
 
 
 if __name__ == "__main__":

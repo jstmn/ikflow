@@ -1,8 +1,8 @@
 import argparse
 import yaml
 
-from utils.visualizations import _3dDemo
-from utils.utils import get_ik_solver, set_seed
+from src.visualizations import _3dDemo
+from src.utils import get_ik_solver, set_seed
 
 set_seed()
 

@@ -1,5 +1,5 @@
 from typing import Dict
-from utils.supporting_types import Config
+from src.supporting_types import Config
 
 
 class TrainingConfig(Config):

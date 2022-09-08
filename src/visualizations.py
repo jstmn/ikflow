@@ -2,9 +2,9 @@ from typing import List, Callable, Any
 from time import time, sleep
 from dataclasses import dataclass
 
-from utils.ik_solvers import GenerativeIKSolver
+from src.ik_solvers import GenerativeIKSolver
 import config
-from utils import robots
+from src import robots
 
 from klampt.model import coordinates, trajectory
 from klampt import vis

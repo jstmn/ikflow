@@ -5,9 +5,9 @@ import os
 
 sys.path.append(os.getcwd())
 
-from utils.ik_solvers import GenerativeIKSolver
-from utils.math_utils import rotation_matrix_from_quaternion, geodesic_distance
-from utils.utils import get_ik_solver, set_seed
+from src.ik_solvers import GenerativeIKSolver
+from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
+from src.utils import get_ik_solver, set_seed
 import config
 
 from tqdm import tqdm

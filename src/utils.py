@@ -6,10 +6,10 @@ import random
 from time import time
 import pickle
 
-from utils.robots import RobotModel, get_robot
+from src.robots import RobotModel, get_robot
 import config
-from utils.ik_solvers import IkflowSolver, GenerativeIKSolver
-from training.training_parameters import IkflowModelParameters
+from src.ik_solvers import IkflowSolver, GenerativeIKSolver
+from src.training_parameters import IkflowModelParameters
 
 import numpy as np
 import pandas as pd

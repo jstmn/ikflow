@@ -8,9 +8,9 @@ from FrEIA.framework.graph_inn import GraphINN
 
 from thirdparty.mdn.mdn.models import MixtureDensityNetwork
 import config
-from utils import robots
-from utils.robots import KlamptRobotModel
-from training.training_parameters import MDNParameters, IkflowModelParameters
+from src import robots
+from src.robots import KlamptRobotModel
+from src.training_parameters import MDNParameters, IkflowModelParameters
 
 import numpy as np
 from wandb.wandb_run import Run

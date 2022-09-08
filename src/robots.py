@@ -6,8 +6,8 @@ from typing import List, Tuple, Union
 sys.path.append(os.getcwd())
 
 import config
-from utils.forward_kinematics import BatchFK, klampt_fk, kinpy_fk, klampt_fk_w_l2_loss_pts
-from utils.math_utils import geodesic_distance_between_quaternions
+from src.forward_kinematics import BatchFK, klampt_fk, kinpy_fk, klampt_fk_w_l2_loss_pts
+from src.math_utils import geodesic_distance_between_quaternions
 
 import torch
 import numpy as np

@@ -10,7 +10,7 @@ from klampt.math import so3, se3
 import klampt
 
 import config
-from utils.math_utils import R_from_rpy_batch, R_from_axis_angle
+from src.math_utils import R_from_rpy_batch, R_from_axis_angle
 from kinpy.chain import Chain
 
 # from kinpy.chain import Chain

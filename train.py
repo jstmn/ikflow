@@ -1,12 +1,12 @@
 import argparse
 
 import config
-from training.training_parameters import IkflowModelParameters
-from utils.ik_solvers import IkflowSolver
-from utils.robots import get_robot, KlamptRobotModel
-from training.lt_model import IkfLitModel
-from training.lt_data import IkfLitDataset
-from utils.utils import boolean_string
+from src.training_parameters import IkflowModelParameters
+from src.ik_solvers import IkflowSolver
+from src.robots import get_robot, KlamptRobotModel
+from src.lt_model import IkfLitModel
+from src.lt_data import IkfLitDataset
+from src.utils import boolean_string
 
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer import Trainer

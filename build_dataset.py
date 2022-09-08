@@ -3,8 +3,8 @@ from typing import Optional
 import os
 
 import config
-from utils.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
-from utils.robots import get_robot, RobotModel, KlamptRobotModel, RobotModel2d
+from src.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
+from src.robots import get_robot, RobotModel, KlamptRobotModel, RobotModel2d
 
 import numpy as np
 import torch

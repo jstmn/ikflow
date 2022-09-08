@@ -93,7 +93,7 @@ class SaveSettings(Config):
 
 
 class TrainingResult(Config):
-    """Store results from training"""
+    """Store results from src"""
 
     def __init__(self):
         self.model_saved = False
