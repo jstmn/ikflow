@@ -19,10 +19,10 @@ import FrEIA.modules as Fm
 import torch
 import torch.nn as nn
 
-# CALL THE FOLLOWING CODE IF RUNNING ON A MACHINE THAT HAS NO DISPLAY. If not run, will get "tkinter.TclError: no display name and no $DISPLAY environment variable"
-# if config.is_cluster:
-#     import matplotlib
-#     matplotlib.use("Agg")
+# CALL THE FOLLOWING CODE IF RUNNING ON A MACHINE THAT HAS NO DISPLAY. If not run, will get "tkinter.TclError: no
+# display name and no $DISPLAY environment variable"
+# import matplotlib
+# matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
@@ -434,7 +434,8 @@ class IkflowSolver(GenerativeIKSolver):
             # (:, 0:3) is x, y, z
             conditional[:, 0:3] = torch.FloatTensor(y[:3])
             # (:, 3:7) is quat
-            conditional[:, 3 : 3 + 4] = torch.FloatTensor([y[3:]])
+            conditional[:, 3 : 3 + 4] = torch.FloatTensor(np.array([y[3:]]))
+            # conditional[:, 3 : 3 + 4] = torch.FloatTensor([y[3:]])
         else:
             conditional[:, 0:2] = torch.FloatTensor(y)
 

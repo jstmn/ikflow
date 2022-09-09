@@ -10,6 +10,7 @@ from src.lt_data import IkfLitDataset
 from src.utils import boolean_string
 
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.trainer import Trainer
 
 # sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
@@ -55,16 +56,18 @@ _____________
 Example usage
 
 # Real
-python3 train.py \
+python train.py \
     --robot_name=panda_arm \
-    --nb_nodes=12 \
+    --nb_nodes=6 \
     --coeff_fn_internal_size=1024 \
     --coeff_fn_config=3 \
-    --batch_size=64 \
+    --dim_latent_space=9 \
+    --batch_size=128 \
     --learning_rate=0.00025 \
-    --log_every=1000 \
-    --eval_every=5000 \
+    --log_every=5000 \
+    --eval_every=10000 \
     --val_set_size=500 \
+    --run_description="baseline (lr logged)"
 
 
 # Smoke testing - w/ wandb
@@ -78,15 +81,24 @@ python train.py \
     --checkpoint_every=500
 
 
-# Smoke testing
+# Smoke test
 python train.py \
     --robot_name=panda_arm \
-    --batch_size=5 \
-    --learning_rate=0.0005 \
-    --log_every=5 \
+    --batch_size=16 \
+    --optimizer=ranger \
+    --log_every=25 \
     --eval_every=100 \
     --val_set_size=100 \
-    --checkpoint_every=100 \
+    --checkpoint_every=500 \
+    --disable_wandb
+
+
+# Test the learning rate scheduler
+python train.py \
+    --robot_name=panda_arm \
+    --learning_rate=1.0 \
+    --gamma=0.5 \
+    --step_lr_every=10 \
     --disable_wandb
 """
 
@@ -108,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument("--zeros_noise_scale", type=float, default=DEFAULT_ZEROS_NOISE_SCALE)
 
     # Training parameters
+    parser.add_argument("--optimizer", type=str, default="ranger")
     parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--gamma", type=float, default=DEFAULT_GAMMA)
     parser.add_argument("--learning_rate", type=float, default=DEFAULT_LR)
@@ -115,21 +128,25 @@ if __name__ == "__main__":
     parser.add_argument("--step_lr_every", type=int, default=DEFAULT_STEP_LR_EVERY)
     parser.add_argument("--gradient_clip_val", type=float, default=DEFAULT_GRADIENT_CLIP_VAL)
     parser.add_argument("--lambd", type=float, default=1)
+    parser.add_argument("--weight_decay", type=float, default=1.8e-05)
 
     # Logging options
     parser.add_argument("--eval_every", type=int, default=DEFAULT_EVAL_EVERY)
     parser.add_argument("--val_set_size", type=int, default=DEFAULT_VAL_SET_SIZE)
     parser.add_argument("--log_every", type=int, default=DEFAULT_LOG_EVERY)
     parser.add_argument("--checkpoint_every", type=int, default=DEFAULT_CHECKPOINT_EVERY)
+    parser.add_argument("--run_description", type=str)
     parser.add_argument("--disable_wandb", action="store_true")
 
     args = parser.parse_args()
 
+    assert args.optimizer in ["ranger", "adadelta"]
     assert 0 <= args.lambd and args.lambd <= 1
 
     # Load model
     robot = get_robot(args.robot_name)
     base_hparams = IkflowModelParameters()
+    base_hparams.run_description = args.run_description
     base_hparams.coupling_layer = args.coupling_layer
     base_hparams.nb_nodes = args.nb_nodes
     base_hparams.dim_latent_space = args.dim_latent_space
@@ -163,15 +180,16 @@ if __name__ == "__main__":
 
         # Call `wandb.init` before creating a `WandbLogger` object so that runs have randomized names. Without this
         # call, the run names are all set to the project name. See this article for further information: https://lightrun.com/answers/lightning-ai-lightning-wandblogger--use-random-name-instead-of-project-as-default-name
-        wandb.init(project=os.getenv("WANDB_PROJECT"))
-
-        wandb_logger = WandbLogger(
-            save_dir=config.WANDB_CACHE_DIR, project=os.environ["WANDB_PROJECT"], entity=os.environ["WANDB_ENTITY"]
-        )
         cfg = {"robot": robot.name}
         cfg.update(args.__dict__)
         cfg.update(base_hparams.__dict__)
-        wandb_logger.experiment.config.update(cfg)
+        wandb.init(
+            entity=os.environ["WANDB_ENTITY"],
+            project=os.getenv("WANDB_PROJECT"),
+            notes=args.run_description,
+            config=cfg,
+        )
+        wandb_logger = WandbLogger(save_dir=config.WANDB_CACHE_DIR)
 
     data_module = IkfLitDataset(robot.name, args.batch_size, val_set_size=args.val_set_size)
     model = IkfLitModel(
@@ -182,13 +200,20 @@ if __name__ == "__main__":
         log_every=args.log_every,
         gradient_clip=args.gradient_clip_val,
         lambd=args.lambd,
+        gamma=args.gamma,
+        step_lr_every=args.step_lr_every,
+        weight_decay=args.weight_decay,
+        optimizer_name=args.optimizer,
     )
     trainer = Trainer(
         logger=wandb_logger,
         callbacks=[],
         val_check_interval=args.eval_every,
-        gpus=1,
+        # gpus=1, # deprecated
+        accelerator="gpu",
+        devices=1,
         log_every_n_steps=args.log_every,
         max_epochs=DEFAULT_MAX_EPOCHS,
+        enable_progress_bar=False if os.getenv("IS_SLURM") is not None else True,
     )
     trainer.fit(model, data_module)

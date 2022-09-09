@@ -2,27 +2,6 @@ from typing import Dict
 from src.supporting_types import Config
 
 
-class TrainingConfig(Config):
-    """Class stores the configuration for a training run"""
-
-    def __init__(self):
-        self.test_description = "not-set"
-        self.n_epochs = 150  # total number of epochs
-        self.batch_size = 64
-        self.use_small_dataset = False
-        self.optimizer = "ranger"  # adam
-        self.learning_rate = 1e-3
-
-        # Step the learning rate every k batches
-        self.step_lr_every_k = int(int(2.5 * 1e6) / 64)
-
-        self.gamma = 0.9794578299341784  # For weight scheduler
-        self.l2_reg = 1.855446930271331e-05  # for optimizer
-
-        self.gradient_clamp = 5.0
-        Config.__init__(self, "TrainingConfig")
-
-
 class IkflowModelParameters(Config):
     def __init__(self):
         self.coupling_layer = "glow"

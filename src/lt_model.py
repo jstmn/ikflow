@@ -1,4 +1,5 @@
 from datetime import datetime
+from multiprocessing.sharedctypes import Value
 import os
 from typing import Tuple, Dict, Optional
 from time import time, sleep
@@ -13,8 +14,7 @@ import wandb
 import numpy as np
 import torch
 from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning.callbacks import Callback
-import pytorch_lightning as pl
+from thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001
 device = "cuda"
@@ -46,6 +46,9 @@ class IkfLitModel(LightningModule):
         log_every: int = 1e10,
         gradient_clip: float = float("inf"),
         lambd: float = 1,
+        step_lr_every: int = int(int(2.5 * 1e6) / 64),  # #batches to see 2.5million datapoints w/ batch size=64
+        weight_decay: float = 1.8e-05,
+        optimizer_name: str = "ranger",
     ):
         # `learning_rate`, `gamma`, `samples_per_pose`, etc. saved to self.hparams
 
@@ -63,6 +66,60 @@ class IkfLitModel(LightningModule):
         self.log_every = log_every
 
         self.save_hyperparameters(ignore=["ik_solver"])
+
+        # The Ranger optimizer is incompatable with pytorch's calling method so we need to manually call the
+        # optimization steps (also need to call .step() on the learning rate scheduler)
+        if self.hparams.optimizer_name == "ranger":
+            # Important: This property activates manual optimization.
+            self.automatic_optimization = False
+
+    def configure_optimizers(self):
+        """Configure the optimizer and learning rate scheduler"""
+        if self.hparams.optimizer_name == "adadelta":
+            optimizer = torch.optim.Adadelta(
+                self.nn_model.parameters(), lr=self.hparams.learning_rate, weight_decay=self.hparams.weight_decay
+            )
+        elif self.hparams.optimizer_name == "ranger":
+            optimizer = RangerVA(
+                self.nn_model.parameters(),
+                lr=self.hparams.learning_rate,
+                betas=(0.95, 0.999),
+                eps=1e-04,
+                weight_decay=self.hparams.weight_decay,
+            )
+        else:
+            raise ValueError(f"Unknown optimizer: '{self.hparams.optimizer_name}'")
+
+        """
+        Create a learning rate scheduler and configure it to update every k optimization steps instead of k epochs. 
+        
+        Quick rant: updating the lr scheduler based on epochs is a pain and dumb and bad engineering practice.
+            Complaint #1: It makes the learning rate decay dependent on your dataset size. If you change your dataset 
+                all the sudden your learning processes is fundamentally altered. Dataset size will always be a 
+                hyperparameter of sorts, but if also is a key factor in your learning rate decay now you've added extra 
+                complexity into hyperparameter tuning. For example, if you change your dataset size and your training 
+                improves, is that because you have more data to learn from? Or because your learning rate is decreasing 
+                more slowly?! 
+
+            Complaint #2: Why do we define an epoch at all when our data is continuously being drawn uniformly at 
+                random from some distribution (D)? To be fair there is one dataset file in this project. But if I have 
+                10 million poses that are being sampled randomly then that is approximately equal to random sampling 
+                from the distribution. Its a meaningless distinction to choose a fixed number and call a set with size 
+                of that fixed number of randomly drawn samples from D an epoch. The bottom line is that what we care 
+                about in training is our generalization error. Epoch is an unneccessary construct.   
+        """
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=self.hparams.step_lr_every, gamma=self.hparams.gamma, verbose=False
+        )
+
+        # See 'configure_optimizers' in these docs to see the format of this dict: https://pytorch-lightning.readthedocs.io/en/stable/common/lightning_module.html
+        lr_scheduler_config = {
+            "scheduler": lr_scheduler,
+            # The unit of the scheduler's step size, either 'step' or 'epoch'.
+            # 'epoch' updates the scheduler on epoch end whereas 'step' updates it after a optimizer update.
+            "interval": "step",
+        }
+        return [optimizer], [lr_scheduler_config]
 
     def _checkpoint(self):
         filename = f"epoch:{self.current_epoch}_batch:{self.global_step}.pkl"
@@ -93,6 +150,7 @@ class IkfLitModel(LightningModule):
             pass
 
     def ml_loss_fn(self, batch):
+        """Maximum likelihood loss"""
         x, y = batch
         y = y.to(device)
         x = x.to(device)
@@ -111,8 +169,7 @@ class IkfLitModel(LightningModule):
 
         loss_is_nan = torch.isnan(loss)
         if loss_is_nan:
-            print("loss is nan")
-            print("output:")
+            print("loss is Nan\n output:")
             print(output)
 
         loss_data = {
@@ -126,13 +183,22 @@ class IkfLitModel(LightningModule):
         force_log = loss_is_nan
         return loss, loss_data, force_log
 
+    def get_lr(self) -> float:
+        """Returns the current learning rate"""
+        optimizer = self.optimizers().optimizer
+        lrs = []
+        for param_group in optimizer.param_groups:
+            lrs.append(param_group["lr"])
+        assert len(set(lrs)) == 1, f"Error: Multiple learning rates found. There should only be one. lrs: '{lrs}'"
+        return lrs[0]
+
     def training_step(self, batch, batch_idx):
         del batch_idx
         t0 = time()
         loss, loss_data, force_log = self.ml_loss_fn(batch)
 
         if (self.global_step % self.log_every == 0 and self.global_step > 0) or force_log:
-            log_data = {"tr/loss": loss.item(), "tr/time_p_batch": time() - t0}
+            log_data = {"tr/loss": loss.item(), "tr/time_p_batch": time() - t0, "tr/learning_rate": self.get_lr()}
             log_data.update(loss_data)
             self.safe_log_metrics(log_data)
 
@@ -141,6 +207,19 @@ class IkfLitModel(LightningModule):
 
         if self.checkpoint_every > 0 and self.global_step % self.checkpoint_every == 0 and self.global_step > 0:
             self._checkpoint()
+
+        # The `step()` function of the Ranger optimizer doesn't follow the convention pytorch lightning expects.
+        # Because of this we manually perform the optimization step. See https://stackoverflow.com/a/73267631/5191069
+        if self.hparams.optimizer_name == "ranger":
+            optimizer = self.optimizers()
+            scheduler = self.lr_schedulers()
+
+            optimizer.zero_grad()
+            # TODO: Verify `manual_backward()` works as well.
+            # self.manual_backward(loss)
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
 
         return loss
 
@@ -208,11 +287,6 @@ class IkfLitModel(LightningModule):
             }
         )
 
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adadelta(self.nn_model.parameters(), lr=self.hparams.learning_rate)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=self.hparams.gamma)
-        return [optimizer], [lr_scheduler]
-
     def make_samples(self, y: Tuple[float], m: int) -> Tuple[torch.Tensor, float]:
         """
         Run the network in reverse to generate samples conditioned on a pose y
@@ -226,7 +300,7 @@ class IkfLitModel(LightningModule):
         # (:, 0:3) is x, y, z
         conditional[:, 0:3] = torch.FloatTensor(y[:3])
         # (:, 3:7) is quat
-        conditional[:, 3 : 3 + 4] = torch.FloatTensor([y[3:]])
+        conditional[:, 3 : 3 + 4] = torch.FloatTensor(np.array([y[3:]]))
         # (:, 7: 7 + ndim_tot) is the sigma of the normal distribution that noise is drawn from and added to x. 0 in this case
         conditional = conditional.to(config.device)
 

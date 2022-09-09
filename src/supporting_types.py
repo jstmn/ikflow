@@ -5,6 +5,9 @@ from math import inf
 from time import time
 
 
+# TODO: Delete this file
+
+
 class Config:
     """Convenience class that overwrites the default print function"""
 

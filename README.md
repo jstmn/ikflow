@@ -121,6 +121,12 @@ Traceback (most recent call last):
 NotImplementedError: Platform does not define a GLUT font retrieval function
 ```
 
+3. If you get this error: `tkinter.TclError: no display name and no $DISPLAY environment variable`, add the lines below to the top of `ik_solvers.py` (anywhere before `import matplotlib.pyplot as plt` should work).
+``` python
+import matplotlib
+matplotlib.use("Agg")
+```
+
 ## TODO
 1. [ ] Add CPU versions of pretrained model
 2. [ ] Add 'light' pretrained models. These are smaller networks for faster inference

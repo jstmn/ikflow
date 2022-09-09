@@ -23,3 +23,7 @@ notes_to_self
 
 # Datasets
 datasets/*/
+
+# Slurm log files
+*.out
+SBATCH_train.sh
