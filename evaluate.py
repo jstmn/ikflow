@@ -7,7 +7,7 @@ sys.path.append(os.getcwd())
 
 from src.ik_solvers import GenerativeIKSolver
 from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
-from src.utils import get_ik_solver, set_seed
+from src.utils import get_ik_solver, set_seed, get_solution_errors
 import config
 
 from tqdm import tqdm
@@ -54,25 +54,11 @@ def error_stats(
                 latent_noise_distribution=latent_noise_distribution,
                 latent_noise_scale=latent_noise_scale,
             )
-            ee_pose_ikflow = ik_solver.robot_model.forward_kinematics(
-                samples[:, 0 : ik_solver.robot_model.dim_x].cpu().detach().numpy()
-            )
+            l2_errors, ang_errors = get_solution_errors(ik_solver.robot, samples, ee_pose_target)
+            l2_errs.append(l2_errors)
+            ang_errs.append(ang_errors)
 
-            # Positional Error
-            pos_l2errs = np.linalg.norm(ee_pose_ikflow[:, 0:3] - ee_pose_target[0:3], axis=1)
-
-            # Angular Error
-            rot_target = np.tile(ee_pose_target[3:], (samples_per_pose, 1))
-            rot_output = ee_pose_ikflow[:, 3:]
-
-            output_R9 = rotation_matrix_from_quaternion(torch.Tensor(rot_output).to(config.device))
-            target_R9 = rotation_matrix_from_quaternion(torch.Tensor(rot_target).to(config.device))
-            angular_errs_rad = geodesic_distance(target_R9, output_R9).cpu().data.numpy()
-
-            l2_errs.append(pos_l2errs)
-            ang_errs.append(angular_errs_rad)
-
-    return np.mean(l2_errs), np.mean(angular_errs_rad)
+    return np.mean(l2_errs), np.mean(ang_errors)
 
 
 """ Usage 
@@ -81,6 +67,11 @@ python evaluate.py \
     --samples_per_pose=50 \
     --testset_size=25 \
     --model_name=atlas_tpm 
+
+	Average L2 error:      3.738 mm
+	Average angular error: 0.6555 deg
+	Average runtime:       6.6501 +/- 0.0006 ms (for 100 samples)
+
 
 python evaluate.py \
     --samples_per_pose=50 \

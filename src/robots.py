@@ -88,6 +88,7 @@ class RobotModel:
         self.actuated_joints_limits = actuated_joints_limits
         self.dim_x = dim_x
         self.dim_y = dim_y
+        self.endeff_link_name: str = "<not-set>"
 
         # Stores a list of end poses that ground truth, and generated joint angles will be plotted for
         if len(end_poses_to_plot_solution_dists_for) > 0:
@@ -241,6 +242,7 @@ class KlamptRobotModel(RobotModel):
         self._klampt_robot: klampt.RobotModel = self.world_model.robot(0)
         self._klampt_config_dim = len(self._klampt_robot.getConfig())
         self._klampt_ee_link = self._klampt_robot.link(self.end_effector_link_name)
+        self.endeff_link_name = self._klampt_ee_link.getName()
 
         assert (
             self._klampt_robot.numDrivers() == self.dim_x
