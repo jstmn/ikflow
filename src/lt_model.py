@@ -87,6 +87,12 @@ class IkfLitModel(LightningModule):
                 eps=1e-04,
                 weight_decay=self.hparams.weight_decay,
             )
+        elif self.hparams.optimizer_name == "adamw":
+            optimizer = torch.optim.AdamW(
+                self.nn_model.parameters(),
+                lr=self.hparams.learning_rate,
+                weight_decay=self.hparams.weight_decay,
+            )
         else:
             raise ValueError(f"Unknown optimizer: '{self.hparams.optimizer_name}'")
 

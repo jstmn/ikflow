@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    assert args.optimizer in ["ranger", "adadelta"]
+    assert args.optimizer in ["ranger", "adadelta", "adamw"]
     assert 0 <= args.lambd and args.lambd <= 1
 
     # Load model
