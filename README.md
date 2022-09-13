@@ -67,6 +67,8 @@ python visualize.py --model_name=panda_tpm
 ```
 ![alt text](../media/panda_tpm_oscillate_x-2022-08-26.gif?raw=true)
 
+Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ipynb`
+
 ## Training new models
 
 The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to setup and perform the training and [Weights and Biases](https://wandb.ai/) ('wandb') to track training runs and experiments. WandB isn't required for training but it's what this project is designed around. Changing the code to use Tensorboard should be straightforward (so feel free to put in a pull request for this if you want it :)).

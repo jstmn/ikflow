@@ -27,3 +27,6 @@ datasets/*/
 # Slurm log files
 *.out
 SBATCH_train.sh
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/

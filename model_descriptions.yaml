@@ -12,7 +12,7 @@ atlas_tpm:
   rnvp_clamp:             2.5
   softflow_enabled:       True
   robot_name:             'atlas'
-  model_weights_filepath: 'pretrained_models/atlas_desert-sweep-6.pkl'
+  model_weights_filepath: 'trained_models/atlas_desert-sweep-6.pkl'
 
 # Average L2 error:      7.5699 mm
 # Average angular error: 6.6687 deg
@@ -25,7 +25,7 @@ panda_tpm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'panda_arm'
-  model_weights_filepath: 'pretrained_models/panda_lucky-pond-7642.pkl'
+  model_weights_filepath: 'trained_models/panda_lucky-pond-7642.pkl'
 
 # Note: from joint limit test. Update with smaller model
 # Average L2 error:      6.8762 mm
@@ -39,7 +39,7 @@ robonaut2_16layers:
   coeff_fn_internal_size: 1024
   softflow_enabled:       True
   robot_name:             'robonaut2'
-  model_weights_filepath: 'pretrained_models/robonaut2_cosmic-sound-9761.pkl'
+  model_weights_filepath: 'trained_models/robonaut2_cosmic-sound-9761.pkl'
 
 # Average L2 error:      3.6971 mm
 # Average angular error: 0.6621 deg
@@ -54,4 +54,4 @@ valkyrie_tpm:
   rnvp_clamp:             2.5
   softflow_enabled:       True
   robot_name:             'valkyrie'
-  model_weights_filepath: 'pretrained_models/valkyrie_vital-sweep-16.pkl'
+  model_weights_filepath: 'trained_models/valkyrie_vital-sweep-16.pkl'

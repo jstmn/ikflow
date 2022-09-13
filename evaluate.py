@@ -83,7 +83,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument("--samples_per_pose", default=50, type=int)
     parser.add_argument("--testset_size", default=500, type=int)
-    parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in pretrained_models/")
+    parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
     parser.add_argument("--all", action="store_true", help="Run for all robots in tpms")
     args = parser.parse_args()
 
