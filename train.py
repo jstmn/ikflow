@@ -1,16 +1,18 @@
+from typing import Tuple
 import argparse
-
 import os
 import config
+from time import time
+
 from src.training_parameters import IkflowModelParameters
 from src.ik_solvers import IkflowSolver
 from src.robots import get_robot, KlamptRobotModel
-from src.lt_model import IkfLitModel
+from src.lt_model import IkfLitModel, checkpoint_dir
 from src.lt_data import IkfLitDataset
 from src.utils import boolean_string
 
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
 
 # sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
@@ -73,13 +75,13 @@ python train.py \
 # Smoke testing - w/ wandb
 python train.py \
     --robot_name=panda_arm \
+    --nb_nodes=3 \
     --batch_size=64 \
     --learning_rate=0.0005 \
-    --log_every=50 \
+    --log_every=250 \
     --eval_every=100 \
     --val_set_size=250 \
     --checkpoint_every=500
-
 
 # Smoke test
 python train.py \
@@ -105,7 +107,11 @@ python train.py \
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="cinn w/ softflow CLI")
-    parser.add_argument("--robot_name", type=str, required=True)
+
+    # Note: WandB saves artifacts by the run ID (i.e. '34c2gimi') not the run name ('dashing-forest-33'). This is
+    # slightly annoying because you need to click on a run to get its ID.
+    parser.add_argument("--wandb_run_id_to_load_checkpoint", type=str, help="Example: '34c2gimi'")
+    parser.add_argument("--robot_name", type=str)
 
     # Model parameters
     parser.add_argument("--coupling_layer", type=str, default=DEFAULT_COUPLING_LAYER)
@@ -136,12 +142,27 @@ if __name__ == "__main__":
     parser.add_argument("--log_every", type=int, default=DEFAULT_LOG_EVERY)
     parser.add_argument("--checkpoint_every", type=int, default=DEFAULT_CHECKPOINT_EVERY)
     parser.add_argument("--run_description", type=str)
+    parser.add_argument("--disable_progress_bar", action="store_true")
     parser.add_argument("--disable_wandb", action="store_true")
 
     args = parser.parse_args()
 
     assert args.optimizer in ["ranger", "adadelta", "adamw"]
     assert 0 <= args.lambd and args.lambd <= 1
+
+    wandb_project = None
+    wandb_entity = None
+    if not args.disable_wandb:
+        wandb_project = os.getenv("WANDB_PROJECT")
+        wandb_entity = os.getenv("WANDB_ENTITY")
+        assert wandb_project is not None, (
+            "The 'WANDB_PROJECT' environment variable is not set. Either set it with the appropriate wandb project name"
+            " (`export WANDB_PROJECT=<your wandb project name>`), or add '--disable_wandb'"
+        )
+        assert wandb_entity is not None, (
+            "The 'WANDB_ENTITY' environment variable is not set. Either set it with the appropriate wandb entity"
+            " (`export WANDB_ENTITY=<your wandb username>`), or add '--disable_wandb'"
+        )
 
     # Load model
     robot = get_robot(args.robot_name)
@@ -158,40 +179,28 @@ if __name__ == "__main__":
     base_hparams.zeros_noise_scale = args.zeros_noise_scale
     base_hparams.softflow_enabled = boolean_string(args.softflow_enabled)
 
-    ik_solver = IkflowSolver(base_hparams, robot)
-
     assert isinstance(robot, KlamptRobotModel), "Only 3d robots are supported for training currently"
     robot.assert_batch_fk_equal()
-
     torch.autograd.set_detect_anomaly(True)
 
     # Setup wandb logging
-    if args.disable_wandb:
-        wandb_logger = None
-    else:
-        assert os.getenv("WANDB_PROJECT") is not None, (
-            "The 'WANDB_PROJECT' environment variable is not set. Either set it with the appropriate wandb project name"
-            " (`export WANDB_PROJECT=<your wandb project name>`), or add '--disable_wandb'"
-        )
-        assert os.getenv("WANDB_ENTITY") is not None, (
-            "The 'WANDB_ENTITY' environment variable is not set. Either set it with the appropriate wandb entity"
-            " (`export WANDB_ENTITY=<your wandb username>`), or add '--disable_wandb'"
-        )
-
+    wandb_logger = None
+    if not args.disable_wandb:
         # Call `wandb.init` before creating a `WandbLogger` object so that runs have randomized names. Without this
         # call, the run names are all set to the project name. See this article for further information: https://lightrun.com/answers/lightning-ai-lightning-wandblogger--use-random-name-instead-of-project-as-default-name
-        cfg = {"robot": robot.name}
+        cfg = {"robot": args.robot_name}
         cfg.update(args.__dict__)
         cfg.update(base_hparams.__dict__)
         wandb.init(
-            entity=os.environ["WANDB_ENTITY"],
-            project=os.getenv("WANDB_PROJECT"),
+            entity=wandb_entity,
+            project=wandb_project,
             notes=args.run_description,
             config=cfg,
         )
-        wandb_logger = WandbLogger(save_dir=config.WANDB_CACHE_DIR)
+        wandb_logger = WandbLogger(log_model="all", save_dir=config.WANDB_CACHE_DIR)
 
     data_module = IkfLitDataset(robot.name, args.batch_size, val_set_size=args.val_set_size)
+    ik_solver = IkflowSolver(base_hparams, robot)
     model = IkfLitModel(
         ik_solver=ik_solver,
         base_hparams=base_hparams,
@@ -205,15 +214,29 @@ if __name__ == "__main__":
         weight_decay=args.weight_decay,
         optimizer_name=args.optimizer,
     )
+
+    # Checkpoint callback
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=checkpoint_dir(args.robot_name),
+        every_n_train_steps=args.checkpoint_every,
+        save_on_train_epoch_end=False,
+        # Save the last 3 checkpoints. Checkpoint files are logged as wandb artifacts so it doesn't really matter anyway
+        save_top_k=3,
+        monitor="global_step",
+        mode="max",
+        filename="ikflow-checkpoint-{step}",
+    )
+
+    # Train
     trainer = Trainer(
         logger=wandb_logger,
-        callbacks=[],
+        callbacks=[checkpoint_callback],
         val_check_interval=args.eval_every,
         # gpus=1, # deprecated
         accelerator="gpu",
         devices=1,
         log_every_n_steps=args.log_every,
         max_epochs=DEFAULT_MAX_EPOCHS,
-        enable_progress_bar=False if os.getenv("IS_SLURM") is not None else True,
+        enable_progress_bar=False if (os.getenv("IS_SLURM") is not None) or args.disable_progress_bar else True,
     )
     trainer.fit(model, data_module)

@@ -60,9 +60,6 @@ class IkfLitModel(LightningModule):
         self.dim_x = self.ik_solver.robot_model.dim_x
         self.dim_tot = self.base_hparams.dim_latent_space
         self.checkpoint_every = checkpoint_every
-        self.checkpoint_dir = checkpoint_dir(self.ik_solver.robot.name)
-        if self.checkpoint_every > 0:
-            safe_mkdir(self.checkpoint_dir)
         self.log_every = log_every
 
         self.save_hyperparameters(ignore=["ik_solver"])
@@ -127,27 +124,6 @@ class IkfLitModel(LightningModule):
         }
         return [optimizer], [lr_scheduler_config]
 
-    def _checkpoint(self):
-        filename = f"epoch:{self.current_epoch}_batch:{self.global_step}.pkl"
-        filepath = os.path.join(self.checkpoint_dir, filename)
-        state = {
-            "nn_model_type": self.ik_solver.nn_model_type,
-            "model": self.ik_solver.nn_model.state_dict(),
-            "robot_model": self.ik_solver.robot_model.name,
-            "hparams": non_private_dict(self.hparams.__dict__),
-            "epoch": self.current_epoch,
-            "batch_nb": self.global_step,
-        }
-        torch.save(state, filepath)
-
-        # Upload to wandb
-        if self.logger is not None:
-            artifact_name = wandb.run.name
-            artifact = wandb.Artifact(artifact_name, type="model", description="checkpoint")
-            artifact.add_file(filepath)
-            wandb.log_artifact(artifact)
-            artifact.wait()
-
     def safe_log_metrics(self, vals: Dict):
         assert isinstance(vals, dict)
         try:
@@ -210,9 +186,6 @@ class IkfLitModel(LightningModule):
 
         if torch.isnan(loss):
             raise ValueError("loss is nan")
-
-        if self.checkpoint_every > 0 and self.global_step % self.checkpoint_every == 0 and self.global_step > 0:
-            self._checkpoint()
 
         # The `step()` function of the Ranger optimizer doesn't follow the convention pytorch lightning expects.
         # Because of this we manually perform the optimization step. See https://stackoverflow.com/a/73267631/5191069
@@ -292,6 +265,9 @@ class IkfLitModel(LightningModule):
                 "val/ave_model_runtime": np.mean(model_runtimes),
             }
         )
+
+        # B/c pytorch lightning is dumb (https://github.com/Lightning-AI/lightning/issues/12724)
+        self.log("global_step", self.global_step)
 
     def make_samples(self, y: Tuple[float], m: int) -> Tuple[torch.Tensor, float]:
         """
