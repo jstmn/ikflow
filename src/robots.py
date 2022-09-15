@@ -293,28 +293,6 @@ class KlamptRobotModel(RobotModel):
         if verbosity > 0:
             print("assert_batch_fk_equal(): klampt, kinpy, batch_fk functions match")
 
-    def assert_l2_loss_pts_equal(self):
-        """
-        Test that kinpy, klampt, and batch_fk all return the same poses
-        """
-        raise NotImplementedError("l2 loss points are not ready for use yet")
-        n_samples = 10
-        samples = self.sample(n_samples)
-        fk_klampt = self.forward_kinematics_klampt(samples, with_l2_loss_pts=True)
-
-        # (B x 3*(n+1) )
-        samples_torch = torch.from_numpy(samples).float().to(config.device)
-        fk_bfk = self.forward_kinematics_batch(samples_torch, with_l2_loss_pts=True)
-
-        for i in range(len(self.l2_loss_pts) + 1):
-            root_idx_klampt = 7 * i
-            t_klampt = fk_klampt[:, root_idx_klampt + 0 : root_idx_klampt + 3]
-            root_idx = 3 * i
-            t_bfk = fk_bfk[:, root_idx + 0 : root_idx + 3].cpu().numpy()
-            assert_endpose_position_almost_equal(t_klampt, t_bfk)
-
-        print("assert_l2_loss_pts_equal(): klampt, batch_fk functions equal")
-
     def __str__(self) -> str:
         s = f"KlamptRobotModel()\n"
         s += "  robot_model:  " + self.name + "\n"
@@ -934,69 +912,6 @@ class Baxter(KlamptRobotModel):
         raise NotImplementedError("batch_fk isn't working for Baxter. Fix this bug before using this function")
 
 
-class Kuka11dof(KlamptRobotModel):
-    name = "kuka_11dof"
-
-    def __init__(self, verbosity=0):
-        actuated_joints = [
-            "lwr_arm_0A_joint",
-            "lwr_arm_1A_joint",
-            "lwr_arm_2A_joint",
-            "lwr_arm_3A_joint",
-            "lwr_arm_0B_joint",
-            "lwr_arm_1B_joint",
-            "lwr_arm_2B_joint",
-            "lwr_arm_3B_joint",
-            "lwr_arm_4_joint",
-            "lwr_arm_5_joint",
-            "lwr_arm_6_joint",
-        ]
-        actuated_joints_limits = [
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-        ]
-        dim_x = len(actuated_joints)
-
-        joint_chain = [
-            "arm_world_joint",
-            "lwr_arm_0A_joint",
-            "lwr_arm_1A_joint",
-            "lwr_arm_2A_joint",
-            "lwr_arm_3A_joint",
-            "lwr_arm_0B_joint",
-            "lwr_arm_1B_joint",
-            "lwr_arm_2B_joint",
-            "lwr_arm_3B_joint",
-            "lwr_arm_4_joint",
-            "lwr_arm_5_joint",
-            "lwr_arm_6_joint",
-        ]
-
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/kuka_11dof/urdf/model.urdf"
-        end_effector_link_name = "lwr_arm_7_link"
-
-        KlamptRobotModel.__init__(
-            self,
-            self.name,
-            urdf_filepath,
-            joint_chain,
-            actuated_joints,
-            actuated_joints_limits,
-            dim_x,
-            end_effector_link_name,
-            verbosity=verbosity,
-        )
-
-
 class PandaArm(KlamptRobotModel):
     name = "panda_arm"
     formal_robot_name = "Panda"
@@ -1295,158 +1210,6 @@ class Robonaut2Arm(KlamptRobotModel):
         )
 
 
-class Robosimian(KlamptRobotModel):
-    name = "robosimian"
-    formal_robot_name = "Robosimian"
-
-    def __init__(self, verbosity=0):
-        actuated_joints = [
-            "limb1_joint1",
-            "limb1_joint2",
-            "limb1_joint3",
-            "limb1_joint4",
-            "limb1_joint5",
-            "limb1_joint6",
-            "limb1_joint7",
-        ]
-        actuated_joints_limits = [
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-        ]
-        dim_x = len(actuated_joints)
-
-        joint_chain = [
-            "limb1_joint0",
-            "limb1_joint1",
-            "limb1_joint2",
-            "limb1_joint3",
-            "limb1_joint4",
-            "limb1_joint5",
-            "limb1_joint6",
-            "limb1_joint7",
-        ]
-
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/robosimian/robosimian.urdf"
-        end_effector_link_name = "limb1_link7"
-
-        poses_for_dist_plots = [
-            [
-                0.16863024470701707,
-                0.28201492512129694,
-                0.09281403370874561,
-                0.42241508566252,
-                0.2186476500202038,
-                -0.8206667485092372,
-                -0.31664615651645767,
-            ],
-            [
-                -0.0003772088443808608,
-                0.7611122361839995,
-                0.5208955051353593,
-                0.6015064248600906,
-                0.5585453599305961,
-                0.08596543991743738,
-                0.5646477175122863,
-            ],
-            [
-                0.22080825444213317,
-                -0.14147027202572388,
-                -0.162022296710575,
-                0.6872598384396488,
-                -0.6064581201042858,
-                0.36353385856255893,
-                -0.16651004986516937,
-            ],
-        ]
-
-        KlamptRobotModel.__init__(
-            self,
-            self.name,
-            urdf_filepath,
-            joint_chain,
-            actuated_joints,
-            actuated_joints_limits,
-            dim_x,
-            end_effector_link_name,
-            verbosity=1,
-            end_poses_to_plot_solution_dists_for=poses_for_dist_plots,
-        )
-
-
-class Ur5(KlamptRobotModel):
-    name = "ur5"
-    formal_robot_name = "Ur5"
-
-    def __init__(self, verbosity=0):
-        actuated_joints = [
-            "shoulder_pan_joint",
-            "shoulder_lift_joint",
-            "elbow_joint",
-            "wrist_1_joint",
-            "wrist_2_joint",
-            "wrist_3_joint",
-        ]
-        actuated_joints_limits = [
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-            (-np.pi, np.pi),
-        ]
-        dim_x = len(actuated_joints)
-
-        joint_chain = [
-            "world_joint",
-            "shoulder_pan_joint",
-            "shoulder_lift_joint",
-            "elbow_joint",
-            "wrist_1_joint",
-            "wrist_2_joint",
-            "wrist_3_joint",
-            "ee_fixed_joint",
-        ]
-
-        end_poses_to_plot_solution_dists_for = [
-            np.array([0.25, 0.25, 0.25, 1, 0, 0, 0]),
-            np.array(
-                [
-                    -0.16066744359911017,
-                    -0.46044821355921434,
-                    0.7014843570585816,
-                    0.2680316364469035,
-                    -0.7876796236371675,
-                    0.4989661066563734,
-                    -0.24238951458053215,
-                ]
-            ),
-            np.array(
-                [-0.25, -0.5, 0.75, 0.2680316364469035, -0.7876796236371675, 0.4989661066563734, -0.24238951458053215]
-            ),
-        ]
-
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/ur5/ur5.urdf"
-        end_effector_link_name = "ee_link"
-
-        KlamptRobotModel.__init__(
-            self,
-            self.name,
-            urdf_filepath,
-            joint_chain,
-            actuated_joints,
-            actuated_joints_limits,
-            dim_x,
-            end_effector_link_name,
-            verbosity=verbosity,
-            end_poses_to_plot_solution_dists_for=end_poses_to_plot_solution_dists_for,
-        )
-
-
 class Valkyrie(KlamptRobotModel):
     name = "valkyrie"
     formal_robot_name = "Valkyrie - Whole Arm and Waist"
@@ -1694,11 +1457,8 @@ class ValkyrieArmShoulder(KlamptRobotModel):
 
 ATLAS = Atlas.name
 ATLAS_ARM = AtlasArm.name
-KUKA_11DOF = Kuka11dof.name
 ROBONAUT = Robonaut2.name
 ROBONAUT_ARM = Robonaut2Arm.name
-ROBOSIMIAN = Robosimian.name
-UR5 = Ur5.name
 PANDA = PandaArm.name
 PR2 = Pr2.name
 VALKYRIE = Valkyrie.name
@@ -1711,11 +1471,8 @@ RAILY_CHAIN3 = RailYChain3.name
 ROBOT_NAMES = [
     ATLAS,
     ATLAS_ARM,
-    KUKA_11DOF,
     ROBONAUT,
     ROBONAUT_ARM,
-    ROBOSIMIAN,
-    UR5,
     PANDA,
     PR2,
     VALKYRIE,
@@ -1732,8 +1489,6 @@ def get_all_3d_robots() -> List[KlamptRobotModel]:
     """
     verbosity = 1
     return [
-        # IK isn't working. Viz looks funky
-        # Kuka11dof(verbosity=verbosity),
         # Batch_fk isn't working
         # Baxter(verbosity=verbosity),
         # Pr2(verbosity=verbosity),
@@ -1742,8 +1497,6 @@ def get_all_3d_robots() -> List[KlamptRobotModel]:
         PandaArm(verbosity=verbosity),
         Robonaut2(verbosity=verbosity),  # vis works too
         Robonaut2Arm(verbosity=verbosity),
-        Robosimian(verbosity=verbosity),
-        Ur5(verbosity=verbosity),  # Vis is messed up
         Valkyrie(verbosity=verbosity),
         ValkyrieArm(verbosity=verbosity),
         ValkyrieArmShoulder(verbosity=verbosity),
@@ -1771,8 +1524,6 @@ def get_robot(name: str, verbosity: int = 0) -> Union[KlamptRobotModel, RobotMod
         return AtlasArm(verbosity=verbosity)
     if name == Baxter.name:
         return Baxter(verbosity=verbosity)
-    if name == Kuka11dof.name:
-        return Kuka11dof(verbosity=verbosity)
     if name == PandaArm.name:
         return PandaArm(verbosity=verbosity)
     if name == Pr2.name:
@@ -1781,10 +1532,6 @@ def get_robot(name: str, verbosity: int = 0) -> Union[KlamptRobotModel, RobotMod
         return Robonaut2(verbosity=verbosity)
     if name == Robonaut2Arm.name:
         return Robonaut2Arm(verbosity=verbosity)
-    if name == Robosimian.name:
-        return Robosimian(verbosity=verbosity)
-    if name == Ur5.name:
-        return Ur5(verbosity=verbosity)
     if name == Valkyrie.name:
         return Valkyrie(verbosity=verbosity)
     if name == ValkyrieArm.name:
@@ -1801,13 +1548,10 @@ def robot_name_to_fancy_robot_name(name: str) -> str:
         Atlas,
         AtlasArm,
         Baxter,
-        Kuka11dof,
         PandaArm,
         Pr2,
         Robonaut2,
         Robonaut2Arm,
-        Robosimian,
-        Ur5,
         Valkyrie,
         ValkyrieArm,
         ValkyrieArmShoulder,

@@ -1313,4 +1313,8 @@
     <limit effort="20.0" lower="-0.020833" upper="0.0" velocity="5.0" />
     <dynamics damping="0.7" friction="0.0" />
   </joint>
+
+  <!-- For some reason klampt visualizes the collision geometry instead of the visual geometry? We add this tag to force Klampt to show the visual geometry. See https://github.com/krishauser/Klampt/blob/master/Cpp/docs/Tutorials/Import-and-calibrate-urdf.md -->
+  <klampt use_vis_geom="1"  />
+
   </robot>

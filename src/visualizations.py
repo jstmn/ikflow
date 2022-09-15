@@ -24,10 +24,19 @@ def _run_demo(
     demo_state: Any = None,
     time_p_loop: float = 2.5,
     title="Anonymous demo",
+    load_terrain=False,
 ):
     """Internal function for running a demo."""
 
     worlds = [robot_model.world_model.copy() for _ in range(n_worlds)]
+
+    # TODO: Adjust terrain height for each robot
+    if load_terrain:
+        terrain_filepath = "urdfs/klampt_resources/terrains/plane.off"
+        res = worlds[0].loadTerrain(terrain_filepath)
+        assert res, f"Failed to load terrain '{terrain_filepath}'"
+        vis.add("terrain", worlds[0].terrain(0))
+
     setup_fn(worlds)
 
     vis.setWindowTitle(title)
@@ -81,17 +90,6 @@ def visualize_fk(ik_solver: GenerativeIKSolver, solver="klampt"):
             fk = robot.robot_model.forward_kinematics_klampt(x_random, with_l2_loss_pts=True)
             ee_pose = fk[0, 0:7]
             vis.add("ee", (so3.from_quaternion(ee_pose[3:]), ee_pose[0:3]), length=0.15, width=2)
-
-            for j in range(len(robot.robot_model.l2_loss_pts)):
-                root_idx = 7 + 7 * j
-                loss_pt_pose = fk[0, root_idx + 0 : root_idx + 7]
-                vis.add(
-                    f"l2_loss_pt_{j}",
-                    (so3.from_quaternion(loss_pt_pose[3:]), loss_pt_pose[0:3]),
-                    length=0.1,
-                    width=2,
-                )
-
         else:
             # (B x 3*(n+1) )
             x_torch = torch.from_numpy(x_random).float().to(config.device)
@@ -114,10 +112,6 @@ def oscillate_latent(ik_solver: GenerativeIKSolver):
     robot = ik_solver.robot
 
     def setup_fn(worlds):
-        # vis.add(f"robot_goal", worlds[0].robot(0))
-        # vis.setColor(f"robot_goal", 0.5, 1, 1, 0)
-        # vis.setColor((f"robot_goal", robot.endeff_link_name), 0, 1, 0, 0.7)
-
         vis.add(f"robot_1", worlds[1].robot(0))
         vis.setColor(f"robot_1", 1, 1, 1, 1)
         vis.setColor((f"robot_1", robot.endeff_link_name), 1, 1, 1, 0.71)
@@ -272,23 +266,56 @@ def random_target_pose(self, nb_sols=5):
     self._run_demo(nb_sols + 1, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
 
 
-def oscillate_joints(self):
+def oscillate_joints(robot: robots.KlamptRobotModel):
     """Set the end effector to a randomly drawn pose. Generate and visualize `nb_sols` solutions for the pose"""
+
+    inc = 0.01
+
+    class DemoState:
+        def __init__(self):
+            self.q = np.array([lim[0] for lim in robot.actuated_joints_limits])
+            self.increasing = True
 
     def setup_fn(worlds):
         vis.add("robot", worlds[0].robot(0))
-        vis.setColor("robot", 1, 1, 1, 1)
+        vis.setColor("robot", 1, 0.1, 0.1, 1)
+        assert len(worlds) == 1
 
     def loop_fn(worlds, _demo_state):
-        # Get random sample
-        random_sample = self.robot_model.sample(1)
-        q = self.robot_model.x_to_qs(random_sample)
+        no_change = True
+        for i in range(robot.dim_x):
+            joint_limits = robot.actuated_joints_limits[i]
+            if _demo_state.increasing:
+                if _demo_state.q[i] < joint_limits[1]:
+                    _demo_state.q[i] += inc
+                    no_change = False
+                    break
+            else:
+                if _demo_state.q[i] > joint_limits[0]:
+                    _demo_state.q[i] -= inc
+                    no_change = False
+                    break
+        if no_change:
+            _demo_state.increasing = not _demo_state.increasing
+
+        q = robot.x_to_qs(np.array([_demo_state.q]))
         worlds[0].robot(0).setConfig(q[0])
 
-    time_p_loop = 2.5
+    time_p_loop = 1 / 60  # 60Hz, in theory
     title = "Oscillate joint angles"
 
     def viz_update_fn(worlds, _demo_state):
         return
 
-    self._run_demo(1, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
+    demo_state = DemoState()
+    _run_demo(
+        robot,
+        1,
+        setup_fn,
+        loop_fn,
+        viz_update_fn,
+        time_p_loop=time_p_loop,
+        title=title,
+        load_terrain=True,
+        demo_state=demo_state,
+    )

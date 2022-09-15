@@ -2068,5 +2068,7 @@
     <child link="pelvisRearImu_Frame"/>
   </joint>
 
-
+  <!-- The y-z coordinates were flipped for some reason. We add this tag so that klampt accounts for this flip. See https://github.com/krishauser/Klampt/blob/master/Cpp/docs/Tutorials/Import-and-calibrate-urdf.md -->
+  <klampt flip_yz="1"/>
+  
 </robot>
