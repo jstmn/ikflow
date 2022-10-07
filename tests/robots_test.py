@@ -24,7 +24,6 @@ ALL_3D_ROBOTS = get_all_3d_robots()
 
 
 class TestForwardKinematics(unittest.TestCase):
-
     # Helper functions
     def assert_endpose_position_almost_equal(self, endpoints1: np.array, endpoints2: np.array):
         """Check that the position of each pose is nearly the same"""
@@ -76,7 +75,6 @@ class TestForwardKinematics(unittest.TestCase):
             self.assert_endpose_rotation_almost_equal(kinpy_fk, klampt_fk)
             self.assert_endpose_position_almost_equal(kinpy_fk, batch_fk_t)
 
-
     def test_fk_matches_saved(self):
         """
         Test that the all three forward kinematics functions return the expected value for saved input
@@ -117,10 +115,8 @@ class TestForwardKinematics(unittest.TestCase):
 
             # Iterate through each sample
             for sample_i in range(n_samples):
-
                 # For each sample, iterate through the number of joints
                 for joint_i in range(robot.dim_x):
-
                     for offset in decimal_range(-np.pi, np.pi, 1.5):
                         pertubation = np.zeros(robot.dim_x)
                         pertubation[joint_i] = offset

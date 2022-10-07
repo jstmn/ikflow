@@ -81,10 +81,8 @@ if __name__ == "__main__":
     # Create training objects
     ikflow_hparams: IkflowModelParameters = checkpoint["hyper_parameters"]["base_hparams"]
     robot = get_robot(robot_name)
-    ik_solver = IkflowSolver(ikflow_hparams, robot)
-    data_module = IkfLitDataset(robot_name, run_cfg["batch_size"], val_set_size=run_cfg["val_set_size"])
-
     wandb_logger = WandbLogger(log_model="all", save_dir=config.WANDB_CACHE_DIR)
+    ik_solver = IkflowSolver(ikflow_hparams, robot)
 
     # Checkpoint callback
     checkpoint_callback = ModelCheckpoint(
@@ -99,18 +97,19 @@ if __name__ == "__main__":
     )
 
     # Train
-    model = IkfLitModel.load_from_checkpoint(ckpt_filepath, ik_solver=ik_solver), data_module
+    model = IkfLitModel.load_from_checkpoint(ckpt_filepath, ik_solver=ik_solver)
+    data_module = IkfLitDataset(robot_name, run_cfg["batch_size"], val_set_size=run_cfg["val_set_size"])
+
     trainer = Trainer(
-        resume_from_checkpoint=ckpt_filepath,
-        # logger=wandb_logger,
-        # callbacks=[checkpoint_callback],
-        # val_check_interval=run_cfg["eval_every"],
+        # resume_from_checkpoint=ckpt_filepath, # 'Please pass `Trainer.fit(ckpt_path=)` directly instead'
+        logger=wandb_logger,
+        callbacks=[checkpoint_callback],
+        val_check_interval=run_cfg["eval_every"],
         # # gpus=1, # deprecated
-        # accelerator="gpu",
-        # devices=1,
-        # log_every_n_steps=run_cfg["log_every"],
-        # max_epochs=DEFAULT_MAX_EPOCHS,
-        # enable_progress_bar=False if (os.getenv("IS_SLURM") is not None) or args.disable_progress_bar else True,
+        accelerator="gpu",
+        devices=1,
+        log_every_n_steps=run_cfg["log_every"],
+        max_epochs=DEFAULT_MAX_EPOCHS,
+        enable_progress_bar=False if (os.getenv("IS_SLURM") is not None) or args.disable_progress_bar else True,
     )
-    # TODO: Fix 'AttributeError: 'tuple' object has no attribute 'trainer'' error
     trainer.fit(model, data_module, ckpt_path=ckpt_filepath)

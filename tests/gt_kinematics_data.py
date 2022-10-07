@@ -6,7 +6,7 @@ from src import robots
 import numpy as np
 
 
-# TODO: Store data in `KnownKinematicMapping` objects.  
+# TODO: Store data in `KnownKinematicMapping` objects.
 # @dataclass
 # class KnownKinematicMapping:
 
@@ -21,7 +21,7 @@ import numpy as np
 
 
 def get_gt_samples_and_endpoints(robot: robots.KlamptRobotModel) -> Tuple[np.array, np.array]:
-    """ Data store for joint space - cartesian space maps. There are better ways to store this, I know. 
+    """Data store for joint space - cartesian space maps. There are better ways to store this, I know.
 
     Args:
         robot (robots.KlamptRobotModel): _description_

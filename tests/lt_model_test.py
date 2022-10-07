@@ -21,7 +21,9 @@ class LitModelTest(unittest.TestCase):
     def setUp(self) -> None:
         self.hps = IkflowModelParameters()
         self.ik_solver = IkflowSolver(self.hps, ROBOT_MODEL)
-        self.model = IkfLitModel(self.ik_solver, self.hps, learning_rate=1.0, checkpoint_every=-1, optimizer_name="adamw")
+        self.model = IkfLitModel(
+            self.ik_solver, self.hps, learning_rate=1.0, checkpoint_every=-1, optimizer_name="adamw"
+        )
 
     def test_gradient_calculated(self):
         batch_size = 10

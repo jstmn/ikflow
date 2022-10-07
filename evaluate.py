@@ -63,6 +63,13 @@ def error_stats(
 
 """ Usage 
 
+
+python evaluate.py \
+    --samples_per_pose=50 \
+    --n_samples_for_runtime=512 \
+    --testset_size=5 \
+    --model_name=panda_tpm 
+
 python evaluate.py \
     --samples_per_pose=50 \
     --testset_size=25 \
@@ -82,6 +89,12 @@ python evaluate.py \
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument("--samples_per_pose", default=50, type=int)
+    parser.add_argument(
+        "--n_samples_for_runtime",
+        default=100,
+        type=int,
+        help="Check the average runtime to get this number of solutions",
+    )
     parser.add_argument("--testset_size", default=500, type=int)
     parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
     parser.add_argument("--all", action="store_true", help="Run for all robots in tpms")
@@ -121,7 +134,7 @@ if __name__ == "__main__":
 
         # Calculate average runtime for 100 samples
         sample_times = []
-        n_samples = 100
+        n_samples = args.n_samples_for_runtime
         with torch.inference_mode():
             for i in range(50):
                 pose = np.random.random(7)

@@ -13,7 +13,8 @@ from src.utils import grad_stats, non_private_dict, safe_mkdir
 import wandb
 import numpy as np
 import torch
-from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.core.module import LightningModule
+
 from thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001
