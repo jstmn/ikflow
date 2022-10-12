@@ -27,9 +27,10 @@ sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libosm
 export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visualization script in a new terminal - annoying, I know
 git lfs pull origin master # Download pretrained models
 ```
-Otherwise if running Ubuntu `< 21.0+`:
+
+Otherwise if running Ubuntu `< 21`:
 ```
-sudo apt-get install build-essential qtcreator qt5-default python3.8-dev python3.8-pip python3.8-venv git-lfs
+sudo apt-get install build-essential qtcreator qt5-default python3.8-dev python3.8-venv git-lfs
 git lfs pull origin master # Download pretrained models
 ```
 
@@ -63,7 +64,7 @@ python evaluate.py \
 
 Visualize the solutions returned by the `panda_tpm` model:
 ```
-python visualize.py --model_name=panda_tpm
+python visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
 ```
 ![alt text](../media/panda_tpm_oscillate_x-2022-08-26.gif?raw=true)
 
