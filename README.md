@@ -39,7 +39,7 @@ python3.8 -m pip install --user virtualenv
 python3.8 -m venv venv
 source venv/bin/activate
 pip install wheel
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 git submodule init; git submodule update # Install git submodules
 cd thirdparty/FrEIA && python setup.py develop && cd ../../ # Install thirdparty libraries
 ```

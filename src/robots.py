@@ -223,7 +223,7 @@ class KlamptRobotModel(RobotModel):
             assert joint in self.joint_chain
 
         with open(urdf_filepath) as f:
-            self.kinpy_fk_chain = kp.build_chain_from_urdf(f.read())
+            self.kinpy_fk_chain = kp.build_chain_from_urdf(f.read().encode("utf-8"))
 
         self.batch_fk_calc = BatchFK(
             self.urdf_filepath,
@@ -965,6 +965,73 @@ class PandaArm(KlamptRobotModel):
         )
 
 
+""" For Panda 2 with panda_tpm model. Note that the l2 error is fine but there is a huge angular error. This must be 
+because of the different joint limits between the two urdfs 
+
+Average L2 error:      7.4632 mm
+Average angular error: 45.0683 deg
+Average runtime:       13.5387 +/- 0.0011 ms (for 512 samples)
+"""
+
+
+class PandaArm2(KlamptRobotModel):
+    name = "panda_arm2"
+    formal_robot_name = "Panda"
+
+    def __init__(self, verbosity=0):
+        actuated_joints_limits = [
+            (-2.8973, 2.8973),  # panda_joint1
+            (-1.7628, 1.7628),  # panda_joint2
+            (-2.8973, 2.8973),  # panda_joint3
+            (-3.0718, -0.0698),  # panda_joint4
+            (-2.8973, 2.8973),  # panda_joint5
+            (-0.0175, 3.7525),  # panda_joint6
+            (-2.8973, 2.8973),  # panda_joint7
+        ]
+        actuated_joints = [
+            "panda_joint1",
+            "panda_joint2",
+            "panda_joint3",
+            "panda_joint4",
+            "panda_joint5",
+            "panda_joint6",
+            "panda_joint7",
+        ]
+        dim_x = len(actuated_joints)
+        joint_chain = [
+            "panda_joint1",
+            "panda_joint2",
+            "panda_joint3",
+            "panda_joint4",
+            "panda_joint5",
+            "panda_joint6",
+            "panda_joint7",
+            "panda_joint8",
+        ]
+
+        urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm2/panda2.urdf"
+        end_effector_link_name = "panda_link8"
+
+        end_poses_to_plot_solution_dists_for = [
+            np.array([0.25, 0.25, 0.65, 1, 0, 0, 0]),
+            np.array([0.25, 0.25, 0.25, 1, 0, 0, 0]),
+            np.array([0, 0, 0, 1, 0, 0, 0]),
+        ]
+
+        KlamptRobotModel.__init__(
+            self,
+            self.name,
+            urdf_filepath,
+            joint_chain,
+            actuated_joints,
+            actuated_joints_limits,
+            dim_x,
+            end_effector_link_name,
+            verbosity=verbosity,
+            end_poses_to_plot_solution_dists_for=end_poses_to_plot_solution_dists_for,
+        )
+
+
 class Pr2(KlamptRobotModel):
     name = "pr2"
     formal_robot_name = "PR2"
@@ -1460,6 +1527,7 @@ ATLAS_ARM = AtlasArm.name
 ROBONAUT = Robonaut2.name
 ROBONAUT_ARM = Robonaut2Arm.name
 PANDA = PandaArm.name
+PANDA2 = PandaArm2.name
 PR2 = Pr2.name
 VALKYRIE = Valkyrie.name
 VALKYRIE_ARM = ValkyrieArm.name
@@ -1474,6 +1542,7 @@ ROBOT_NAMES = [
     ROBONAUT,
     ROBONAUT_ARM,
     PANDA,
+    PANDA2,
     PR2,
     VALKYRIE,
     VALKYRIE_ARM,
@@ -1526,6 +1595,8 @@ def get_robot(name: str, verbosity: int = 0) -> Union[KlamptRobotModel, RobotMod
         return Baxter(verbosity=verbosity)
     if name == PandaArm.name:
         return PandaArm(verbosity=verbosity)
+    if name == PandaArm2.name:
+        return PandaArm2(verbosity=verbosity)
     if name == Pr2.name:
         return Pr2(verbosity=verbosity)
     if name == Robonaut2.name:

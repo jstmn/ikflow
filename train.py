@@ -85,7 +85,7 @@ python train.py \
 
 # Smoke test
 python train.py \
-    --robot_name=panda_arm \
+    --robot_name=panda_arm2 \
     --batch_size=16 \
     --optimizer=ranger \
     --log_every=25 \

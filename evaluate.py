@@ -63,17 +63,11 @@ def error_stats(
 
 """ Usage 
 
-
 python evaluate.py \
     --samples_per_pose=50 \
+    --testset_size=500 \
     --n_samples_for_runtime=512 \
-    --testset_size=5 \
     --model_name=panda_tpm 
-
-python evaluate.py \
-    --samples_per_pose=50 \
-    --testset_size=25 \
-    --model_name=atlas_tpm 
 
 	Average L2 error:      3.738 mm
 	Average angular error: 0.6555 deg
