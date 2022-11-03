@@ -268,7 +268,9 @@ class IkfLitModel(LightningModule):
         )
 
         # B/c pytorch lightning is dumb (https://github.com/Lightning-AI/lightning/issues/12724)
-        self.log("global_step", self.global_step)
+        # self.global_step converted to torch.float32 because of the following warning:
+        #   "UserWarning: You called `self.log('global_step', ...)` in your `validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32."
+        self.log("global_step", torch.float32(self.global_step))
 
     def make_samples(self, y: Tuple[float], m: int) -> Tuple[torch.Tensor, float]:
         """

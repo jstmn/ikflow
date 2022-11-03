@@ -1,6 +1,7 @@
 python -m black *.py --line-length=120 --preview
 python -m black src/*.py --line-length=120 --preview
 python -m black tests/*.py --line-length=120 --preview
+python -m black tools/*.py --line-length=120 --preview
 
 # Clear pynbs
 jupyter nbconvert --clear-output --inplace notebooks/*.ipynb
