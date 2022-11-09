@@ -1,6 +1,0 @@
-[submodule "thirdparty/mdn"]
-	path = thirdparty/mdn
-	url = https://github.com/tonyduan/mdn.git
-[submodule "thirdparty/FrEIA"]
-	path = thirdparty/FrEIA
-	url = https://github.com/VLL-HD/FrEIA.git

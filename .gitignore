@@ -33,3 +33,4 @@ SBATCH_resume_train.sh
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
+lr_scheduler_scrathpad.py

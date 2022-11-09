@@ -6,11 +6,10 @@ from time import time
 
 from FrEIA.framework.graph_inn import GraphINN
 
-from thirdparty.mdn.mdn.models import MixtureDensityNetwork
 import config
 from src import robots
 from src.robots import KlamptRobotModel
-from src.training_parameters import MDNParameters, IkflowModelParameters
+from src.training_parameters import IkflowModelParameters
 
 import numpy as np
 from wandb.wandb_run import Run
@@ -206,19 +205,6 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
     model.to(config.device)
     return model
 
-
-def mdn_model(n_components: int, robot_model: robots.RobotModel):
-    """Build and return a Mixture Density Network. See https://publications.aston.ac.uk/id/eprint/373/1/NCRG_94_004.pdf. Implementation from https://github.com/tonyduan/mdn
-
-    Args:
-        n_components (int): Number of components in the model
-
-    Returns:
-        mdn-model [MixtureDensityNetwork]: A Mixture density network
-    """
-    return MixtureDensityNetwork(robot_model.dim_y, robot_model.dim_x, n_components)
-
-
 def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, latent_noise_scale, shape):
     """Draw a sample from the latent noise distribution for running inference"""
     assert latent_noise_distribution in ["gaussian", "uniform"]
@@ -247,9 +233,9 @@ class GenerativeIKSolver:
         """Initialize a GenerativeIKSolver.
 
         Args:
-            nn_model_type (str): The type of the model. One of ["ikflow", "mdn"]
+            nn_model_type (str): The type of the model. One of ["ikflow"]
         """
-        assert nn_model_type in ["ikflow", "mdn"]
+        assert nn_model_type in ["ikflow"]
 
         self.nn_model_type = nn_model_type
         self.nn_model = nn_model
@@ -502,29 +488,3 @@ class IkflowSolver(GenerativeIKSolver):
         t0 = time()
         output_rev, jac = self.nn_model(latent_noise, c=conditional, rev=True)
         return output_rev[:, 0 : self.dim_x], time() - t0
-
-
-class MDNSolver(GenerativeIKSolver):
-    """A GenerativeIKSolver subclass which calls a Mixture Density Network"""
-
-    nn_model_type = "mdn"
-
-    def __init__(self, hyper_parameters: MDNParameters, robot_model: robots.RobotModel):
-        """Initialize a MDNSolver object"""
-        assert isinstance(hyper_parameters, MDNParameters)
-        nn_model = mdn_model(hyper_parameters.n_components, robot_model)
-        GenerativeIKSolver.__init__(self, MDNSolver.nn_model_type, nn_model, robot_model)
-
-    def make_samples(
-        self, y: List[float], m: int, rev_inputs: Optional[torch.Tensor] = None
-    ) -> Tuple[torch.Tensor, float]:
-        """
-        Run the network in reverse to generate samples conditioned on a pose y
-                y: endpose [x, y, z, q0, q1, q2, q3]
-                m: Number of samples
-        """
-        assert len(y) == self.dim_y
-        assert rev_inputs is None, "`rev_inputs` not implemented for MDN"
-        t0 = time()
-        conditional = torch.zeros(m, self.dim_y)
-        return self.nn_model.sample(conditional)[:, 0 : self.dim_x], time() - t0
