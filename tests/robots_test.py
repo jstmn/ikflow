@@ -59,6 +59,14 @@ class TestForwardKinematics(unittest.TestCase):
         return kinpy_fk, klampt_fk, (batch_fk_t.cpu().data.numpy(), batch_fk_R.cpu().data.numpy())
 
     # Tests
+    def test_x_q_conversion(self):
+        n_samples = 25
+        for robot in self.robots:
+            samples = robot.sample(n_samples)
+            qs = robot._x_to_qs(samples)
+            samples_post_conversion = robot._qs_to_x(qs)
+            np.testing.assert_almost_equal(samples, samples_post_conversion)
+
     def test_fk_functions_equal(self):
         """
         Test that kinpy, klampt, and batch_fk all return the same poses

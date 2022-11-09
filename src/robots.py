@@ -315,7 +315,7 @@ class RobotModel:
             if not res:
                 if verbosity > 0:
                     print(
-                        "inverse_kinematics_klampt() IK failed after",
+                        "  inverse_kinematics_klampt() IK failed after",
                         solver.lastSolveIters(),
                         "optimization steps, retrying (non fatal)",
                     )
