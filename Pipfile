@@ -71,7 +71,6 @@ tensorboard = "==2.9.1"
 tensorboard-data-server = "==0.6.1"
 tensorboard-plugin-wit = "==1.8.1"
 tomli = "==2.0.1"
-torch = "==1.12.0"
 torchmetrics = "==0.9.3"
 tqdm = "==4.64.0"
 transformations = "==2020.1.1"
@@ -84,6 +83,7 @@ wslink = "==1.6.6"
 yarl = "==1.8.1"
 zipp = "==3.8.1"
 freia = {subdirectory = "../../../thirdparty/FrEIA", editable = true, ref = "2717f6d07c0c92bb71d4d2ff441985da3cd17973", git = "https://github.com/VLL-HD/FrEIA.git"}
+torch = "==1.12.1"
 
 [dev-packages]
 

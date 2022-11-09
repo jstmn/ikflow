@@ -134,6 +134,11 @@ COUPLING_BLOCKS = {
 }
 
 
+def get_split_len(dim_total: int) -> int:
+    """ """
+    return dim_total // 2  # // is a floor division operator
+
+
 def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, robot_model: robots.RobotModel):
     """
     Build a nn_model consisting of a sequence of Glow coupling layers
@@ -174,7 +179,7 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
         self.split_len1 = self.channels // 2
         self.split_len2 = self.channels - self.channels // 2
     """
-    split_dimension = ndim_tot // 2  # // is a floor division operator
+    split_dimension = get_split_len(ndim_tot)
 
     permute_random = True
     if "permute_random_enabled" in params.__dict__:
@@ -237,6 +242,7 @@ class GenerativeIKSolver:
         nn_model: Union[MixtureDensityNetwork, Ff.ReversibleGraphNet],
         robot_model: robots.RobotModel,
         cuda_out_of_memory=False,
+        verbosity: int = 1,
     ):
         """Initialize a GenerativeIKSolver.
 
@@ -258,7 +264,8 @@ class GenerativeIKSolver:
             return
 
         self.n_parameters = sum(p.numel() for p in self.nn_model.parameters())
-        print(f"Created model of type '{self.nn_model_type}' ( w/ {self.n_parameters} parameters)")
+        if verbosity > 0:
+            print(f"Created model of type '{self.nn_model_type}' ( w/ {self.n_parameters} parameters)")
 
     @property
     def robot(self) -> KlamptRobotModel:
@@ -392,11 +399,14 @@ class IkflowSolver(GenerativeIKSolver):
 
     nn_model_type = "ikflow"
 
-    def __init__(self, hyper_parameters: IkflowModelParameters, robot_model: robots.RobotModel):
+    def __init__(self, hyper_parameters: IkflowModelParameters, robot_model: robots.RobotModel, verbosity: int = 1):
         """Initialize a IkflowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
+        assert hyper_parameters.dim_latent_space >= robot_model.dim_x, (
+            f"Latent space dimension ({hyper_parameters.dim_latent_space}) must be greater than the robots DoFs"
+            f" ({robot_model.dim_x})"
+        )
 
-        print(hyper_parameters)
         if hyper_parameters.softflow_enabled:
             self.dim_cond = robot_model.dim_y + 1
         else:
@@ -414,8 +424,15 @@ class IkflowSolver(GenerativeIKSolver):
                 cuda_out_of_memory = True
 
         GenerativeIKSolver.__init__(
-            self, IkflowSolver.nn_model_type, nn_model, robot_model, cuda_out_of_memory=cuda_out_of_memory
+            self,
+            IkflowSolver.nn_model_type,
+            nn_model,
+            robot_model,
+            cuda_out_of_memory=cuda_out_of_memory,
+            verbosity=verbosity,
         )
+        if verbosity > 0:
+            print(hyper_parameters)
 
     def make_samples(
         self,

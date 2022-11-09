@@ -85,15 +85,15 @@ python train.py \
 
 # Smoke test
 python train.py \
-    --robot_name=panda_arm2 \
-    --batch_size=16 \
+    --robot_name=valkyrie \
+    --batch_size=50 \
     --optimizer=ranger \
     --log_every=25 \
     --eval_every=100 \
     --val_set_size=100 \
+    --dim_latent_space=10 \
     --checkpoint_every=500 \
     --disable_wandb
-
 
 # Test the learning rate scheduler
 python train.py \
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     parser.add_argument("--zeros_noise_scale", type=float, default=DEFAULT_ZEROS_NOISE_SCALE)
 
     # Training parameters
-    parser.add_argument("--optimizer", type=str, default="ranger")
+    parser.add_argument("--optimizer", type=str, default="adamw")
     parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--gamma", type=float, default=DEFAULT_GAMMA)
     parser.add_argument("--learning_rate", type=float, default=DEFAULT_LR)

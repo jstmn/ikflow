@@ -1,7 +1,9 @@
 import argparse
+
 # Update sys.path so you can run this file from the projects root directory
 import sys
 import os
+
 sys.path.append(os.getcwd())
 
 from src.visualizations import oscillate_joints
@@ -31,7 +33,6 @@ if __name__ == "__main__":
     Working
         PandaArm
     """
-    
+
     robot = get_robot(args.robot_name)
     oscillate_joints(robot)
-    
