@@ -1,0 +1,3 @@
+[submodule "thirdparty/tracikpy"]
+	path = thirdparty/tracikpy
+	url = https://github.com/mjd3/tracikpy

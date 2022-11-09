@@ -10,7 +10,6 @@ from src.robots import RobotModel, PandaArm
 from src.math_utils import geodesic_distance_between_quaternions
 from src.utils import set_seed
 
-from tqdm import tqdm
 import torch
 import numpy as np
 
@@ -119,76 +118,15 @@ class TestInverseKinematics(unittest.TestCase):
         for robot in self.robots:
             self.ik_with_random_seed_test(robot, robot.inverse_kinematics_klampt, positional_tol=positional_tol)
 
-    # def test_tracik_ik_w_seed(self):
-    #     for robot in self.robots:
-    #         self.ik_with_seed_test(robot, robot.inverse_kinematics_tracik)
+    def test_tracik_ik_w_seed(self):
+        positional_tol = 1e-3
+        for robot in self.robots:
+            self.ik_with_seed_test(robot, robot.inverse_kinematics_tracik, positional_tol)
 
-    # def test_tracik_ik_w_random_seed(self):
-    #     for robot in self.robots:
-    #         self.ik_with_random_seed_test(robot, robot.inverse_kinematics_tracik)
-
-    # def test_ik_seeding(self):
-    #     wandb_run_name = tpms.TPMS["atlas_tpm"]["wandb_run_name"]
-    #     model_wrapper, hps = get_model_wrapper(wandb_run_name)
-
-    #     def randomize_klampt_robot_q():
-    #         # model_wrapper.robot_model._klampt_robot.randomizeConfig()
-    #         model_wrapper.robot_model._klampt_robot.setConfig(
-    #             model_wrapper.robot_model.x_to_qs(model_wrapper.robot_model.sample(1))[0]
-    #         )
-
-    #     # Randomly drawn poses are held fixed for a given batch_size
-    #     batch_size = 5
-    #     r_samples = model_wrapper.robot_model.sample(batch_size)
-    #     end_poses = model_wrapper.robot_model.forward_kinematics(r_samples)
-
-    #     with torch.inference_mode():
-    #         seeds, seed_runtime = model_wrapper.make_samples_mult_y(end_poses, latent_noise_scale=0.75)
-
-    #     seeds = seeds.cpu().numpy()
-    #     seeds += 0.001 * np.random.randn(seeds.shape[0], seeds.shape[1])
-    #     seeds_fk = model_wrapper.robot_model.forward_kinematics(seeds)
-
-    #     for i in range(batch_size):
-
-    #         print(f"\n_________\n{i}")
-
-    #         pose = end_poses[i]
-    #         seed = np.expand_dims(seeds[i, :], axis=0)
-
-    #         print("\npose:   ", pose)
-
-    #         # Set seed, if seeding is enabled
-    #         print("seed fk:      ", seeds_fk[i])
-    #         print("seed:         ", seed)
-    #         seed_l2_error = np.linalg.norm(seeds_fk[i, 0:3] - pose[0:3])
-    #         print("seed_l2_error:", 1000 * seed_l2_error, "mm")
-    #         print()
-    #         (
-    #             sols,
-    #             solution_n_iterations,
-    #             pre_solve_configs,
-    #             solution_n_retries,
-    #         ) = model_wrapper.robot_model.inverse_kinematics(pose, 1, seed=seed, return_stats=True)
-    #         sols_fk = model_wrapper.robot_model.forward_kinematics(sols)
-    #         l2_error = np.linalg.norm(sols_fk[0, 0:3] - pose[0:3])
-    #         print("sols:                 ", sols)
-    #         print("solution_n_iterations:", solution_n_iterations)
-    #         print("pre_solve_configs:    ", pre_solve_configs)
-    #         print("solution_n_retries:   ", solution_n_retries)
-    #         print("l2_error:             ", 1000 * l2_error, "mm")
-
-    #         # randomize_klampt_robot_q()
-
-    #         # print("\n Random seed:")
-    #         # sols, solution_n_iterations, pre_solve_configs, solution_n_retries = \
-    #         #     model_wrapper.robot_model.inverse_kinematics(pose, 1, return_stats=True)
-    #         # print("sols:                 ", sols)
-    #         # print("solution_n_iterations:", solution_n_iterations)
-    #         # print("pre_solve_configs:    ", pre_solve_configs)
-    #         # print("solution_n_retries:   ", solution_n_retries)
-    #         # l2_error = np.linalg.norm(sols_fk[0, 0:3] - pose[0:3])
-    #         # print("l2_error:", 1000* l2_error, "mm")
+    def test_tracik_ik_w_random_seed(self):
+        positional_tol = 1e-3
+        for robot in self.robots:
+            self.ik_with_random_seed_test(robot, robot.inverse_kinematics_tracik, positional_tol)
 
 
 if __name__ == "__main__":

@@ -6,16 +6,16 @@ sys.path.append(os.getcwd())
 
 import config
 from src.forward_kinematics import BatchFK, klampt_fk, kinpy_fk
-from src.math_utils import geodesic_distance_between_quaternions
+from src.math_utils import geodesic_distance_between_quaternions, xyzw_to_wxyz, wxyz_to_xyzw
 
 import torch
 import numpy as np
 import kinpy as kp
 import klampt
-
 from klampt import IKSolver
 from klampt.model import ik
 from klampt.math import so3
+from tracikpy import TracIKSolver
 
 
 def format_joint_limits(lower: List[float], upper: List[float]) -> List[Tuple[float, float]]:
@@ -82,6 +82,7 @@ class RobotModel:
         actuated_joints_limits: List[Tuple[float, float]],
         ndofs: int,
         end_effector_link_name: str,
+        base_link_name: str,
     ):
         assert len(end_effector_link_name) > 0, f"End effector link name '{end_effector_link_name}' is empty"
         assert len(actuated_joints) == len(actuated_joints_limits)
@@ -116,7 +117,7 @@ class RobotModel:
             self._kinpy_fk_chain = kp.build_chain_from_urdf(f.read().encode("utf-8"))
 
         # Initialize TRAC-IK
-        # self.tracik_solver = TracIKSolver(urdf_filepath, base_link_name, end_effector_link_name)
+        self.tracik_solver = TracIKSolver(urdf_filepath, base_link_name, end_effector_link_name)
 
         # Initialize the batched forward kinematics module
         self.batch_fk_calc = BatchFK(
@@ -254,6 +255,11 @@ class RobotModel:
     ) -> np.array:
         """Run IK using tracik
 
+        Altenative quaternion -> R conversion:
+            from scipy.spatial.transform import Rotation
+            r = Rotation.from_quat(wxyz_to_xyzw(pose[3:]))
+            T[0:3, 0:3] = r.as_matrix()
+
         Args:
             pose (np.array): The target pose to solve for
             seed (Optional[np.ndarray], optional): A seed to initialize the optimization with. Defaults to None.
@@ -262,14 +268,30 @@ class RobotModel:
         Returns:
             np.array: _description_
         """
-        return self.tracik_solver.ik(
-            pose, qinit=seed, bx=positional_tolerance, by=positional_tolerance, bz=positional_tolerance
-        )
+        # Note: I believe tracik uses (x, y, z, w) form for quaternions - imported from the math3d:: c++ library from
+        # here https://github.com/adragonite/math3d#quaternion
+        # klampt: w x y z
+        # scipy:  x y z w
+        # tracik: x y z w
+        # TODO(@jstmn): Consider reimplmenting quat->R in batch to speed up conversion time
+        n_tries = 50
+        T = np.eye(4)
+        T[0:3, 3] = pose[0:3]
+        R = so3.from_quaternion(pose[3:])
+        R_np = so3.ndarray(R)
+        T[0:3, 0:3] = R_np
+        for _ in range(n_tries):
+            sol = self.tracik_solver.ik(
+                T, qinit=seed, bx=positional_tolerance, by=positional_tolerance, bz=positional_tolerance
+            )
+            if sol is not None:
+                return sol.reshape(1, 7)
+        raise RuntimeError("inverse_kinematics_tracik() IK failed after", n_tries, "optimization attempts")
 
     def inverse_kinematics_klampt(
         self, pose: np.array, seed: Optional[np.ndarray] = None, positional_tolerance: float = 1e-3, verbosity: int = 0
     ) -> np.array:
-        """Run klampts inverse kinematics solver the given pose`
+        """Run klampts inverse kinematics solver with the given pose`
 
         Per http://motion.cs.illinois.edu/software/klampt/latest/pyklampt_docs/Manual-IK.html#ik-solver:
         'To use the solver properly, you must understand how the solver uses the RobotModel:
@@ -335,6 +357,8 @@ class RobotModel:
 # The robots
 #
 
+# TODO: Define `base_link_name` for all the robots
+
 
 class Atlas(RobotModel):
     name = "atlas"
@@ -380,6 +404,7 @@ class Atlas(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -418,6 +443,7 @@ class AtlasArm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -458,6 +484,7 @@ class Baxter(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
     def forward_kinematics_batch(self, x: torch.tensor, device=None) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -496,6 +523,7 @@ class PandaArm(RobotModel):
 
         urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm/panda.urdf"
         end_effector_link_name = "panda_hand"
+        base_link_name = "panda_link0"
 
         RobotModel.__init__(
             self,
@@ -506,6 +534,7 @@ class PandaArm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -555,6 +584,7 @@ class PandaArm2(RobotModel):
 
         urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm2/panda2.urdf"
         end_effector_link_name = "panda_link8"
+        base_link_name = "panda_link0"
 
         RobotModel.__init__(
             self,
@@ -565,6 +595,7 @@ class PandaArm2(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -621,6 +652,7 @@ class Pr2(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
     def forward_kinematics_batch(self, x: torch.tensor, device=None) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -682,6 +714,7 @@ class Robonaut2(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -738,6 +771,7 @@ class Robonaut2Arm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -797,6 +831,7 @@ class Valkyrie(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -834,6 +869,7 @@ class ValkyrieArm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 
@@ -887,6 +923,7 @@ class ValkyrieArmShoulder(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
+            base_link_name,
         )
 
 

@@ -4,6 +4,22 @@ import numpy as np
 import config
 
 
+def wxyz_to_xyzw(q: np.ndarray) -> np.ndarray:
+    """Convert a quaternion from wxyz to xyzw format"""
+    assert q.size == 4
+    # In:  w x y z
+    # Out: x y z w
+    return np.array([q[1], q[2], q[3], q[0]])
+
+
+def xyzw_to_wxyz(q: np.ndarray) -> np.ndarray:
+    """Convert a quaternion from xyzw to wxyz format"""
+    assert q.size == 4
+    # In:  x y z w
+    # Out: w x y z
+    return np.array([q[3], q[0], q[1], q[2]])
+
+
 def MMD_multiscale(x, y, c_list, a_list, reduce=True):
     """Example usage:
         MMD_multiscale(x0, x1, rev_kernel_width, reverse_loss_a, reduce=False)
