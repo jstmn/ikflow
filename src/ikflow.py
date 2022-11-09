@@ -118,4 +118,3 @@ class IkflowSolver:
         """Set the nn_models state_dict"""
         with open(state_dict_filename, "rb") as f:
             self.nn_model.load_state_dict(pickle.load(f))
-

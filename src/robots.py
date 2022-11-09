@@ -97,10 +97,10 @@ class RobotModel:
         self._actuated_joints_limits = actuated_joints_limits
 
         # Initialize klampt
-        # Note: Need to save `_klampt_wm` as a member variable otherwise you'll be doomed to get a segfault
-        self._klampt_wm = klampt.WorldModel()
-        assert self._klampt_wm.loadRobot(urdf_filepath), f"Error loading urdf '{urdf_filepath}'"
-        self._klampt_robot: klampt.robotsim.RobotModel = self._klampt_wm.robot(0)
+        # Note: Need to save `_klampt_world_model` as a member variable otherwise you'll be doomed to get a segfault
+        self._klampt_world_model = klampt.WorldModel()
+        assert self._klampt_world_model.loadRobot(urdf_filepath), f"Error loading urdf '{urdf_filepath}'"
+        self._klampt_robot: klampt.robotsim.RobotModel = self._klampt_world_model.robot(0)
         self._klampt_ee_link: klampt.robotsim.RobotModelLink = self._klampt_robot.link(self._end_effector_link_name)
         self._klampt_config_dim = len(self._klampt_robot.getConfig())
         self._klampt_active_dofs = self._get_klampt_active_dofs()
@@ -130,6 +130,10 @@ class RobotModel:
     @property
     def robot_name(self) -> str:
         return self._robot_name
+
+    @property
+    def end_effector_link_name(self) -> str:
+        return self._end_effector_link_name
 
     @property
     def ndofs(self) -> int:
@@ -325,6 +329,7 @@ class RobotModel:
             return self._qs_to_x([self._klampt_robot.getConfig()])
 
         raise RuntimeError("inverse_kinematics_klampt() IK failed after", n_tries, "optimization attempts")
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # The robots

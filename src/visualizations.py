@@ -28,7 +28,7 @@ def _run_demo(
 ):
     """Internal function for running a demo."""
 
-    worlds = [robot_model.world_model.copy() for _ in range(n_worlds)]
+    worlds = [robot_model._klampt_world_model.copy() for _ in range(n_worlds)]
 
     # TODO: Adjust terrain height for each robot
     if load_terrain:
@@ -72,7 +72,7 @@ def visualize_fk(ik_solver: IkflowSolver, solver="klampt"):
 
     def setup_fn(worlds):
         vis.add(f"robot", worlds[0].robot(0))
-        vis.setColor((f"robot", robot.endeff_link_name), 0, 1, 0, 0.7)
+        vis.setColor((f"robot", robot.end_effector_link_name), 0, 1, 0, 0.7)
 
         # Axis
         vis.add("coordinates", coordinates.manager())
@@ -82,18 +82,18 @@ def visualize_fk(ik_solver: IkflowSolver, solver="klampt"):
     from klampt.math import so3
 
     def loop_fn(worlds, _demo_state):
-        x_random = robot.robot_model.sample(1)
-        q_random = robot.robot_model.x_to_qs(x_random)
+        x_random = robot.sample(1)
+        q_random = robot._x_to_qs(x_random)
         worlds[0].robot(0).setConfig(q_random[0])
 
         if solver == "klampt":
-            fk = robot.robot_model.forward_kinematics_klampt(x_random)
+            fk = robot.forward_kinematics_klampt(x_random)
             ee_pose = fk[0, 0:7]
             vis.add("ee", (so3.from_quaternion(ee_pose[3:]), ee_pose[0:3]), length=0.15, width=2)
         else:
             # (B x 3*(n+1) )
             x_torch = torch.from_numpy(x_random).float().to(config.device)
-            fk = robot.robot_model.forward_kinematics_batch(x_torch)
+            fk = robot.forward_kinematics_batch(x_torch)
             ee_pose = fk[0, 0:3]
             vis.add("ee", (so3.identity(), ee_pose[0:3]), length=0.15, width=2)
 
@@ -114,7 +114,7 @@ def oscillate_latent(ik_solver: IkflowSolver):
     def setup_fn(worlds):
         vis.add(f"robot_1", worlds[1].robot(0))
         vis.setColor(f"robot_1", 1, 1, 1, 1)
-        vis.setColor((f"robot_1", robot.endeff_link_name), 1, 1, 1, 0.71)
+        vis.setColor((f"robot_1", robot.end_effector_link_name), 1, 1, 1, 0.71)
 
         # Axis
         vis.add("coordinates", coordinates.manager())
@@ -134,7 +134,7 @@ def oscillate_latent(ik_solver: IkflowSolver):
 
         # Get solutions to pose of random sample
         ik_solutions = ik_solver.make_samples(target_pose, 1, latent_noise=rev_input)[0]
-        qs = robot.x_to_qs(ik_solutions)
+        qs = robot._x_to_qs(ik_solutions)
         worlds[1].robot(0).setConfig(qs[0])
 
         # Update _demo_state
@@ -167,7 +167,7 @@ def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise
         for i in range(len(worlds)):
             vis.add(f"robot_{i}", worlds[i].robot(0))
             vis.setColor(f"robot_{i}", 1, 1, 1, 1)
-            vis.setColor((f"robot_{i}", robot.endeff_link_name), 1, 1, 1, 0.71)
+            vis.setColor((f"robot_{i}", robot.end_effector_link_name), 1, 1, 1, 0.71)
 
         # Axis
         vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
@@ -211,7 +211,7 @@ def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise
         _demo_state.ave_ang_error = np.rad2deg(np.mean(ang_errors))
 
         # Update viz with solutions
-        qs = robot.x_to_qs(ik_solutions)
+        qs = robot._x_to_qs(ik_solutions)
         for i in range(nb_sols):
             worlds[i].robot(0).setConfig(qs[i])
 
@@ -231,29 +231,29 @@ def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise
     )
 
 
-def random_target_pose(self, nb_sols=5):
+def random_target_pose(ik_solver: IkflowSolver, nb_sols=5):
     """Set the end effector to a randomly drawn pose. Generate and visualize `nb_sols` solutions for the pose"""
 
     def setup_fn(worlds):
         vis.add(f"robot_goal", worlds[0].robot(0))
         vis.setColor(f"robot_goal", 0.5, 1, 1, 0)
-        vis.setColor((f"robot_goal", self.endeff_link_name), 0, 1, 0, 0.7)
+        vis.setColor((f"robot_goal", ik_solver.end_effector_link_name), 0, 1, 0, 0.7)
 
         for i in range(1, nb_sols + 1):
             vis.add(f"robot_{i}", worlds[i].robot(0))
             vis.setColor(f"robot_{i}", 1, 1, 1, 1)
-            vis.setColor((f"robot_{i}", self.endeff_link_name), 1, 1, 1, 0.71)
+            vis.setColor((f"robot_{i}", ik_solver.end_effector_link_name), 1, 1, 1, 0.71)
 
     def loop_fn(worlds, _demo_state):
         # Get random sample
         random_sample = self.robot_model.sample(1)
-        random_sample_q = self.robot_model.x_to_qs(random_sample)
+        random_sample_q = self.robot_model._x_to_qs(random_sample)
         worlds[0].robot(0).setConfig(random_sample_q[0])
         target_pose = self.robot_model.forward_kinematics_klampt(random_sample)[0]
 
         # Get solutions to pose of random sample
         ik_solutions = self.ik_solver.make_samples(target_pose, nb_sols)[0]
-        qs = self.robot_model.x_to_qs(ik_solutions)
+        qs = self.robot_model._x_to_qs(ik_solutions)
         for i in range(nb_sols):
             worlds[i + 1].robot(0).setConfig(qs[i])
 
@@ -298,7 +298,7 @@ def oscillate_joints(robot: robots.RobotModel):
         if no_change:
             _demo_state.increasing = not _demo_state.increasing
 
-        q = robot.x_to_qs(np.array([_demo_state.q]))
+        q = robot._x_to_qs(np.array([_demo_state.q]))
         worlds[0].robot(0).setConfig(q[0])
 
     time_p_loop = 1 / 60  # 60Hz, in theory
