@@ -4,9 +4,9 @@ import os
 import config
 from time import time
 
-from src.training_parameters import IkflowModelParameters
-from src.ik_solvers import IkflowSolver
-from src.robots import get_robot, KlamptRobotModel
+from src.supporting_types import IkflowModelParameters
+from src.ikflow import IkflowSolver
+from src.robots import get_robot, RobotModel
 from src.lt_model import IkfLitModel, checkpoint_dir
 from src.lt_data import IkfLitDataset
 from src.utils import boolean_string
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     base_hparams.zeros_noise_scale = args.zeros_noise_scale
     base_hparams.softflow_enabled = boolean_string(args.softflow_enabled)
 
-    assert isinstance(robot, KlamptRobotModel), "Only 3d robots are supported for training currently"
+    assert isinstance(robot, RobotModel), "Only 3d robots are supported for training currently"
     robot.assert_batch_fk_equal()
     torch.autograd.set_detect_anomaly(True)
 

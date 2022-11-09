@@ -16,8 +16,3 @@ class IkflowModelParameters:
 
         self.softflow_noise_scale = 0.01
         self.softflow_enabled = True
-
-
-class MDNParameters:
-    def __init__(self):
-        self.n_components = 1

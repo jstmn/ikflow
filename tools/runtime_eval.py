@@ -6,8 +6,8 @@ import os
 
 sys.path.append(os.getcwd())
 
-from src.training_parameters import IkflowModelParameters
-from src.ik_solvers import IkflowSolver
+from src.supporting_types import IkflowModelParameters
+from src.ikflow import IkflowSolver
 from src.robots import get_robot
 
 import torch

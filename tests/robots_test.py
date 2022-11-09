@@ -6,10 +6,9 @@ import sys
 sys.path.append(os.getcwd())
 
 from src.robots import get_all_3d_robots
-from src.robots import KlamptRobotModel
-from src.training_parameters import IkflowModelParameters
+from src.robots import RobotModel
 from src.utils import decimal_range
-from tests.gt_kinematics_data import get_gt_samples_and_endpoints
+from tests.ground_truth_kinematics_data import get_gt_samples_and_endpoints
 
 from src.math_utils import geodesic_distance_between_quaternions
 
@@ -40,7 +39,7 @@ class TestForwardKinematics(unittest.TestCase):
             self.assertLess(rotational_errors[i], threshold)
 
     def get_fk_poses(
-        self, robot: KlamptRobotModel, samples: np.array, verbose=False
+        self, robot: RobotModel, samples: np.array, verbose=False
     ) -> Tuple[np.array, np.array, Tuple[np.array, np.array]]:
         """Return fk solutions calculated by kinpy, klampt, and batch_fk"""
         kinpy_fk = robot.forward_kinematics_kinpy(samples)
@@ -100,7 +99,7 @@ class TestForwardKinematics(unittest.TestCase):
 
     def test_each_dimension_actuated(self):
         """
-        Test that each dimension in dim_x is actuated. This is done by asserting that there is either a positional
+        Test that each dimension in ndofs is actuated. This is done by asserting that there is either a positional
         or rotational change of the end effector when there is a change along each dimension of x
         """
         print("\n___\ntest_each_dimension_actuated()")
@@ -116,9 +115,9 @@ class TestForwardKinematics(unittest.TestCase):
             # Iterate through each sample
             for sample_i in range(n_samples):
                 # For each sample, iterate through the number of joints
-                for joint_i in range(robot.dim_x):
+                for joint_i in range(robot.ndofs):
                     for offset in decimal_range(-np.pi, np.pi, 1.5):
-                        pertubation = np.zeros(robot.dim_x)
+                        pertubation = np.zeros(robot.ndofs)
                         pertubation[joint_i] = offset
                         sample = np.array([samples[sample_i, :] + pertubation])
                         fk_i = robot.forward_kinematics_kinpy(sample)

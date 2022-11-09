@@ -4,7 +4,7 @@ import os
 
 import config
 from src.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
-from src.robots import get_robot, RobotModel, KlamptRobotModel, RobotModel2d
+from src.robots import get_robot, RobotModel
 
 import numpy as np
 import torch
@@ -92,15 +92,10 @@ def save_dataset_to_disk(
 
     # Build testset
     te_samples = robot.sample(test_set_size, solver=solver)
-    if isinstance(robot, KlamptRobotModel):
-        te_endpoints = endpoints_from_samples_3d(te_samples)
-    elif isinstance(robot, RobotModel2d):
-        te_endpoints = robot.forward_kinematics(te_samples)
-    else:
-        raise ValueError(f"robot: {robot} / {type(robot)} not recognized")
+    te_endpoints = endpoints_from_samples_3d(te_samples)
 
-    samples = np.zeros((training_set_size, robot.dim_x))
-    end_points = np.zeros((training_set_size, robot.dim_y))
+    samples = np.zeros((training_set_size, robot.ndofs))
+    end_points = np.zeros((training_set_size, 7))
 
     # Build training set
     iterator = range(0, training_set_size, INTERNAL_BATCH_SIZE)
@@ -109,14 +104,7 @@ def save_dataset_to_disk(
 
     for i in iterator:
         samples_i = robot.sample(INTERNAL_BATCH_SIZE)
-
-        if isinstance(robot, KlamptRobotModel):
-            end_points_i = endpoints_from_samples_3d(samples_i)
-        elif isinstance(robot, RobotModel2d):
-            end_points_i = robot.forward_kinematics(samples_i)
-        else:
-            raise ValueError("ummmm.... case not handled")
-
+        end_points_i = endpoints_from_samples_3d(samples_i)
         samples[i : i + INTERNAL_BATCH_SIZE] = samples_i
         end_points[i : i + INTERNAL_BATCH_SIZE] = end_points_i
 
@@ -167,8 +155,6 @@ def save_dataset_to_disk(
 python build_dataset.py --robot_name=panda_arm --training_set_size=2500000
 python build_dataset.py --robot_name=panda_arm2 --training_set_size=2500000
 python build_dataset.py --robot_name=valkyrie --training_set_size=10000000
-python build_dataset.py --robot_name=planar_3dof --training_set_size=100000
-
 """
 
 

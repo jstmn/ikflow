@@ -6,10 +6,10 @@ import random
 from time import time
 import pickle
 
-from src.robots import KlamptRobotModel, RobotModel, get_robot
+from src.robots import RobotModel, RobotModel, get_robot
 import config
-from src.ik_solvers import IkflowSolver, GenerativeIKSolver
-from src.training_parameters import IkflowModelParameters
+from src.ikflow import IkflowSolver, IkflowSolver
+from src.supporting_types import IkflowModelParameters
 from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 
 import numpy as np
@@ -24,20 +24,20 @@ from wandb.wandb_run import Run
 
 
 def get_solution_errors(
-    robot_model: KlamptRobotModel, solutions: Union[torch.Tensor, np.ndarray], target_pose: np.ndarray
+    robot_model: RobotModel, solutions: Union[torch.Tensor, np.ndarray], target_pose: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Return the L2 and angular errors of calculated ik solutions for a given target_pose. Note: this function expects
     multiple solutions but only a single target_pose. All of the solutions are assumed to be for the given target_pose
 
     Args:
-        robot_model (KlamptRobotModel): The KlamptRobotModel which contains the FK function we will use
+        robot_model (RobotModel): The RobotModel which contains the FK function we will use
         solutions (Union[torch.Tensor, np.ndarray]): [n x 7] IK solutions for the given target pose
         target_pose (np.ndarray): [7] the target pose the IK solutions were generated for
 
     Returns:
         Tuple[np.ndarray, np.ndarray]: The L2, and angular (rad) errors of IK solutions for the given target_pose
     """
-    ee_pose_ikflow = robot_model.forward_kinematics(solutions[:, 0 : robot_model.dim_x].cpu().detach().numpy())
+    ee_pose_ikflow = robot_model.forward_kinematics(solutions[:, 0 : robot_model.ndofs].cpu().detach().numpy())
 
     # Positional Error
     l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_pose[0:3], axis=1)
@@ -67,7 +67,7 @@ def get_dataset_directory(robot: str):
 
 def get_ik_solver(
     model_weights_filepath: str, robot_name: str, model_hyperparameters: Dict
-) -> Tuple[GenerativeIKSolver, IkflowModelParameters]:
+) -> Tuple[IkflowSolver, IkflowModelParameters]:
     """Build and return a `IkflowSolver` using the model weights saved in the file `model_weights_filepath` for the
     given robot and with the given hyperparameters
 
@@ -77,7 +77,7 @@ def get_ik_solver(
         model_hyperparameters (Dict): The hyperparameters used for the NN
 
     Returns:
-        Tuple[GenerativeIKSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
+        Tuple[IkflowSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
                                                             `IkflowModelParameters` parameters object
     """
     assert os.path.isfile(
@@ -85,7 +85,7 @@ def get_ik_solver(
     ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
     robot_model = get_robot(robot_name)
 
-    # Build GenerativeIKSolver and set weights
+    # Build IkflowSolver and set weights
     hyper_parameters = IkflowModelParameters()
     hyper_parameters.__dict__.update(model_hyperparameters)
     ik_solver = IkflowSolver(hyper_parameters, robot_model)

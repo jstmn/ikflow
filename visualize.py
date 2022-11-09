@@ -43,7 +43,7 @@ if __name__ == "__main__":
     robot_name = MODEL_DESCRIPTIONS[args.model_name]["robot_name"]
     hparams = MODEL_DESCRIPTIONS[args.model_name]
 
-    # Build GenerativeIKSolver and set weights
+    # Build IkflowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
 
     fn = getattr(visualizations, args.demo_name)

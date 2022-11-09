@@ -5,10 +5,10 @@ import sys
 sys.path.append(os.getcwd())
 
 import config
-from src.ik_solvers import IkflowSolver
+from src.ikflow import IkflowSolver
 from src.robots import get_robot
 from src.lt_model import IkfLitModel
-from src.training_parameters import IkflowModelParameters
+from src.supporting_types import IkflowModelParameters
 
 import torch
 
@@ -28,10 +28,10 @@ class LitModelTest(unittest.TestCase):
     def test_gradient_calculated(self):
         batch_size = 10
         batch = (
-            torch.randn((batch_size, self.ik_solver.dim_x)).to(config.device),
-            torch.randn((batch_size, self.ik_solver.dim_y)).to(config.device),
+            torch.randn((batch_size, self.ik_solver.robot.ndofs)).to(config.device),
+            torch.randn((batch_size, 7)).to(config.device),
         )
-        fixed_latent_noise = torch.randn((5, self.ik_solver.dim_tot)).to(config.device)
+        fixed_latent_noise = torch.randn((5, self.ik_solver.network_width)).to(config.device)
         zero_response0 = self.ik_solver.make_samples([0] * 7, m=5, latent_noise=fixed_latent_noise)[0]
         optimizer = torch.optim.Adadelta(self.model.nn_model.parameters(), lr=self.model.hparams.learning_rate)
 

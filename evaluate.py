@@ -5,10 +5,12 @@ import os
 
 sys.path.append(os.getcwd())
 
-from src.ik_solvers import GenerativeIKSolver
+from src.ikflow import IkflowSolver
 from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from src.utils import get_ik_solver, set_seed, get_solution_errors
+from src.robots import get_robot
 import config
+
 
 from tqdm import tqdm
 import torch
@@ -22,7 +24,7 @@ with open("model_descriptions.yaml", "r") as f:
 
 
 def error_stats(
-    ik_solver: GenerativeIKSolver,
+    ik_solver: IkflowSolver,
     testset: np.ndarray,
     latent_noise_distribution: str,
     latent_noise_scale: float,
@@ -31,7 +33,7 @@ def error_stats(
     """Evaluate the given `ik_solver` on the provided `testset`.
 
     Args:
-        ik_solver (GenerativeIKSolver): _description_
+        ik_solver (IkflowSolver): _description_
         testset (np.ndarray): _description_
         latent_noise_distribution (str): _description_
         latent_noise_scale (float): _description_
@@ -69,17 +71,11 @@ python evaluate.py \
     --n_samples_for_runtime=512 \
     --model_name=panda2_lite 
 
-
 python evaluate.py \
     --samples_per_pose=50 \
     --testset_size=500 \
     --n_samples_for_runtime=512 \
     --model_name=panda_tpm 
-
-	Average L2 error:      3.738 mm
-	Average angular error: 0.6555 deg
-	Average runtime:       6.6501 +/- 0.0006 ms (for 100 samples)
-
 
 python evaluate.py \
     --samples_per_pose=50 \
@@ -117,16 +113,17 @@ if __name__ == "__main__":
         robot_name = MODEL_DESCRIPTIONS[model_name]["robot_name"]
         hparams = MODEL_DESCRIPTIONS[model_name]
 
-        # Build GenerativeIKSolver and set weights
+        # Build IkflowSolver and set weights
         ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
+        robot_model = get_robot(robot_name)
 
         # Get latent distribution parameters
         latent_noise_distribution = "gaussian"
         latent_noise_scale = 0.75
 
         # Calculate final L2 error
-        samples = ik_solver.robot_model.sample(args.testset_size)
-        testset = ik_solver.robot_model.forward_kinematics(samples)
+        samples = robot_model.sample(args.testset_size)
+        testset = robot_model.forward_kinematics(samples)
         ave_l2_error, ave_angular_error = error_stats(
             ik_solver, testset, latent_noise_distribution, latent_noise_scale, args.samples_per_pose
         )

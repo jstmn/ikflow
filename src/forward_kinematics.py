@@ -1,4 +1,4 @@
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
@@ -6,14 +6,12 @@ import torch
 import numpy as np
 
 import kinpy as kp
-from klampt.math import so3, se3
+from klampt.math import so3
 import klampt
 
 import config
 from src.math_utils import R_from_rpy_batch, R_from_axis_angle
 from kinpy.chain import Chain
-
-# from kinpy.chain import Chain
 
 
 class Link:
@@ -278,7 +276,7 @@ class BatchFK:
 
 
 def kinpy_fk(
-    kinpy_fk_chain: Chain, actuated_joints: List[str], end_effector_link_name: str, dim_x: int, x: np.array
+    kinpy_fk_chain: Chain, actuated_joints: List[str], end_effector_link_name: str, ndofs: int, x: np.array
 ) -> np.array:
     """
     Returns the pose of the end effector for each joint parameter setting in x
@@ -295,7 +293,7 @@ def kinpy_fk(
         fk_dict[joint_name] = 0.0
 
     def get_fk_dict(xs):
-        for i in range(dim_x):
+        for i in range(ndofs):
             fk_dict[actuated_joints[i]] = xs[i]
         return fk_dict
 
@@ -331,49 +329,5 @@ def klampt_fk(
         R, t = klampt_end_effector_link.getTransform()
         y[i, 0:3] = np.array(t)
         y[i, 3:] = np.array(so3.quaternion(R))
-
-    return y
-
-
-def klampt_fk_w_l2_loss_pts(
-    klampt_robot: klampt.RobotModel,
-    klampt_end_effector_link: klampt.RobotModelLink,
-    robot_configs: List[List[float]],
-    l2_loss_pts: List[Tuple[float, float, float]],
-) -> np.array:
-    """
-    Returns the pose of the end effector for each joint parameter setting in x. Forward kinemaitcs calculated with
-    klampt
-    """
-    dim_y = 7
-    n = len(robot_configs)
-    n_loss_pts = len(l2_loss_pts)
-    n_poses_per_sample = 1 + n_loss_pts
-    y = np.zeros((n, dim_y * n_poses_per_sample))
-
-    # Get ee_T_l2_loss_pts
-    ee_T_l2lps = []
-    for l2lp in l2_loss_pts:
-        ee_T_l2lp = ([1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0], l2lp)
-        ee_T_l2lps.append(ee_T_l2lp)
-
-    for i in range(n):
-        q = robot_configs[i]
-        klampt_robot.setConfig(q)
-
-        world_T_ee = klampt_end_effector_link.getTransform()
-        R, t = world_T_ee
-
-        y[i, 0:3] = np.array(t)
-        y[i, 3 : 3 + 4] = np.array(so3.quaternion(R))
-
-        for j in range(len(l2_loss_pts)):
-            root_idx = 7 * (1 + j)
-
-            world_T_l2lp = se3.mul(world_T_ee, ee_T_l2lps[j])
-            R_j, t_j = world_T_l2lp
-
-            y[i, root_idx + 0 : root_idx + 3] = t_j
-            y[i, root_idx + 3 : root_idx + 3 + 4] = np.array(so3.quaternion(R_j))
 
     return y

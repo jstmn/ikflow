@@ -4,9 +4,9 @@ import os
 import config
 from time import time
 
-from src.training_parameters import IkflowModelParameters
-from src.ik_solvers import IkflowSolver
-from src.robots import get_robot, KlamptRobotModel
+from src.supporting_types import IkflowModelParameters
+from src.ikflow import IkflowSolver
+from src.robots import get_robot
 from src.lt_model import IkfLitModel, checkpoint_dir
 from src.lt_data import IkfLitDataset
 from src.utils import boolean_string

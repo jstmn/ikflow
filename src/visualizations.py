@@ -2,7 +2,7 @@ from typing import List, Callable, Any
 from time import time, sleep
 from dataclasses import dataclass
 
-from src.ik_solvers import GenerativeIKSolver
+from src.ikflow import IkflowSolver
 import config
 from src import robots
 from src.utils import get_solution_errors
@@ -16,7 +16,7 @@ import torch.optim
 
 
 def _run_demo(
-    robot_model: robots.KlamptRobotModel,
+    robot_model: robots.RobotModel,
     n_worlds: int,
     setup_fn: Callable[[List[WorldModel]], None],
     loop_fn: Callable[[List[WorldModel], Any], None],
@@ -59,7 +59,7 @@ def _run_demo(
 """
 
 
-def visualize_fk(ik_solver: GenerativeIKSolver, solver="klampt"):
+def visualize_fk(ik_solver: IkflowSolver, solver="klampt"):
     """Set the robot to a random config. Visualize the poses returned by fk"""
 
     assert solver in ["klampt", "batch_fk"]
@@ -87,13 +87,13 @@ def visualize_fk(ik_solver: GenerativeIKSolver, solver="klampt"):
         worlds[0].robot(0).setConfig(q_random[0])
 
         if solver == "klampt":
-            fk = robot.robot_model.forward_kinematics_klampt(x_random, with_l2_loss_pts=True)
+            fk = robot.robot_model.forward_kinematics_klampt(x_random)
             ee_pose = fk[0, 0:7]
             vis.add("ee", (so3.from_quaternion(ee_pose[3:]), ee_pose[0:3]), length=0.15, width=2)
         else:
             # (B x 3*(n+1) )
             x_torch = torch.from_numpy(x_random).float().to(config.device)
-            fk = robot.robot_model.forward_kinematics_batch(x_torch, with_l2_loss_pts=True)
+            fk = robot.robot_model.forward_kinematics_batch(x_torch)
             ee_pose = fk[0, 0:3]
             vis.add("ee", (so3.identity(), ee_pose[0:3]), length=0.15, width=2)
 
@@ -103,7 +103,7 @@ def visualize_fk(ik_solver: GenerativeIKSolver, solver="klampt"):
     _run_demo(robot, n_worlds, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
 
 
-def oscillate_latent(ik_solver: GenerativeIKSolver):
+def oscillate_latent(ik_solver: IkflowSolver):
     """Fixed end pose, oscillate through the latent space"""
 
     n_worlds = 2
@@ -122,14 +122,14 @@ def oscillate_latent(ik_solver: GenerativeIKSolver):
         vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
 
     target_pose = np.array([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0])
-    rev_input = torch.zeros(1, ik_solver.dim_tot).to(config.device)
+    rev_input = torch.zeros(1, ik_solver.network_width).to(config.device)
 
     @dataclass
     class DemoState:
         counter: int
 
     def loop_fn(worlds, _demo_state):
-        for i in range(ik_solver.dim_tot):
+        for i in range(ik_solver.network_width):
             rev_input[0, i] = 0.25 * np.cos(_demo_state.counter / 25) - 0.1 * np.cos(_demo_state.counter / 250)
 
         # Get solutions to pose of random sample
@@ -150,7 +150,7 @@ def oscillate_latent(ik_solver: GenerativeIKSolver):
 
 
 # TODO(@jeremysm): Add/flesh out plots. Consider plotting each solutions x, or error
-def oscillate_target_pose(ik_solver: GenerativeIKSolver, nb_sols=5, fixed_latent_noise=True):
+def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise=True):
     """Oscillating target pose"""
 
     initial_target_pose = np.array([0, 0.5, 0.25, 1.0, 0.0, 0.0, 0.0])
@@ -158,7 +158,7 @@ def oscillate_target_pose(ik_solver: GenerativeIKSolver, nb_sols=5, fixed_latent
     title = "Solutions for oscillating target pose"
     latent = None
     if fixed_latent_noise:
-        latent = torch.randn((nb_sols, ik_solver.dim_tot)).to(config.device)
+        latent = torch.randn((nb_sols, ik_solver.network_width)).to(config.device)
 
     robot = ik_solver.robot
 
@@ -266,7 +266,7 @@ def random_target_pose(self, nb_sols=5):
     self._run_demo(nb_sols + 1, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
 
 
-def oscillate_joints(robot: robots.KlamptRobotModel):
+def oscillate_joints(robot: robots.RobotModel):
     """Set the end effector to a randomly drawn pose. Generate and visualize `nb_sols` solutions for the pose"""
 
     inc = 0.01
@@ -283,7 +283,7 @@ def oscillate_joints(robot: robots.KlamptRobotModel):
 
     def loop_fn(worlds, _demo_state):
         no_change = True
-        for i in range(robot.dim_x):
+        for i in range(robot.ndofs):
             joint_limits = robot.actuated_joints_limits[i]
             if _demo_state.increasing:
                 if _demo_state.q[i] < joint_limits[1]:
