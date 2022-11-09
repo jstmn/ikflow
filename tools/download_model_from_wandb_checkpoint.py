@@ -11,13 +11,12 @@ import wandb
 import torch
 
 
-
 def format_state_dict(state_dict: Dict) -> Dict:
-    """ The `state_dict` saved in checkpoints will have keys with the form:
-            "nn_model.module_list.0.M", "nn_model.module_list.0.M_inv", ...
+    """The `state_dict` saved in checkpoints will have keys with the form:
+        "nn_model.module_list.0.M", "nn_model.module_list.0.M_inv", ...
 
-        This function updates them to the expected format below. (note the 'nn_model' prefix is removed)
-            "module_list.0.M", "module_list.0.M_inv", ...
+    This function updates them to the expected format below. (note the 'nn_model' prefix is removed)
+        "module_list.0.M", "module_list.0.M_inv", ...
     """
     bad_prefix = "nn_model."
     len_prefix = len(bad_prefix)
@@ -27,9 +26,10 @@ def format_state_dict(state_dict: Dict) -> Dict:
         assert k[0:len_prefix] == bad_prefix
 
         k_new = k[len_prefix:]
-        updated[k_new] = v 
+        updated[k_new] = v
         print(k_new)
     return updated
+
 
 """
 _____________
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     t0 = time()
     api = wandb.Api()
-    artifact = api.artifact(f'{wandb_entity}/{wandb_project}/model-{args.wandb_run_id}:best_k')
+    artifact = api.artifact(f"{wandb_entity}/{wandb_project}/model-{args.wandb_run_id}:best_k")
     download_dir = artifact.download()
     print(f"Downloaded artifact in {round(time()- t0, 2)}s")
 
@@ -79,4 +79,3 @@ if __name__ == "__main__":
     model_state_dict_filepath = os.path.join(f"trained_models/{robot_name}-{run_name}.pkl")
     with open(model_state_dict_filepath, "wb") as f:
         pickle.dump(state_dict, f)
-

@@ -20,5 +20,6 @@ class IkSolverTest(unittest.TestCase):
             self.assertGreaterEqual(split_dim, 0)
             self.assertLess(split_dim, dim_total)
 
+
 if __name__ == "__main__":
     unittest.main()

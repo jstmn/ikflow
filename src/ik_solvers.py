@@ -205,6 +205,7 @@ def glow_nn_model(params: IkflowModelParameters, dim_cond: int, ndim_tot: int, r
     model.to(config.device)
     return model
 
+
 def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, latent_noise_scale, shape):
     """Draw a sample from the latent noise distribution for running inference"""
     assert latent_noise_distribution in ["gaussian", "uniform"]
@@ -225,7 +226,7 @@ class GenerativeIKSolver:
     def __init__(
         self,
         nn_model_type: str,
-        nn_model: Union[MixtureDensityNetwork, Ff.ReversibleGraphNet],
+        nn_model: Union[Ff.ReversibleGraphNet],
         robot_model: robots.RobotModel,
         cuda_out_of_memory=False,
         verbosity: int = 1,

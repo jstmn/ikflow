@@ -6,9 +6,7 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 
 ## Setup - Ubuntu
 
-TODO: Add instructions for running on Mac
-
-**Install python3.8 (for ubuntu 22+**)
+**> Install python3.8 (for ubuntu 22+**)
 ```
 sudo apt update && sudo apt upgrade
 sudo apt install software-properties-common -y
@@ -17,7 +15,7 @@ sudo apt update
 sudo apt install python3.8 -y
 ```
 
-**Install base ubuntu dependencies**
+**> Install base ubuntu dependencies**
 
 Note: `qt5-default` is not in the apt repository for Ubuntu 21.0+ so can't be installed. 
 See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04. Therefor, if running Ubuntu `> 21.0`:
@@ -25,32 +23,25 @@ See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04. The
 sudo apt-get install -y build-essential qtcreator python3.8-dev python3-pip python3.8-venv git-lfs 
 sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libosmesa6
 export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visualization script in a new terminal - annoying, I know
-git lfs pull origin master # Download pretrained models
 ```
 
 Otherwise if running Ubuntu `< 21`:
 ```
 sudo apt-get install build-essential qtcreator qt5-default python3.8-dev python3.8-venv git-lfs
-git lfs pull origin master # Download pretrained models
 ```
 
-**Create a virtual environment**
+**> Download pretrained models**
+```bash
+git lfs pull origin master
+```
+
+**> Create a virtual environment**
 ```
 python3.8 -m pip install --user virtualenv
-python3.8 -m venv venv
-source venv/bin/activate
-pip install wheel
+python3.8 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-git submodule init; git submodule update # Install git submodules
-cd thirdparty/FrEIA && python setup.py develop && cd ../../ # Install thirdparty libraries
 ```
 
-**Build datasets**
-
-This will build a dataset for the Frank Panda arm.  
-```
-python build_dataset.py --robot_name=panda_arm --training_set_size=2500000
-```
 
 ## Examples
 
@@ -74,7 +65,12 @@ Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ip
 
 The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to setup and perform the training and [Weights and Biases](https://wandb.ai/) ('wandb') to track training runs and experiments. WandB isn't required for training but it's what this project is designed around. Changing the code to use Tensorboard should be straightforward (so feel free to put in a pull request for this if you want it :)).
 
-Typical workflow:
+First, create a dataset for the robot:
+```
+python build_dataset.py --robot_name=panda_arm --training_set_size=2500000
+```
+
+Then start a training run:
 ```
 # Login to wandb account - Only needs to be run once
 wandb login
@@ -82,6 +78,17 @@ wandb login
 # Set wandb project name and entity
 export WANDB_PROJECT=ikflow 
 export WANDB_ENTITY=<your wandb entity name>
+
+python train.py \
+    --robot_name=panda_arm \
+    --nb_nodes=8 \
+    --dim_latent_space=7 \
+    --batch_size=128 \
+    --learning_rate=0.0001 \
+    --log_every=5000 \
+    --eval_every=10000 \
+    --val_set_size=500 \
+    --run_description="baseline"
 ```
 
 ## Add a trained model to the repo
