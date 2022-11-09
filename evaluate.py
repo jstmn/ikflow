@@ -67,6 +67,13 @@ python evaluate.py \
     --samples_per_pose=50 \
     --testset_size=500 \
     --n_samples_for_runtime=512 \
+    --model_name=panda2_lite 
+
+
+python evaluate.py \
+    --samples_per_pose=50 \
+    --testset_size=500 \
+    --n_samples_for_runtime=512 \
     --model_name=panda_tpm 
 
 	Average L2 error:      3.738 mm

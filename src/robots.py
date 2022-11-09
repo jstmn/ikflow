@@ -140,33 +140,6 @@ class RobotModel:
             angs[:, i] += joint_limits[i][0]
         return angs
 
-    def joint_limit_delta_valid(self, limit_increase: float, debug=False):
-        """Return whether the rotation limits are valid for each joint, in a change of `delta` is
-        applied to their lower and upper limits. See `DATASET_TAG` in data.py for further notes on this
-
-        Check that 1. The limit delta is positive, and 2. the limit delta is not more than 2*pi
-        """
-        # TODO(@jeremysmorgan)
-        for idx, (l, u) in enumerate(self.actuated_joints_limits):
-            l -= limit_increase
-            u += limit_increase
-            joint_range = u - l
-
-            if debug:
-                print(f"joint_{idx}: {(l, u)}\t range: {joint_range}")
-            if joint_range < 0:
-                if debug:
-                    print(f"joint_range < 0, returning False")
-                return False
-            if joint_range > 2 * np.pi:
-                if debug:
-                    print(f"joint_range  > 2*np.pi")
-        return True
-
-    def visualize(self):
-        """Visualize the robot. Function should be implemented by subclass"""
-        raise NotImplementedError()
-
     @abstractmethod
     def forward_kinematics(self, x: np.array) -> np.array:
         """Forward kinematics"""
@@ -313,18 +286,6 @@ class KlamptRobotModel(RobotModel):
                 active_dofs.append(idx)
         assert len(active_dofs) == self.dim_x, f"len(active_dofs): {len(active_dofs)} != self.dim_x: {self.dim_x}"
         return active_dofs
-
-    def visualize_kinpy(self):
-        """ """
-        th = {}
-        # for joint in self.actuated_joints:
-        # 	th[joint] = np.pi / 2
-        ret = self.kinpy_fk_chain.forward_kinematics(th)
-        print(ret)
-        viz = kp.Visualizer()
-        mesh_file_path = "/".join(self.urdf_filepath.split(".urdf")[0].split("/")[0:-1])
-        viz.add_robot(ret, self.kinpy_fk_chain.visuals_map(), axes=True, mesh_file_path=mesh_file_path)
-        viz.spin()
 
     def x_to_qs(self, x: np.ndarray) -> List[List[float]]:
         """Return a list of configurations from an array of joint angles
@@ -481,11 +442,6 @@ class RobotModel2d(RobotModel):
 
     def __init__(self, robot_name: str, actuated_joints_limits: List[Tuple[float, float]], dim_x: int, verbosity=1):
         super().__init__(robot_name, actuated_joints_limits, dim_x, RobotModel2d.dim_y, verbosity=verbosity)
-
-    def visualize(self):
-        """Visualize the robot"""
-        # TODO(@jeremysm): Implement visualization
-        raise NotImplementedError()
 
     @staticmethod
     def jacobian(self, thetas: np.array) -> np.array:
@@ -1635,10 +1591,4 @@ def robot_name_to_fancy_robot_name(name: str) -> str:
 
 if __name__ == "__main__":
     for robot in get_all_3d_robots():
-        print(f"visualizeing robot: {robot.name}")
-        robot.visualize()
-        try:
-            robot.visualize_kinpy()
-        except ValueError as e:
-            print("error visualizing with kinpy")
-            print(e)
+        pass

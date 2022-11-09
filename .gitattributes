@@ -2,3 +2,4 @@ trained_models/atlas_desert-sweep-6.pkl filter=lfs diff=lfs merge=lfs -text
 trained_models/panda_lucky-pond-7642.pkl filter=lfs diff=lfs merge=lfs -text
 trained_models/robonaut2_cosmic-sound-9761.pkl filter=lfs diff=lfs merge=lfs -text
 trained_models/valkyrie_vital-sweep-16.pkl filter=lfs diff=lfs merge=lfs -text
+trained_models/panda_arm2-sweet-armadillo-69.pkl filter=lfs diff=lfs merge=lfs -text

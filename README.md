@@ -84,6 +84,15 @@ export WANDB_PROJECT=ikflow
 export WANDB_ENTITY=<your wandb entity name>
 ```
 
+## Add a trained model to the repo
+
+1. Train a model `python train.py ...`. Note down the wandb run id (it should look like '1zkh9zfo')
+2. Download model with `python tools/download_model_from_wandb_checkpoint.py --wandb_run_id=<run_id>`
+3. Add the model to git lfs `git lfs track trained_models/*.pkl`
+4. Add an entry for the model to 'model_descriptions.yaml' using a new alias `<new_alias>`
+5. Use the model `python evaluate.py --model_name=<new_alias>`
+```
+
 
 ## Common errors
 

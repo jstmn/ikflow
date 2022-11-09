@@ -29,9 +29,15 @@ import matplotlib.pyplot as plt
 VERBOSE = False
 
 
-def subnet_constructor(internal_size: int, n_layers: int, ch_in: int, ch_out: int):
-    """Create a coefficient network"""
+def subnet_constructor(internal_size: int, n_layers: int, ch_in: int, ch_out: int) -> nn.Sequential:
+    """Create a MLP with width `internal_size`, depth `n_layers`, and input/output sizes of `ch_in`, `ch_out`
 
+    Args:
+        internal_size (int): Internal width of the network
+        n_layers (int): Depth of the MLP
+        ch_in (int): Input dimension of the MLP
+        ch_out (int): Output dimension of the MLP
+    """
     assert n_layers in [1, 2, 3, 4, 5, 6, 7], "Number of layers `n_layers` must be in [1, ..., 7]"
 
     if n_layers == 1:

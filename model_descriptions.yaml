@@ -27,6 +27,18 @@ panda_tpm:
   robot_name:             'panda_arm'
   model_weights_filepath: 'trained_models/panda_lucky-pond-7642.pkl'
 
+panda2_lite:
+  coupling_layer:         'glow'
+  nb_nodes:               8
+  dim_latent_space:       9
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  # softflow_enabled:       False
+  robot_name:             'panda_arm2'
+  model_weights_filepath: 'trained_models/panda_arm2-sweet-armadillo-69.pkl'
+
+
 # Note: from joint limit test. Update with smaller model
 # Average L2 error:      6.8762 mm
 # Average angular error: 7.5261 deg

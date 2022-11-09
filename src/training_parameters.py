@@ -1,8 +1,4 @@
-from typing import Dict
-from src.supporting_types import Config
-
-
-class IkflowModelParameters(Config):
+class IkflowModelParameters:
     def __init__(self):
         self.coupling_layer = "glow"
         self.nb_nodes = 12
@@ -21,10 +17,7 @@ class IkflowModelParameters(Config):
         self.softflow_noise_scale = 0.01
         self.softflow_enabled = True
 
-        Config.__init__(self, "IkflowModelParameters")
 
-
-class MDNParameters(Config):
+class MDNParameters:
     def __init__(self):
         self.n_components = 1
-        Config.__init__(self, "MDNParameters")
