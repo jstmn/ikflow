@@ -61,7 +61,7 @@ class TestForwardKinematics(unittest.TestCase):
     # Tests
     def test_x_q_conversion(self):
         n_samples = 25
-        for robot in self.robots:
+        for robot in ALL_3D_ROBOTS:
             samples = robot.sample(n_samples)
             qs = robot._x_to_qs(samples)
             samples_post_conversion = robot._qs_to_x(qs)
