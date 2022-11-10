@@ -251,8 +251,13 @@ class RobotModel:
     # ---                                                                                                            ---
 
     def inverse_kinematics_tracik(
-        self, pose: np.array, seed: Optional[np.ndarray] = None, positional_tolerance: float = 1e-3, verbosity: int = 0
-    ) -> np.array:
+        self,
+        pose: np.array,
+        seed: Optional[np.ndarray] = None,
+        positional_tolerance: float = 1e-3,
+        n_tries: int = 50,
+        verbosity: int = 0,
+    ) -> Optional[np.array]:
         """Run IK using tracik
 
         Altenative quaternion -> R conversion:
@@ -263,35 +268,66 @@ class RobotModel:
         Args:
             pose (np.array): The target pose to solve for
             seed (Optional[np.ndarray], optional): A seed to initialize the optimization with. Defaults to None.
-            verbosity (int): Set the verbosity of the function. 0: only fatal errors are printed. Defaults to 0.
+            verbosity (int): Set the verbosity of the function. 1: only fatal errors are printed. Defaults to 0.
 
         Returns:
             np.array: _description_
         """
-        # Note: I believe tracik uses (x, y, z, w) form for quaternions - imported from the math3d:: c++ library from
-        # here https://github.com/adragonite/math3d#quaternion
+        if seed is not None:
+            assert isinstance(seed, np.ndarray), f"seed must be a numpy array (currently {type(seed)})"
+            assert len(seed.shape) == 1, f"Seed must be a 1D array (currently: {seed.shape})"
+            assert seed.size == self.ndofs
+        # Note: tracik uses (x, y, z, w) form for quaternions - imported from the math3d:: c++ library from
+        # here https://github.com/adragonite/math3d#quaternion (I think)
         # klampt: w x y z
         # scipy:  x y z w
         # tracik: x y z w
         # TODO(@jstmn): Consider reimplmenting quat->R in batch to speed up conversion time
-        n_tries = 50
+
         T = np.eye(4)
         T[0:3, 3] = pose[0:3]
         R = so3.from_quaternion(pose[3:])
         R_np = so3.ndarray(R)
         T[0:3, 0:3] = R_np
+
+        # Run `n_tries` times
         for _ in range(n_tries):
             sol = self.tracik_solver.ik(
                 T, qinit=seed, bx=positional_tolerance, by=positional_tolerance, bz=positional_tolerance
             )
             if sol is not None:
                 return sol.reshape(1, 7)
-        raise RuntimeError("inverse_kinematics_tracik() IK failed after", n_tries, "optimization attempts")
+
+            if verbosity > 0:
+                print("  inverse_kinematics_tracik() IK failed retrying (non fatal)")
+
+            if seed is not None:
+                if verbosity > 0:
+                    print("inverse_kinematics_tracik() - Failed to find IK solution - trying again with a random seed")
+                return self.inverse_kinematics_tracik(
+                    pose, seed=None, positional_tolerance=positional_tolerance, verbosity=verbosity
+                )
+
+        if verbosity > 0:
+            print(
+                "inverse_kinematics_tracik() - Failed to find IK solution after",
+                n_tries,
+                "optimization attempts for pose:",
+                pose,
+            )
+        return None
 
     def inverse_kinematics_klampt(
-        self, pose: np.array, seed: Optional[np.ndarray] = None, positional_tolerance: float = 1e-3, verbosity: int = 0
-    ) -> np.array:
-        """Run klampts inverse kinematics solver with the given pose`
+        self,
+        pose: np.array,
+        seed: Optional[np.ndarray] = None,
+        positional_tolerance: float = 1e-3,
+        n_tries: int = 50,
+        verbosity: int = 0,
+    ) -> Optional[np.array]:
+        """Run klampts inverse kinematics solver with the given pose
+
+        Note: If the solver fails to find a solution with the provided seed, it will rerun with a random seed
 
         Per http://motion.cs.illinois.edu/software/klampt/latest/pyklampt_docs/Manual-IK.html#ik-solver:
         'To use the solver properly, you must understand how the solver uses the RobotModel:
@@ -306,13 +342,12 @@ class RobotModel:
         """
         assert len(pose.shape) == 1
         assert pose.size == 7
-
-        if isinstance(seed, np.ndarray):
+        if seed is not None:
+            assert isinstance(seed, np.ndarray), f"seed must be a numpy array (currently {type(seed)})"
             assert len(seed.shape) == 1, f"Seed must be a 1D array (currently: {seed.shape})"
             assert seed.size == self.ndofs
             seed_q = self._x_to_qs(seed.reshape((1, self.ndofs)))[0]
 
-        n_tries = 50
         max_iterations = 150
         R = so3.from_quaternion(pose[3 : 3 + 4])
         obj = ik.objective(self._klampt_ee_link, t=pose[0:3].tolist(), R=R)
@@ -341,6 +376,13 @@ class RobotModel:
                         solver.lastSolveIters(),
                         "optimization steps, retrying (non fatal)",
                     )
+
+                # Rerun the solver with a random seed
+                if seed is not None:
+                    return self.inverse_kinematics_klampt(
+                        pose, seed=None, positional_tolerance=positional_tolerance, verbosity=verbosity
+                    )
+
                 continue
 
             if verbosity > 1:
@@ -350,7 +392,9 @@ class RobotModel:
 
             return self._qs_to_x([self._klampt_robot.getConfig()])
 
-        raise RuntimeError("inverse_kinematics_klampt() IK failed after", n_tries, "optimization attempts")
+        if verbosity > 0:
+            print("inverse_kinematics_tracik() - Failed to find IK solution after", n_tries, "optimization attempts")
+        return None
 
 
 # ----------------------------------------------------------------------------------------------------------------------

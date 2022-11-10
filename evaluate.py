@@ -6,10 +6,8 @@ import os
 sys.path.append(os.getcwd())
 
 from src.ikflow import IkflowSolver
-from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from src.utils import get_ik_solver, set_seed, get_solution_errors
 from src.robots import get_robot
-import config
 
 
 from tqdm import tqdm

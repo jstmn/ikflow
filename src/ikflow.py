@@ -107,7 +107,7 @@ class IkflowSolver:
         conditional[:, 0:7] = ys
         conditional = conditional.to(config.device)
         shape = (m, self.network_width)
-        latent_noise = draw_latent_noise(latent_noise, latent_noise_scale, shape)
+        latent_noise = draw_latent_noise(latent_noise, latent_noise_distribution, latent_noise_scale, shape)
         assert latent_noise.shape[0] == m
         assert latent_noise.shape[1] == self.network_width
         t0 = time()

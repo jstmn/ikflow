@@ -28,7 +28,7 @@ def calculate_ave_runtime(ik_solver: IkflowSolver, n_samples: int):
     # Calculate average runtime for 100 samples
     sample_times = []
     with torch.inference_mode():
-        for i in range(50):
+        for i in range(30):
             pose = np.random.random(7)
             sample_times.append(
                 ik_solver.make_samples(
