@@ -1,5 +1,4 @@
-from typing import List, Tuple, Optional
-import os
+from typing import List, Tuple, Optional, Union
 import pickle
 from time import time
 
@@ -38,11 +37,45 @@ class IkflowSolver:
         self.network_width = hyper_parameters.dim_latent_space
         self.nn_model = glow_cNF_model(hyper_parameters, robot_model, self.dim_cond, self.network_width)
         self.ndofs = robot_model.ndofs
-        self._robot_model = robot_model
+        self.robot_model = robot_model
 
-    @property
-    def robot(self) -> RobotModel:
-        return self._robot_model
+    # TODO(@jstmn): Unit test this function
+    def refine_solutions(
+        self,
+        ikflow_solutions: torch.Tensor,
+        target_pose: Union[List[float], np.ndarray],
+        positional_tolerance: float = 1e-3,
+    ) -> Tuple[torch.Tensor, float]:
+        """Refine a batch of IK solutions using the klampt IK solver
+        Args:
+            ikflow_solutions (torch.Tensor): A batch of IK solutions of the form [batch x ndofs]
+            target_pose (Union[List[float], np.ndarray]): The target endpose(s). Must either be of the form
+                                                            [x, y, z, q0, q1, q2, q3] or be a [batch x 7] numpy array
+        Returns:
+            torch.Tensor: A batch of IK refined solutions [batch x ndofs]
+        """
+        t0 = time()
+        b = ikflow_solutions.shape[0]
+        if isinstance(target_pose, list):
+            target_pose = np.array(target_pose)
+        if isinstance(target_pose, np.ndarray) and len(target_pose.shape) == 2:
+            assert target_pose.shape[0] == b, f"target_pose.shape ({target_pose.shape[0]}) != [{b} x {self.ndofs}]"
+
+        ikflow_solutions_np = ikflow_solutions.detach().cpu().numpy()
+        refined = ikflow_solutions_np.copy()
+        is_single_pose = (len(target_pose.shape) == 1) or (target_pose.shape[0] == 1)
+        pose = target_pose
+
+        for i in range(b):
+            if not is_single_pose:
+                pose = target_pose[i]
+            ik_sol = self.robot_model.inverse_kinematics_klampt(
+                pose, seed=ikflow_solutions_np[i], positional_tolerance=positional_tolerance
+            )
+            if ik_sol is not None:
+                refined[i] = ik_sol
+
+        return torch.from_numpy(refined).to(config.device), time() - t0
 
     def make_samples(
         self,
@@ -51,9 +84,9 @@ class IkflowSolver:
         latent_noise: Optional[torch.Tensor] = None,
         latent_noise_distribution: str = "gaussian",
         latent_noise_scale: float = 1,
+        refine_solutions: bool = False,
     ) -> Tuple[torch.Tensor, float]:
         """Run the network in reverse to generate samples conditioned on a pose y
-
         Args:
             y (List[float]): Target endpose of the form [x, y, z, q0, q1, q2, q3]
             m (int): The number of samples to draw
@@ -70,6 +103,7 @@ class IkflowSolver:
         """
         assert len(y) == 7
         assert latent_noise_distribution in ["gaussian", "uniform"]
+        t0 = time()
 
         # (:, 0:3) is x, y, z, (:, 3:7) is quat
         conditional = torch.zeros(m, self.dim_cond)
@@ -82,9 +116,13 @@ class IkflowSolver:
         )
         assert latent_noise.shape[0] == m
         assert latent_noise.shape[1] == self.network_width
-        t0 = time()
-        output_rev, jac = self.nn_model(latent_noise, c=conditional, rev=True)
-        return output_rev[:, 0 : self.ndofs], time() - t0
+        output_rev, _ = self.nn_model(latent_noise, c=conditional, rev=True)
+        solutions = output_rev[:, 0 : self.ndofs]
+        runtime = time() - t0
+        if not refine_solutions:
+            return solutions, runtime
+        refined, refinement_runtime = self.refine_solutions(solutions, y)
+        return refined, runtime + refinement_runtime
 
     def make_samples_mult_y(
         self,
@@ -92,27 +130,31 @@ class IkflowSolver:
         latent_noise: Optional[torch.Tensor] = None,
         latent_noise_distribution: str = "gaussian",
         latent_noise_scale: float = 1,
+        refine_solutions: bool = False,
     ) -> Tuple[torch.Tensor, float]:
         """Same as make_samples, but for multiple ys.
-
         ys: [batch x 7]
         """
         assert ys.shape[1] == 7
-
-        ys = torch.FloatTensor(ys)
+        t0 = time()
         m = ys.shape[0]
 
         # Note: No code change required here to handle using/not using softflow.
         conditional = torch.zeros(m, self.dim_cond)
-        conditional[:, 0:7] = ys
+        conditional[:, 0:7] = torch.FloatTensor(ys)
         conditional = conditional.to(config.device)
-        shape = (m, self.network_width)
-        latent_noise = draw_latent_noise(latent_noise, latent_noise_distribution, latent_noise_scale, shape)
+        latent_noise = draw_latent_noise(
+            latent_noise, latent_noise_distribution, latent_noise_scale, (m, self.network_width)
+        )
         assert latent_noise.shape[0] == m
         assert latent_noise.shape[1] == self.network_width
-        t0 = time()
-        output_rev, jac = self.nn_model(latent_noise, c=conditional, rev=True)
-        return output_rev[:, 0 : self.ndofs], time() - t0
+        output_rev, _ = self.nn_model(latent_noise, c=conditional, rev=True)
+        solutions = output_rev[:, 0 : self.ndofs]
+        runtime = time() - t0
+        if not refine_solutions:
+            return solutions, runtime
+        refined, refinement_runtime = self.refine_solutions(solutions, ys)
+        return refined, runtime + refinement_runtime
 
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""

@@ -1,19 +1,18 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import argparse
-import sys
+import yaml
 import os
+import sys
+from time import time
 
 sys.path.append(os.getcwd())
 
 from src.ikflow import IkflowSolver
+from src.robots import RobotModel, get_robot
 from src.utils import get_ik_solver, set_seed, get_solution_errors
-from src.robots import get_robot
 
-
-from tqdm import tqdm
 import torch
 import numpy as np
-import yaml
 
 set_seed()
 
@@ -23,12 +22,16 @@ with open("model_descriptions.yaml", "r") as f:
 
 def error_stats(
     ik_solver: IkflowSolver,
+    robot: RobotModel,
     testset: np.ndarray,
     latent_noise_distribution: str,
     latent_noise_scale: float,
     samples_per_pose: int,
+    refine_solutions: bool,
 ) -> Tuple[float, float]:
     """Evaluate the given `ik_solver` on the provided `testset`.
+
+    NOTE: Returns L2 error in millimeters and angular error in degrees
 
     Args:
         ik_solver (IkflowSolver): _description_
@@ -53,12 +56,41 @@ def error_stats(
                 samples_per_pose,
                 latent_noise_distribution=latent_noise_distribution,
                 latent_noise_scale=latent_noise_scale,
+                refine_solutions=refine_solutions,
             )
-            l2_errors, ang_errors = get_solution_errors(ik_solver.robot, samples, ee_pose_target)
+            l2_errors, ang_errors = get_solution_errors(robot, samples, ee_pose_target)
             l2_errs.append(l2_errors)
             ang_errs.append(ang_errors)
+    return 1000 * np.mean(l2_errs), float(np.rad2deg(np.mean(ang_errors)))
 
-    return np.mean(l2_errs), np.mean(ang_errors)
+
+def runtime_stats(ik_solver: IkflowSolver, n_solutions: int, k: int, refine_solutions: bool) -> Tuple[float, float]:
+    """Collect runtime statistics for the given `ik_solver`. NOTE: Returns runtime in milliseconds
+
+    Returns:
+        Tuple[float, float]: Mean, std of the runtime
+    """
+    sample_times = []
+    poses = ik_solver.robot_model.forward_kinematics_klampt(ik_solver.robot_model.sample(n_solutions * k))
+    with torch.inference_mode():
+        for k_i in range(k):
+            target_poses = poses[k_i * n_solutions : (k_i + 1) * n_solutions]
+            assert target_poses.shape == (n_solutions, 7)
+            t0 = time()
+            ik_solver.make_samples_mult_y(target_poses, refine_solutions=refine_solutions)[1]
+            sample_times.append(time() - t0)
+    return np.mean(sample_times) * 1000, np.std(sample_times)
+
+
+def pp_results(title, mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n):
+    print(f"\n----------------------------------------")
+    print(f"> {title}")
+    print(f"\n    Average L2 error:      {round(mean_l2_error, 4)} mm")
+    print(f"    Average angular error: {round(mean_angular_error, 4)} deg")
+    print(
+        f"    Average runtime:       {round(mean_runtime, 4)} +/- {round(runtime_std, 4)} ms (for {runtime_n} samples)"
+    )
+    print(f"                           {round(mean_runtime/runtime_n, 4)} ms per solution")
 
 
 """ Usage 
@@ -67,18 +99,25 @@ python evaluate.py \
     --samples_per_pose=50 \
     --testset_size=500 \
     --n_samples_for_runtime=512 \
-    --model_name=panda2_lite 
+    --model_name=panda_tpm
 
-python evaluate.py \
-    --samples_per_pose=50 \
-    --testset_size=500 \
-    --n_samples_for_runtime=512 \
-    --model_name=panda_tpm 
+Expected output:
+    ----------------------------------------
+    > IKFlow with solution refinement
 
-python evaluate.py \
-    --samples_per_pose=50 \
-    --testset_size=50 \
-    --all
+        Average L2 error:      0.6555 mm
+        Average angular error: 0.6084 deg
+        Average runtime:       66.3345 +/- 0.0062 ms (for 512 samples)
+                            0.1296 ms per solution
+
+    ----------------------------------------
+    > Vanilla IKFlow
+
+        Average L2 error:      7.645 mm
+        Average angular error: 1.2644 deg
+        Average runtime:       10.8963 +/- 0.001 ms (for 512 samples)
+                            0.0213 ms per solution
+    Done
 """
 
 if __name__ == "__main__":
@@ -102,7 +141,11 @@ if __name__ == "__main__":
     else:
         model_names = [model_name for model_name in MODEL_DESCRIPTIONS]
 
-    results = []
+    # Get latent distribution parameters
+    latent_noise_distribution = "gaussian"
+    latent_noise_scale = 0.75
+    runtime_n = args.n_samples_for_runtime
+
     for model_name in model_names:
         print("\n-------------")
         print(f"Evaluating model '{model_name}'")
@@ -114,42 +157,38 @@ if __name__ == "__main__":
         # Build IkflowSolver and set weights
         ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
         robot_model = get_robot(robot_name)
+        testset = robot_model.forward_kinematics_klampt(robot_model.sample(args.testset_size))
 
-        # Get latent distribution parameters
-        latent_noise_distribution = "gaussian"
-        latent_noise_scale = 0.75
-
-        # Calculate final L2 error
-        samples = robot_model.sample(args.testset_size)
-        testset = robot_model.forward_kinematics(samples)
-        ave_l2_error, ave_angular_error = error_stats(
-            ik_solver, testset, latent_noise_distribution, latent_noise_scale, args.samples_per_pose
+        # ------------------------
+        # With solution refinement
+        #
+        mean_l2_error, mean_angular_error = error_stats(
+            ik_solver,
+            robot_model,
+            testset,
+            latent_noise_distribution,
+            latent_noise_scale,
+            args.samples_per_pose,
+            refine_solutions=True,
         )
-        ave_l2_error = ave_l2_error * 1000  # to millimeters
-        ave_angular_error = float(np.rad2deg(ave_angular_error))  # to degrees
-
-        # Calculate average runtime for 100 samples
-        sample_times = []
-        n_samples = args.n_samples_for_runtime
-        with torch.inference_mode():
-            for i in range(50):
-                pose = np.random.random(7)
-                sample_times.append(
-                    ik_solver.make_samples(
-                        pose,
-                        n_samples,
-                        latent_noise_distribution=latent_noise_distribution,
-                        latent_noise_scale=latent_noise_scale,
-                    )[1]
-                )
-        sample_time_100 = 1000 * np.mean(sample_times)  # to milleseconds
-        sample_time_100_std = np.std(sample_times)
-
-        print(f"\n\tAverage L2 error:      {round(ave_l2_error, 4)} mm")
-        print(f"\tAverage angular error: {round(ave_angular_error, 4)} deg")
-        print(
-            f"\tAverage runtime:       {round(sample_time_100, 4)} +/- {round(sample_time_100_std, 4)} ms (for"
-            f" {n_samples} samples)"
+        mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=True)
+        pp_results(
+            "IKFlow with solution refinement", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n
         )
+
+        # ---------------------------
+        # Without solution refinement
+        #
+        mean_l2_error, mean_angular_error = error_stats(
+            ik_solver,
+            robot_model,
+            testset,
+            latent_noise_distribution,
+            latent_noise_scale,
+            args.samples_per_pose,
+            refine_solutions=False,
+        )
+        mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=False)
+        pp_results("Vanilla IKFlow", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n)
 
     print("Done")

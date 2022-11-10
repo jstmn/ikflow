@@ -75,6 +75,10 @@ def get_ik_solver(
         Tuple[IkflowSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
                                                             `IkflowModelParameters` parameters object
     """
+    assert isinstance(robot_name, str), f"robot_name must be a string, got {type(robot_name)}"
+    assert isinstance(
+        model_hyperparameters, dict
+    ), f"model_hyperparameters must be a Dict, got {type(model_hyperparameters)}"
     assert os.path.isfile(
         model_weights_filepath
     ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
