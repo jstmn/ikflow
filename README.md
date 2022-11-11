@@ -4,17 +4,19 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
-# Setup - Ubuntu
+## Setup - Ubuntu
 
 The only supported OS is Ubuntu. Everything should work in theory on Mac and Windows, I just haven't tried it out. For 
 Ubuntu, there are different system wide dependencies for `Ubuntu > 21` and `Ubuntu < 21`. For example, `qt5-default` is 
 not in the apt repository for Ubuntu 21.0+ so can't be installed. See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04.
 
-### Install version specific dependencies
-**> Ubuntu >= 21.04**
+### 1. Install version specific dependencies
+<ins>Ubuntu >= 21.04</ins>
+<!-- #### Ubuntu >= 21.04 -->
+<!-- **Ubuntu >= 21.04** -->
 
-Install python3.8
 <!-- 1. Install python3.8 -->
+Install python3.8
 ```
 sudo apt update && sudo apt upgrade
 sudo apt install software-properties-common -y
@@ -23,34 +25,34 @@ sudo apt update
 sudo apt install python3.8 -y
 ```
 
-Install base ubuntu dependencies
 <!-- 2. Install base ubuntu dependencies -->
+Install base ubuntu dependencies
 ```
 sudo apt-get install -y python3-pip qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libosmesa6
 export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visualization script in a new terminal - annoying, I know
 ```
 
-**> Ubuntu <= 20.x.y**
-(This includes 20.04 LTS, 18.04 LTS, ...)
+<ins>Ubuntu <= 20.x.y</ins>
+<!-- #### Ubuntu <= 20.x.y -->
+<!-- **Ubuntu <= 20.x.y** -->
 <!-- 1. Install base ubuntu dependencies -->
+(This includes 20.04 LTS, 18.04 LTS, ...)
 ```
 sudo apt-get install qt5-default   
 ```
 
-### Install common dependencies
+### 2. Install common dependencies
 These installation steps are the same regardless of ubuntu version
 
-**> Install dependencies**
+Install dependencies:
 ```
 sudo apt-get install -y build-essential qtcreator python3.8-dev python3.8-venv git-lfs 
 ```
-
-**> Download pretrained models**
+Download pretrained models:
 ```bash
 git lfs pull origin master
 ```
-
-**> Create a virtual environment**
+Create a virtual environment:
 ```
 python3.8 -m pip install --user virtualenv
 python3.8 -m venv venv && source venv/bin/activate
@@ -63,7 +65,7 @@ cd thirdparty/ && pip install tracikpy/
 ```
 
 
-# Getting started
+## Getting started
 
 **> Example 1: Use IKFlow to generate IK solutions for the Franka Panda arm**
 Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper. Note that the value for `model_name` - in this case `panda_tpm` should match an entry in `model_descriptions.yaml` 
@@ -92,11 +94,11 @@ solution, solution_runtime = ik_solver.make_samples(target_pose, number_of_solut
 ```
 
 
-# Notes
+## Notes
 This project uses the `w,x,y,z` format for quaternions. That is all.
 
 
-# Training new models
+## Training new models
 
 The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to setup and perform the training and [Weights and Biases](https://wandb.ai/) ('wandb') to track training runs and experiments. WandB isn't required for training but it's what this project is designed around. Changing the code to use Tensorboard should be straightforward (so feel free to put in a pull request for this if you want it :)).
 
@@ -135,7 +137,7 @@ python train.py \
 
 
 
-# Common errors
+## Common errors
 
 1. Pickle error when loading a pretrained model from gitlfs. This happens when the pretrained models haven't been downloaded by gitlfs. For example, they may be 134 bytes (they should be 100+ mb). Run `git lfs pull origin master` 
 ```
@@ -180,14 +182,14 @@ import matplotlib
 matplotlib.use("Agg")
 ```
 
-# TODO
+## TODO
 1. [ ] ~~Add CPU versions of pretrained model~~
 2. [ ] Add 'light' pretrained models. These are smaller networks for faster inference
 3. [ ] ~~Include a batched jacobian optimizer to enable parallelized solution refinement.~~ Note: This is in the works in a seperate repository
 
 
 
-# Citation
+## Citation
 ```
 @ARTICLE{9793576,
   author={Ames, Barrett and Morgan, Jeremy and Konidaris, George},
