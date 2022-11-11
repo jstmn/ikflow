@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Build IkflowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
     robot_model = get_robot(robot_name)
-        
+
     """SINGLE TARGET-POSE
 
     The following code is for when you want to run IKFlow on a single target poses. In this example we are getting 

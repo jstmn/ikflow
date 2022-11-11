@@ -4,9 +4,17 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
-## Setup - Ubuntu
+# Setup - Ubuntu
 
-**> Install python3.8 (for ubuntu 22+**)
+The only supported OS is Ubuntu. Everything should work in theory on Mac and Windows, I just haven't tried it out. For 
+Ubuntu, there are different system wide dependencies for `Ubuntu > 21` and `Ubuntu < 21`. For example, `qt5-default` is 
+not in the apt repository for Ubuntu 21.0+ so can't be installed. See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04.
+
+### Install version specific dependencies
+**> Ubuntu >= 21.04**
+
+Install python3.8
+<!-- 1. Install python3.8 -->
 ```
 sudo apt update && sudo apt upgrade
 sudo apt install software-properties-common -y
@@ -15,19 +23,26 @@ sudo apt update
 sudo apt install python3.8 -y
 ```
 
-**> Install base ubuntu dependencies**
-
-Note: `qt5-default` is not in the apt repository for Ubuntu 21.0+ so can't be installed. 
-See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04. Therefor, if running Ubuntu `> 21.0`:
+Install base ubuntu dependencies
+<!-- 2. Install base ubuntu dependencies -->
 ```
-sudo apt-get install -y build-essential qtcreator python3.8-dev python3-pip python3.8-venv git-lfs 
-sudo apt-get install -y qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libosmesa6
+sudo apt-get install -y python3-pip qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libosmesa6
 export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visualization script in a new terminal - annoying, I know
 ```
 
-Otherwise if running Ubuntu `< 21`:
+**> Ubuntu <= 20.x.y**
+(This includes 20.04 LTS, 18.04 LTS, ...)
+<!-- 1. Install base ubuntu dependencies -->
 ```
-sudo apt-get install build-essential qtcreator qt5-default python3.8-dev python3.8-venv git-lfs
+sudo apt-get install qt5-default   
+```
+
+### Install common dependencies
+These installation steps are the same regardless of ubuntu version
+
+**> Install dependencies**
+```
+sudo apt-get install -y build-essential qtcreator python3.8-dev python3.8-venv git-lfs 
 ```
 
 **> Download pretrained models**
@@ -48,23 +63,18 @@ cd thirdparty/ && pip install tracikpy/
 ```
 
 
+# Getting started
 
-
-## Notes
-This project uses the `w,x,y,z` format for quaternions. That is all.
-
-
-## Examples
-
-Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper.
+**> Example 1: Use IKFlow to generate IK solutions for the Franka Panda arm**
+Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper. Note that the value for `model_name` - in this case `panda_tpm` should match an entry in `model_descriptions.yaml` 
 ```
 python evaluate.py \
-    --samples_per_pose=50 \
-    --testset_size=25 \
+    --testset_size=500 \
     --model_name=panda_tpm
 ```
 
-Visualize the solutions returned by the `panda_tpm` model:
+**> Example 2: Visualize the solutions returned by the `panda_tpm` model**
+Run the following:
 ```
 python visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
 ```
@@ -72,7 +82,21 @@ python visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
 
 Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ipynb`
 
-## Training new models
+**> Example 3: Run IKFlow yourself**
+
+Example code for how to run IKFlow is provided in `examples/example.py`. A sample excerpt:
+```
+target_pose = np.array([0.5, 0.5, 0.5, 1, 0, 0, 0])
+number_of_solutions = 3
+solution, solution_runtime = ik_solver.make_samples(target_pose, number_of_solutions, refine_solutions=False)
+```
+
+
+# Notes
+This project uses the `w,x,y,z` format for quaternions. That is all.
+
+
+# Training new models
 
 The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to setup and perform the training and [Weights and Biases](https://wandb.ai/) ('wandb') to track training runs and experiments. WandB isn't required for training but it's what this project is designed around. Changing the code to use Tensorboard should be straightforward (so feel free to put in a pull request for this if you want it :)).
 
@@ -102,17 +126,16 @@ python train.py \
     --run_description="baseline"
 ```
 
-## Add a trained model to the repo
-
+**> Add a trained model to the repo**
 1. Train a model `python train.py ...`. Note down the wandb run id (it should look like '1zkh9zfo')
 2. Download model with `python tools/download_model_from_wandb_checkpoint.py --wandb_run_id=<run_id>`
 3. Add the model to git lfs `git lfs track trained_models/*.pkl`
 4. Add an entry for the model to 'model_descriptions.yaml' using a new alias `<new_alias>`
 5. Use the model `python evaluate.py --model_name=<new_alias>`
-```
 
 
-## Common errors
+
+# Common errors
 
 1. Pickle error when loading a pretrained model from gitlfs. This happens when the pretrained models haven't been downloaded by gitlfs. For example, they may be 134 bytes (they should be 100+ mb). Run `git lfs pull origin master` 
 ```
@@ -157,14 +180,14 @@ import matplotlib
 matplotlib.use("Agg")
 ```
 
-## TODO
-1. [ ] Add CPU versions of pretrained model
+# TODO
+1. [ ] ~~Add CPU versions of pretrained model~~
 2. [ ] Add 'light' pretrained models. These are smaller networks for faster inference
-3. [ ] Include a batched jacobian optimizer to enable parallelized solution refinement   
+3. [ ] ~~Include a batched jacobian optimizer to enable parallelized solution refinement.~~ Note: This is in the works in a seperate repository
 
 
 
-## Citation
+# Citation
 ```
 @ARTICLE{9793576,
   author={Ames, Barrett and Morgan, Jeremy and Konidaris, George},

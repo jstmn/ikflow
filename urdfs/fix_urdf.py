@@ -3,8 +3,7 @@ import xml.etree.ElementTree as ET
 
 
 def remove_elements(tree, element_types):
-    """ Remove elements if their type is in `element_types`
-    """
+    """Remove elements if their type is in `element_types`"""
     print("in remove_transmission()")
     root = tree.getroot()
     rm_elements = []
@@ -17,22 +16,21 @@ def remove_elements(tree, element_types):
 
 
 def update_mesh_paths(tree):
-    """ Update the mesh filenames from package://... to meshes/...
-    """
+    """Update the mesh filenames from package://... to meshes/..."""
     print("in update_mesh_paths()")
 
     def updated_filename(filename):
         # NOTE: May need to replace 'meshes/' this for specific robot urdfs
         mesh_idx = filename.index("meshes/")
-        filename =  filename[mesh_idx:]
+        filename = filename[mesh_idx:]
         if filename.endswith("DAE"):
-            updated = filename[0:-3] + "STL" 
+            updated = filename[0:-3] + "STL"
             print(f"Converting mesh filename from '{filename}' to '{updated}'")
             return updated
 
     root = tree.getroot()
 
-    # Note: `materials/` not copied over for pr2_description 
+    # Note: `materials/` not copied over for pr2_description
     for mesh_element in root.iter("mesh"):
         mesh_filename = mesh_element.get("filename")
         updated = updated_filename(mesh_filename)
@@ -41,14 +39,14 @@ def update_mesh_paths(tree):
 
 
 def update_joint_types(tree, prismatic_joints, continuous_joints, revolute_joints):
-    """ Set all joints to fixed. Then set all joints in `prismatic_joints` to prismatic, all joints in 
-    `continuous_joints` to continuous, all joints in `revolute_joints` to revolute. 
-    
+    """Set all joints to fixed. Then set all joints in `prismatic_joints` to prismatic, all joints in
+    `continuous_joints` to continuous, all joints in `revolute_joints` to revolute.
+
     Rant about using 'etc' here:
-        If there were a forth joint type, the sentence would benefit from using 'etc.'. With only three, i'm stuck 
-        between a rock and a hardplace: Writing out the rule for all three joint types is overly verbose, but if I 
-        don't, i'll be using 'etc' for only one value. If I only explain one joint type, the pattern may not be obvious 
-        to a reader. 
+        If there were a forth joint type, the sentence would benefit from using 'etc.'. With only three, i'm stuck
+        between a rock and a hardplace: Writing out the rule for all three joint types is overly verbose, but if I
+        don't, i'll be using 'etc' for only one value. If I only explain one joint type, the pattern may not be obvious
+        to a reader.
     """
 
     print("in update_joint_types()")
@@ -72,23 +70,21 @@ def update_joint_types(tree, prismatic_joints, continuous_joints, revolute_joint
         elif name in revolute_joints:
             joint_element.set("type", "revolute")
     return tree
-    
+
 
 def remove_mimic(tree):
-    """ Remove <mimic> tags
-    """
+    """Remove <mimic> tags"""
     print("in remove_mimic()")
     root = tree.getroot()
     # Set all to fixed
     for joint_element in root.iter("joint"):
-
         for child in joint_element:
             if child.tag == "mimic":
                 joint_element.remove(child)
                 break
     return tree
-    
-    
+
+
 """ Example usage
 
 # Pr2
