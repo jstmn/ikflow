@@ -65,9 +65,7 @@ pip install -r requirements.txt
 **> Example 1: Use IKFlow to generate IK solutions for the Franka Panda arm**
 Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper. Note that the value for `model_name` - in this case `panda_tpm` should match an entry in `model_descriptions.yaml` 
 ```
-python evaluate.py \
-    --testset_size=500 \
-    --model_name=panda_tpm
+python evaluate.py --testset_size=500 --model_name=panda_tpm
 ```
 
 **> Example 2: Visualize the solutions returned by the `panda_tpm` model**

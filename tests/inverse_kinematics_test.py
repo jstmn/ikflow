@@ -22,6 +22,7 @@ np.set_printoptions(edgeitems=30, linewidth=100000)
 MAX_ALLOWABLE_L2_ERR = 2.5e-4
 MAX_ALLOWABLE_ANG_ERR = 0.01  # degrees
 
+
 class TestInverseKinematics(unittest.TestCase):
     @classmethod
     def setUpClass(self):
