@@ -1,8 +1,13 @@
 import argparse
 import yaml
 
-from src import visualizations
-from src.utils import get_ik_solver, set_seed
+import os
+import sys
+
+sys.path.append(os.getcwd())
+
+from ikflow import visualizations
+from ikflow.utils import get_ik_solver, set_seed
 
 set_seed()
 

@@ -2,10 +2,10 @@ from typing import List, Callable, Any
 from time import time, sleep
 from dataclasses import dataclass
 
-from src.ikflow import IkflowSolver
+from ikflow.ikflow import IkflowSolver
 import config
-from src import robots
-from src.utils import get_solution_errors
+from ikflow import robots
+from ikflow.utils import get_solution_errors
 
 from klampt.model import coordinates, trajectory
 from klampt import vis

@@ -6,9 +6,9 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from src.robots import RobotModel, PandaArm
-from src.math_utils import geodesic_distance_between_quaternions
-from src.utils import set_seed
+from ikflow.robots import RobotModel, PandaArm
+from ikflow.math_utils import geodesic_distance_between_quaternions
+from ikflow.utils import set_seed
 
 import torch
 import numpy as np

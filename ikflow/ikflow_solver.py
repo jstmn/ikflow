@@ -3,9 +3,9 @@ import pickle
 from time import time
 
 import config
-from src.robots import RobotModel
-from src.supporting_types import IkflowModelParameters
-from src.model import glow_cNF_model
+from ikflow.robots import RobotModel
+from ikflow.supporting_types import IkflowModelParameters
+from ikflow.model import glow_cNF_model
 
 import numpy as np
 import torch

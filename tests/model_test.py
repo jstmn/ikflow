@@ -4,9 +4,9 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from src.model import glow_cNF_model
-from src.supporting_types import IkflowModelParameters
-from src.robots import get_robot
+from ikflow.model import glow_cNF_model
+from ikflow.supporting_types import IkflowModelParameters
+from ikflow.robots import get_robot
 
 import torch
 

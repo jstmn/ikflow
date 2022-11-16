@@ -5,17 +5,17 @@ from typing import Tuple, Dict, Optional
 from time import time, sleep
 
 import config
-from src.ikflow import IkflowSolver, draw_latent_noise
-from src.supporting_types import IkflowModelParameters
-from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
-from src.utils import grad_stats, non_private_dict, safe_mkdir
+from ikflow.ikflow import IkflowSolver, draw_latent_noise
+from ikflow.supporting_types import IkflowModelParameters
+from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
+from ikflow.utils import grad_stats, non_private_dict, safe_mkdir
 
 import wandb
 import numpy as np
 import torch
 from pytorch_lightning.core.module import LightningModule
 
-from thirdparty.ranger import RangerVA  # from ranger913A.py
+from ikflow.thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001
 device = "cuda"

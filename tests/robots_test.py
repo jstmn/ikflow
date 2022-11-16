@@ -5,12 +5,12 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from src.robots import get_all_3d_robots
-from src.robots import RobotModel
-from src.utils import decimal_range
+from ikflow.robots import get_all_3d_robots
+from ikflow.robots import RobotModel
+from ikflow.utils import decimal_range
 from tests.ground_truth_kinematics_data import get_gt_samples_and_endpoints
 
-from src.math_utils import geodesic_distance_between_quaternions
+from ikflow.math_utils import geodesic_distance_between_quaternions
 
 import torch
 import numpy as np

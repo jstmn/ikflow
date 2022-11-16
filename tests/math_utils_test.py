@@ -4,8 +4,8 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from src.math_utils import xyzw_to_wxyz, wxyz_to_xyzw
-from src.utils import set_seed
+from ikflow.math_utils import xyzw_to_wxyz, wxyz_to_xyzw
+from ikflow.utils import set_seed
 
 import numpy as np
 

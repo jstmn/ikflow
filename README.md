@@ -149,7 +149,7 @@ _pickle.UnpicklingError: invalid load key, 'v'.
 ```
 Traceback (most recent call last):
   File "visualize.py", line 4, in <module>
-    from src.visualizations import _3dDemo
+    from ikflow.visualizations import _3dDemo
   File "/home/jstm/Projects/ikflow/utils/visualizations.py", line 10, in <module>
     from klampt import vis
   File "/home/jstm/Projects/ikflow/venv/lib/python3.8/site-packages/klampt/vis/__init__.py", line 3, in <module>

@@ -4,11 +4,11 @@ import pathlib
 import os
 import random
 
-from src.robots import RobotModel, RobotModel, get_robot
+from ikflow.robots import RobotModel, RobotModel, get_robot
 import config
-from src.ikflow import IkflowSolver, IkflowSolver
-from src.supporting_types import IkflowModelParameters
-from src.math_utils import rotation_matrix_from_quaternion, geodesic_distance
+from ikflow.ikflow import IkflowSolver, IkflowSolver
+from ikflow.supporting_types import IkflowModelParameters
+from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 
 import numpy as np
 import torch

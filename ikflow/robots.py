@@ -5,8 +5,8 @@ from typing import List, Tuple, Union, Optional
 sys.path.append(os.getcwd())
 
 import config
-from src.forward_kinematics import BatchFK, klampt_fk, kinpy_fk
-from src.math_utils import geodesic_distance_between_quaternions, xyzw_to_wxyz, wxyz_to_xyzw
+from ikflow.forward_kinematics import BatchFK, klampt_fk, kinpy_fk
+from ikflow.math_utils import geodesic_distance_between_quaternions, xyzw_to_wxyz, wxyz_to_xyzw
 
 import torch
 import numpy as np
@@ -81,7 +81,6 @@ class RobotModel:
         actuated_joints_limits: List[Tuple[float, float]],
         ndofs: int,
         end_effector_link_name: str,
-        base_link_name: str,
     ):
         assert len(end_effector_link_name) > 0, f"End effector link name '{end_effector_link_name}' is empty"
         assert len(actuated_joints) == len(actuated_joints_limits)
@@ -330,8 +329,6 @@ class RobotModel:
 # The robots
 #
 
-# TODO: Define `base_link_name` for all the robots
-
 
 class Atlas(RobotModel):
     name = "atlas"
@@ -377,7 +374,6 @@ class Atlas(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -416,7 +412,6 @@ class AtlasArm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -457,7 +452,6 @@ class Baxter(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
     def forward_kinematics_batch(self, x: torch.tensor, device=None) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -507,7 +501,6 @@ class PandaArm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -568,7 +561,6 @@ class PandaArm2(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -625,7 +617,6 @@ class Pr2(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
     def forward_kinematics_batch(self, x: torch.tensor, device=None) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -687,7 +678,6 @@ class Robonaut2(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -744,7 +734,6 @@ class Robonaut2Arm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -804,7 +793,6 @@ class Valkyrie(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -842,7 +830,6 @@ class ValkyrieArm(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 
@@ -896,7 +883,6 @@ class ValkyrieArmShoulder(RobotModel):
             actuated_joints_limits,
             ndofs,
             end_effector_link_name,
-            base_link_name,
         )
 
 

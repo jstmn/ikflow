@@ -36,3 +36,5 @@ SBATCH_resume_train.sh
 lr_scheduler_scrathpad.py
 
 *.pkl
+
+dist/

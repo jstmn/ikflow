@@ -7,9 +7,9 @@ from time import time
 
 sys.path.append(os.getcwd())
 
-from src.ikflow import IkflowSolver
-from src.robots import RobotModel, get_robot
-from src.utils import get_ik_solver, set_seed, get_solution_errors
+from ikflow.ikflow import IkflowSolver
+from ikflow.robots import RobotModel, get_robot
+from ikflow.utils import get_ik_solver, set_seed, get_solution_errors
 
 import torch
 import numpy as np

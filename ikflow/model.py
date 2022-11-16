@@ -1,7 +1,7 @@
 import config
 
-from src.supporting_types import IkflowModelParameters
-from src.robots import RobotModel
+from ikflow.supporting_types import IkflowModelParameters
+from ikflow.robots import RobotModel
 
 import FrEIA.framework as Ff
 import FrEIA.modules as Fm

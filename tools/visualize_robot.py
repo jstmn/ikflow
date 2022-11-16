@@ -6,8 +6,8 @@ import os
 
 sys.path.append(os.getcwd())
 
-from src.visualizations import oscillate_joints
-from src.robots import get_robot
+from ikflow.visualizations import oscillate_joints
+from ikflow.robots import get_robot
 
 """ Example usage
 

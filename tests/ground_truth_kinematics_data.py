@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-from src import robots
+from ikflow import robots
 
 import numpy as np
 
