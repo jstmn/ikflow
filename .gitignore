@@ -38,3 +38,4 @@ lr_scheduler_scrathpad.py
 *.pkl
 
 dist/
+ikflow.egg-info

@@ -1,4 +1,0 @@
-FrEIA>=0.2
-confuse
-kinpy>=0.1.0
-klampt>=0.9.0
