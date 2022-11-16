@@ -7,7 +7,8 @@ import sys
 sys.path.append(os.getcwd())
 
 from ikflow import visualizations
-from ikflow.utils import get_ik_solver, set_seed
+from ikflow.utils import set_seed
+from ikflow.ikflow_solver import get_ik_solver
 
 set_seed()
 

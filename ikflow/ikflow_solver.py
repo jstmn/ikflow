@@ -1,11 +1,14 @@
 from typing import List, Tuple, Optional, Union
 import pickle
 from time import time
+import os
+import yaml
 
-import config
-from ikflow.robots import RobotModel
+from ikflow import config
+from ikflow.robots import get_robot, RobotModel
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.model import glow_cNF_model
+from ikflow.utils import get_filepath
 
 import numpy as np
 import torch
@@ -27,7 +30,10 @@ def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, la
 
 
 class IkflowSolver:
-    def __init__(self, hyper_parameters: IkflowModelParameters, robot_model: RobotModel):
+    # def __init__(self, hyper_parameters: IkflowModelParameters, robot_model):
+    def __init__(
+        self, hyper_parameters: IkflowModelParameters, robot_model: RobotModel
+    ):  # TODO(@jstmn): refactor to enable typehints for RobotModel. Currently this is causing a circular import error
         """Initialize an IkflowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
 
@@ -38,6 +44,11 @@ class IkflowSolver:
         self.nn_model = glow_cNF_model(hyper_parameters, robot_model, self.dim_cond, self.network_width)
         self.ndofs = robot_model.ndofs
         self.robot_model = robot_model
+
+    # TODO(@jstmn): Consolidate `robot`, `robot_model`
+    @property
+    def robot(self) -> RobotModel:
+        return self.robot_model
 
     # TODO(@jstmn): Unit test this function
     def refine_solutions(
@@ -160,3 +171,38 @@ class IkflowSolver:
         """Set the nn_models state_dict"""
         with open(state_dict_filename, "rb") as f:
             self.nn_model.load_state_dict(pickle.load(f))
+
+
+with open(get_filepath("model_descriptions.yaml"), "r") as f:
+    MODEL_DESCRIPTIONS = yaml.safe_load(f)
+
+
+def get_ik_solver(model_name: str) -> Tuple[IkflowSolver, IkflowModelParameters]:
+    """Build and return a `IkflowSolver` using the model weights saved in the file `model_weights_filepath` for the
+    given robot and with the given hyperparameters
+
+    Args:
+        model_weights_filepath (str): The filepath for the model weights
+        robot_name (str): The name of the robot that the model is for
+        model_hyperparameters (Dict): The hyperparameters used for the NN
+
+    Returns:
+        Tuple[IkflowSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
+                                                            `IkflowModelParameters` parameters object
+    """
+    model_weights_filepath = get_filepath(MODEL_DESCRIPTIONS[model_name]["model_weights_filepath"])
+    robot_name = MODEL_DESCRIPTIONS[model_name]["robot_name"]
+    hparams = MODEL_DESCRIPTIONS[model_name]
+    assert isinstance(robot_name, str), f"robot_name must be a string, got {type(robot_name)}"
+    assert isinstance(hparams, dict), f"model_hyperparameters must be a Dict, got {type(hparams)}"
+    assert os.path.isfile(
+        model_weights_filepath
+    ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
+    robot_model = get_robot(robot_name)
+
+    # Build IkflowSolver and set weights
+    hyper_parameters = IkflowModelParameters()
+    hyper_parameters.__dict__.update(hparams)
+    ik_solver = IkflowSolver(hyper_parameters, robot_model)
+    ik_solver.load_state_dict(model_weights_filepath)
+    return ik_solver, hyper_parameters

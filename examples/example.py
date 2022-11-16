@@ -5,7 +5,8 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from ikflow.utils import get_ik_solver, set_seed
+from ikflow.utils import set_seed
+from ikflow.ikflow_solver import get_ik_solver
 from ikflow.robots import get_robot
 
 import numpy as np

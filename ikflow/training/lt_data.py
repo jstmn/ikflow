@@ -1,7 +1,7 @@
 from typing import Optional
 import os
 
-import config
+from ikflow import config
 from ikflow.utils import get_sum_joint_limit_range, get_dataset_directory
 
 from torch.utils.data import DataLoader, random_split

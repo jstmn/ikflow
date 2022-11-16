@@ -2,8 +2,8 @@ from typing import List, Callable, Any
 from time import time, sleep
 from dataclasses import dataclass
 
-from ikflow.ikflow import IkflowSolver
-import config
+from ikflow.ikflow_solver import IkflowSolver
+from ikflow import config
 from ikflow import robots
 from ikflow.utils import get_solution_errors
 

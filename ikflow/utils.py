@@ -3,51 +3,18 @@ import csv
 import pathlib
 import os
 import random
+import pkg_resources
 
-from ikflow.robots import RobotModel, RobotModel, get_robot
-import config
-from ikflow.ikflow import IkflowSolver, IkflowSolver
-from ikflow.supporting_types import IkflowModelParameters
-from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
+from ikflow import config
+
+# from ikflow.ikflow_solver import IkflowSolver
+# from ikflow.supporting_types import IkflowModelParameters
 
 import numpy as np
 import torch
 
-
-# _______________________
-# Prediction errors
-
-
-def get_solution_errors(
-    robot_model: RobotModel, solutions: Union[torch.Tensor, np.ndarray], target_pose: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Return the L2 and angular errors of calculated ik solutions for a given target_pose. Note: this function expects
-    multiple solutions but only a single target_pose. All of the solutions are assumed to be for the given target_pose
-
-    Args:
-        robot_model (RobotModel): The RobotModel which contains the FK function we will use
-        solutions (Union[torch.Tensor, np.ndarray]): [n x 7] IK solutions for the given target pose
-        target_pose (np.ndarray): [7] the target pose the IK solutions were generated for
-
-    Returns:
-        Tuple[np.ndarray, np.ndarray]: The L2, and angular (rad) errors of IK solutions for the given target_pose
-    """
-    ee_pose_ikflow = robot_model.forward_kinematics(solutions[:, 0 : robot_model.ndofs].cpu().detach().numpy())
-
-    # Positional Error
-    l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_pose[0:3], axis=1)
-
-    # Angular Error
-    n_solutions = solutions.shape[0]
-    rot_target = np.tile(target_pose[3:], (n_solutions, 1))
-    rot_output = ee_pose_ikflow[:, 3:]
-
-    output_R9 = rotation_matrix_from_quaternion(torch.Tensor(rot_output).to(config.device))
-    target_R9 = rotation_matrix_from_quaternion(torch.Tensor(rot_target).to(config.device))
-    ang_errors = geodesic_distance(target_R9, output_R9).cpu().data.numpy()
-    assert l2_errors.shape == ang_errors.shape
-    return l2_errors, ang_errors
-
+import yaml
+import os
 
 # _______________________
 # Dataset utilities
@@ -56,41 +23,12 @@ def get_dataset_directory(robot: str):
     return os.path.join(config.DATASET_DIR, robot)
 
 
+def get_filepath(local_filepath: str):
+    return pkg_resources.resource_filename(__name__, local_filepath)
+
+
 # _______________________
 # Model loading utilities
-
-
-def get_ik_solver(
-    model_weights_filepath: str, robot_name: str, model_hyperparameters: Dict
-) -> Tuple[IkflowSolver, IkflowModelParameters]:
-    """Build and return a `IkflowSolver` using the model weights saved in the file `model_weights_filepath` for the
-    given robot and with the given hyperparameters
-
-    Args:
-        model_weights_filepath (str): The filepath for the model weights
-        robot_name (str): The name of the robot that the model is for
-        model_hyperparameters (Dict): The hyperparameters used for the NN
-
-    Returns:
-        Tuple[IkflowSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
-                                                            `IkflowModelParameters` parameters object
-    """
-    assert isinstance(robot_name, str), f"robot_name must be a string, got {type(robot_name)}"
-    assert isinstance(
-        model_hyperparameters, dict
-    ), f"model_hyperparameters must be a Dict, got {type(model_hyperparameters)}"
-    assert os.path.isfile(
-        model_weights_filepath
-    ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
-    robot_model = get_robot(robot_name)
-
-    # Build IkflowSolver and set weights
-    hyper_parameters = IkflowModelParameters()
-    hyper_parameters.__dict__.update(model_hyperparameters)
-    ik_solver = IkflowSolver(hyper_parameters, robot_model)
-    ik_solver.load_state_dict(model_weights_filepath)
-    return ik_solver, hyper_parameters
-
 
 # _____________
 # Pytorch utils
@@ -121,68 +59,8 @@ def cuda_info():
     print()
 
 
-def cuda_mem_info():
-    """Print out the current memory usage on the gpu"""
-
-    print(f"\n____________\ncuda_mem_info()")
-
-    if not torch.cuda.is_available():
-        print("Cuda unavailable, returning")
-
-    # Total memory of the gpu (MB)
-    t = torch.cuda.get_device_properties(0).total_memory
-    t = t / (1024 * 1024)
-
-    # Returns the current GPU memory managed by the caching allocator in bytes for the given device
-    r = torch.cuda.memory_reserved(0)
-    r = r / (1024 * 1024)  # convert to MB
-
-    # Returns the current GPU memory occupied by tensors in bytes for a given device
-    a = torch.cuda.memory_allocated(0)
-    a = a / (1024 * 1024)  # convert to MB
-    f = r - a  # free inside reserved
-
-    print(f"  Total device memory (MB):                      {t}")
-    print(f"  Total reserved memory (MB):                    {r}")
-    print(f"  Total allocated memory (MB):                   {a}")
-    print(f"  Total free memory (reserved - allocated) (MB): {f}")
-    print()
-
-
 # __________________
 # Printing functions
-
-
-def pp_dict(d, space=4):
-    for k, v in d.items():
-        if isinstance(v, dict):
-            print(f"{' ' * space}{k}")
-            pp_dict(v, space=space + 3)
-        # elif isinstance(v, pd.DataFrame):
-        #     # s = " " * 5 + d.to_string().replace("\n", "\n     ")
-        #     print(f"{' ' * space}{k}\n{s}")
-        else:
-            print(f"{' ' * space}{k}\t{v}")
-
-
-def print_sd(sd, name=""):
-    print(f"\nprint_sd(name = '{name}')")
-    for k, v in sd.items():
-        print(" ", k, "\t", v.shape)
-
-
-def print_np_array_copyable(x: np.array):
-    """Prints a numpy array so that it can be copy pasted as python code"""
-    print("[", end="")
-    for i in range(x.shape[0]):
-        print("[", end="")
-        for j in range(x.shape[1] - 1):
-            print(f"{x[i, j]}, ", end="")
-        print(f"{x[i, x.shape[1]-1]}]", end="")
-        if i < x.shape[0] - 1:
-            print(",")
-            continue
-        print("]")
 
 
 def print_tensor_stats(
@@ -244,19 +122,6 @@ def boolean_string(s):
     return s.upper() == "TRUE"
 
 
-def decimal_range(start, stop, inc):
-    while start < stop:
-        yield start
-        start += inc
-
-
-def float_range(start, stop, inc):
-    x = start
-    while x < stop:
-        yield x
-        x += inc
-
-
 def non_private_dict(d):
     r = {}
     for k, v in d.items():
@@ -276,16 +141,6 @@ def safe_mkdir(dir_name: str):
     pathlib.Path(dir_name).mkdir(exist_ok=True, parents=True)
 
 
-def os_is_posix() -> bool:
-    return os.name == "posix"
-
-
-def delete_files_in_dir(dir_name: str):
-    """Delete all files in directory"""
-    for f in os.listdir(dir_name):
-        os.remove(os.path.join(dir_name, f))
-
-
 # ______________
 # Training utils
 
@@ -303,11 +158,3 @@ def grad_stats(params_trainable) -> Tuple[float, float, float]:
             abs_ave_grads.append(p.grad.abs().mean().item())
             max_grad = max(max_grad, p.grad.data.max().item())
     return np.average(ave_grads), np.average(abs_ave_grads), max_grad
-
-
-def get_learning_rate(optimizer) -> float:
-    """
-    Get the learning rate used by the optimizer
-    """
-    for param_group in optimizer.param_groups:
-        return param_group["lr"]

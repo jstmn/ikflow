@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-import config
+from ikflow import config
 
 
 def wxyz_to_xyzw(q: np.ndarray) -> np.ndarray:

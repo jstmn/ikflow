@@ -4,8 +4,8 @@ import sys
 
 sys.path.append(os.getcwd())
 
-import config
-from ikflow.ikflow import IkflowSolver
+from ikflow import config
+from ikflow.ikflow_solver import IkflowSolver
 from ikflow.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.supporting_types import IkflowModelParameters

@@ -7,7 +7,7 @@ import os
 sys.path.append(os.getcwd())
 
 from ikflow.supporting_types import IkflowModelParameters
-from ikflow.ikflow import IkflowSolver
+from ikflow.ikflow_solver import IkflowSolver
 from ikflow.robots import get_robot
 
 import torch

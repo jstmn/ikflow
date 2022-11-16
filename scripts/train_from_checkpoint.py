@@ -1,6 +1,6 @@
 import argparse
 import os
-import config
+from ikflow import config
 from time import time
 
 import os
@@ -9,11 +9,10 @@ import sys
 sys.path.append(os.getcwd())
 
 from ikflow.supporting_types import IkflowModelParameters
-from ikflow.ikflow import IkflowSolver
+from ikflow.ikflow_solver import IkflowSolver
 from ikflow.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
-from ikflow.utils import boolean_string
 
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint

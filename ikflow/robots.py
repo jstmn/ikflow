@@ -4,9 +4,10 @@ from typing import List, Tuple, Union, Optional
 
 sys.path.append(os.getcwd())
 
-import config
+from ikflow import config
 from ikflow.forward_kinematics import BatchFK, klampt_fk, kinpy_fk
-from ikflow.math_utils import geodesic_distance_between_quaternions, xyzw_to_wxyz, wxyz_to_xyzw
+from ikflow.math_utils import geodesic_distance_between_quaternions
+from ikflow.utils import get_filepath
 
 import torch
 import numpy as np
@@ -75,19 +76,21 @@ class RobotModel:
     def __init__(
         self,
         robot_name: str,
-        urdf_filepath: str,
+        local_urdf_filepath: str,
         joint_chain: List[str],
         actuated_joints: List[str],
         actuated_joints_limits: List[Tuple[float, float]],
         ndofs: int,
         end_effector_link_name: str,
     ):
+        urdf_filepath = get_filepath(local_urdf_filepath)
         assert len(end_effector_link_name) > 0, f"End effector link name '{end_effector_link_name}' is empty"
         assert len(actuated_joints) == len(actuated_joints_limits)
         assert len(actuated_joints) == ndofs
         assert len(actuated_joints) <= len(joint_chain)
         for joint in actuated_joints:
             assert joint in joint_chain
+        assert os.path.isfile(urdf_filepath), f"urdf file '{urdf_filepath}' doesn't exist"
 
         self._robot_name = robot_name
         self._ndofs = ndofs
@@ -98,7 +101,7 @@ class RobotModel:
         # Initialize klampt
         # Note: Need to save `_klampt_world_model` as a member variable otherwise you'll be doomed to get a segfault
         self._klampt_world_model = klampt.WorldModel()
-        assert self._klampt_world_model.loadRobot(urdf_filepath), f"Error loading urdf '{urdf_filepath}'"
+        self._klampt_world_model.loadRobot(urdf_filepath)
         self._klampt_robot: klampt.robotsim.RobotModel = self._klampt_world_model.robot(0)
         self._klampt_ee_link: klampt.robotsim.RobotModelLink = self._klampt_robot.link(self._end_effector_link_name)
         self._klampt_config_dim = len(self._klampt_robot.getConfig())
@@ -363,12 +366,12 @@ class Atlas(RobotModel):
 
         ndofs = len(actuated_joints)
         end_effector_link_name = "l_hand"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/atlas/atlas.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/atlas/atlas.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -402,11 +405,11 @@ class AtlasArm(RobotModel):
 
         ndofs = len(actuated_joints)
         end_effector_link_name = "l_hand"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/atlas/atlas_arm.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/atlas/atlas_arm.urdf"
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -441,12 +444,12 @@ class Baxter(RobotModel):
         joint_chain = ["left_s0", "left_s1", "left_e0", "left_e1", "left_w0", "left_w1", "left_w2", "left_hand"]
         ndofs = len(actuated_joints)
         end_effector_link_name = "left_hand"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/baxter/baxter.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/baxter/baxter.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -488,14 +491,14 @@ class PandaArm(RobotModel):
             "panda_hand_joint",
         ]
 
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm/panda.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm/panda.urdf"
         end_effector_link_name = "panda_hand"
         base_link_name = "panda_link0"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -548,14 +551,14 @@ class PandaArm2(RobotModel):
             "panda_joint8",
         ]
 
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm2/panda2.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/panda_arm2/panda2.urdf"
         end_effector_link_name = "panda_link8"
         base_link_name = "panda_link0"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -606,12 +609,12 @@ class Pr2(RobotModel):
         end_effector_link_name = "l_gripper_palm_link"
 
         ndofs = len(actuated_joints)
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/pr2/pr2.urdf"  # this is pr2_out.urdf in nn_ik repo
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/pr2/pr2.urdf"  # this is pr2_out.urdf in nn_ik repo
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -667,12 +670,12 @@ class Robonaut2(RobotModel):
         ]
         ndofs = len(actuated_joints)
         end_effector_link_name = "r2/left_palm"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/robonaut2/r2b.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/robonaut2/r2b.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -723,12 +726,12 @@ class Robonaut2Arm(RobotModel):
         ]
         ndofs = len(actuated_joints)
         end_effector_link_name = "r2/left_palm"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/robonaut2/r2b_arm.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/robonaut2/r2b_arm.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -782,12 +785,12 @@ class Valkyrie(RobotModel):
 
         ndofs = len(actuated_joints)
         end_effector_link_name = "leftPalm"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -819,12 +822,12 @@ class ValkyrieArm(RobotModel):
 
         ndofs = len(actuated_joints)
         end_effector_link_name = "leftPalm"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie_arm.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie_arm.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,
@@ -872,12 +875,12 @@ class ValkyrieArmShoulder(RobotModel):
 
         ndofs = len(actuated_joints)
         end_effector_link_name = "leftPalm"
-        urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie_arm_shoulder.urdf"
+        local_urdf_filepath = f"{config.URDFS_DIRECTORY}/valkyrie/valkyrie_arm_shoulder.urdf"
 
         RobotModel.__init__(
             self,
             self.name,
-            urdf_filepath,
+            local_urdf_filepath,
             joint_chain,
             actuated_joints,
             actuated_joints_limits,

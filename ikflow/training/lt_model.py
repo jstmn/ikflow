@@ -1,14 +1,14 @@
 from datetime import datetime
 from multiprocessing.sharedctypes import Value
 import os
-from typing import Tuple, Dict, Optional
-from time import time, sleep
+from typing import Tuple, Dict
+from time import time
 
-import config
-from ikflow.ikflow import IkflowSolver, draw_latent_noise
+from ikflow import config
+from ikflow.ikflow_solver import IkflowSolver, draw_latent_noise
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
-from ikflow.utils import grad_stats, non_private_dict, safe_mkdir
+from ikflow.utils import grad_stats
 
 import wandb
 import numpy as np

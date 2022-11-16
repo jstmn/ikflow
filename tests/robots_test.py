@@ -17,6 +17,13 @@ import numpy as np
 
 torch.manual_seed(0)
 
+
+def decimal_range(start, stop, inc):
+    while start < stop:
+        yield start
+        start += inc
+
+
 MAX_ALLOWABLE_L2_ERR = 5e-4
 MAX_ALLOWABLE_ANG_ERR = 0.0008726646  # .05 degrees
 ALL_3D_ROBOTS = get_all_3d_robots()

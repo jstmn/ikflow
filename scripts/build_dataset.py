@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.getcwd())
 
-import config
+from ikflow import config
 from ikflow.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
 from ikflow.robots import get_robot, RobotModel
 

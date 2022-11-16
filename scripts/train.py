@@ -1,17 +1,17 @@
 import argparse
 import os
-import config
+from ikflow import config
 
 import sys
 
 sys.path.append(os.getcwd())
 
 from ikflow.supporting_types import IkflowModelParameters
-from ikflow.ikflow import IkflowSolver
+from ikflow.ikflow_solver import IkflowSolver
 from ikflow.robots import get_robot, RobotModel
 from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
-from ikflow.utils import boolean_string
+from ikflow.utils import boolean_string, non_private_dict
 
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -191,8 +191,8 @@ if __name__ == "__main__":
         # Call `wandb.init` before creating a `WandbLogger` object so that runs have randomized names. Without this
         # call, the run names are all set to the project name. See this article for further information: https://lightrun.com/answers/lightning-ai-lightning-wandblogger--use-random-name-instead-of-project-as-default-name
         cfg = {"robot": args.robot_name}
-        cfg.update(args.__dict__)
-        cfg.update(base_hparams.__dict__)
+        cfg.update(non_private_dict(args.__dict__))
+        cfg.update(non_private_dict(base_hparams.__dict__))
         wandb.init(
             entity=wandb_entity,
             project=wandb_project,

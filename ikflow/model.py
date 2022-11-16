@@ -1,4 +1,4 @@
-import config
+from ikflow import config
 
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.robots import RobotModel
