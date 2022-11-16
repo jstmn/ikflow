@@ -57,11 +57,6 @@ Create a virtual environment:
 python3.8 -m pip install --user virtualenv
 python3.8 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# Install tracikpy
-sudo apt-get install libeigen3-dev liborocos-kdl-dev libkdl-parser-dev liburdfdom-dev libnlopt-dev
-git submodule init && git submodule update
-cd thirdparty/ && pip install tracikpy/
 ```
 
 

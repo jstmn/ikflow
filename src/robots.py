@@ -15,7 +15,6 @@ import klampt
 from klampt import IKSolver
 from klampt.model import ik
 from klampt.math import so3
-from tracikpy import TracIKSolver
 
 
 def format_joint_limits(lower: List[float], upper: List[float]) -> List[Tuple[float, float]]:
@@ -115,9 +114,6 @@ class RobotModel:
         # is a temporary measure until we are sure they are correct.
         with open(urdf_filepath) as f:
             self._kinpy_fk_chain = kp.build_chain_from_urdf(f.read().encode("utf-8"))
-
-        # Initialize TRAC-IK
-        self.tracik_solver = TracIKSolver(urdf_filepath, base_link_name, end_effector_link_name)
 
         # Initialize the batched forward kinematics module
         self.batch_fk_calc = BatchFK(
@@ -250,73 +246,6 @@ class RobotModel:
     # ---                                             Inverse Kinematics                                             ---
     # ---                                                                                                            ---
 
-    def inverse_kinematics_tracik(
-        self,
-        pose: np.array,
-        seed: Optional[np.ndarray] = None,
-        positional_tolerance: float = 1e-3,
-        n_tries: int = 50,
-        verbosity: int = 0,
-    ) -> Optional[np.array]:
-        """Run IK using tracik
-
-        Altenative quaternion -> R conversion:
-            from scipy.spatial.transform import Rotation
-            r = Rotation.from_quat(wxyz_to_xyzw(pose[3:]))
-            T[0:3, 0:3] = r.as_matrix()
-
-        Args:
-            pose (np.array): The target pose to solve for
-            seed (Optional[np.ndarray], optional): A seed to initialize the optimization with. Defaults to None.
-            verbosity (int): Set the verbosity of the function. 1: only fatal errors are printed. Defaults to 0.
-
-        Returns:
-            np.array: _description_
-        """
-        if seed is not None:
-            assert isinstance(seed, np.ndarray), f"seed must be a numpy array (currently {type(seed)})"
-            assert len(seed.shape) == 1, f"Seed must be a 1D array (currently: {seed.shape})"
-            assert seed.size == self.ndofs
-        # Note: tracik uses (x, y, z, w) form for quaternions - imported from the math3d:: c++ library from
-        # here https://github.com/adragonite/math3d#quaternion (I think)
-        # klampt: w x y z
-        # scipy:  x y z w
-        # tracik: x y z w
-        # TODO(@jstmn): Consider reimplmenting quat->R in batch to speed up conversion time
-
-        T = np.eye(4)
-        T[0:3, 3] = pose[0:3]
-        R = so3.from_quaternion(pose[3:])
-        R_np = so3.ndarray(R)
-        T[0:3, 0:3] = R_np
-
-        # Run `n_tries` times
-        for _ in range(n_tries):
-            sol = self.tracik_solver.ik(
-                T, qinit=seed, bx=positional_tolerance, by=positional_tolerance, bz=positional_tolerance
-            )
-            if sol is not None:
-                return sol.reshape(1, 7)
-
-            if verbosity > 0:
-                print("  inverse_kinematics_tracik() IK failed retrying (non fatal)")
-
-            if seed is not None:
-                if verbosity > 0:
-                    print("inverse_kinematics_tracik() - Failed to find IK solution - trying again with a random seed")
-                return self.inverse_kinematics_tracik(
-                    pose, seed=None, positional_tolerance=positional_tolerance, verbosity=verbosity
-                )
-
-        if verbosity > 0:
-            print(
-                "inverse_kinematics_tracik() - Failed to find IK solution after",
-                n_tries,
-                "optimization attempts for pose:",
-                pose,
-            )
-        return None
-
     def inverse_kinematics_klampt(
         self,
         pose: np.array,
@@ -393,7 +322,7 @@ class RobotModel:
             return self._qs_to_x([self._klampt_robot.getConfig()])
 
         if verbosity > 0:
-            print("inverse_kinematics_tracik() - Failed to find IK solution after", n_tries, "optimization attempts")
+            print("inverse_kinematics_klampt() - Failed to find IK solution after", n_tries, "optimization attempts")
         return None
 
 

@@ -22,13 +22,6 @@ np.set_printoptions(edgeitems=30, linewidth=100000)
 MAX_ALLOWABLE_L2_ERR = 2.5e-4
 MAX_ALLOWABLE_ANG_ERR = 0.01  # degrees
 
-PANDA_TRACIK_FAILED_POSES = [
-    [0.06789877, -0.00637721, 0.21159614, 0.43150462, 0.76238463, 0.45549865, -0.15841218],
-    [0.16467319, -0.15501953, 0.33747797, 0.79762846, 0.53922403, -0.12397464, -0.24011782],
-    [-0.09237697, 0.19603867, -0.31870467, 0.0119468, -0.05194912, -0.99494791, -0.08507181],
-]
-
-
 class TestInverseKinematics(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -80,21 +73,6 @@ class TestInverseKinematics(unittest.TestCase):
         l2_err = np.linalg.norm(pose[0:3] - solution_pose[0, 0:3])
         self.assertLess(l2_err, 2 * positional_tol)
 
-    def test_seed_failure_recovery_tracik(self):
-        """Test that inverse_kinematics_tracik() generates a solution if the original seed fails"""
-        pose = np.array([0.06789877, -0.00637721, 0.21159614, 0.43150462, 0.76238463, 0.45549865, -0.15841218])
-        seed = np.array([1.70349581, 0.43225326, -0.25895414, -3.07634641, 2.75504321, 3.82524821, -1.86344296])
-        positional_tol = 1e-3
-        solution = self.panda_arm.inverse_kinematics_tracik(
-            pose, seed=seed, positional_tolerance=positional_tol, verbosity=0
-        )
-        # Note: The rest of the test fails. This particular pose is difficult for tracik - it can't solve it even with
-        # a random seed
-        # self.assertIsInstance(solution, np.ndarray)
-        # solution_pose = self.panda_arm.forward_kinematics_klampt(solution)
-        # l2_err = np.linalg.norm(pose[0:3] - solution_pose[0, 0:3])
-        # self.assertLess(l2_err, 2*positional_tol)
-
     def solution_valid(self, robot: RobotModel, solution: np.ndarray, pose_gt: np.ndarray, positional_tol: float):
         if solution is None:
             print(" -> Solution is None, failing")
@@ -123,7 +101,7 @@ class TestInverseKinematics(unittest.TestCase):
             print("Perturbed configs L2 end pose error:", samples_noisy_l2_errors)
         """
         print("\n\n----------------------------------------\n----------------------------------------")
-        print("> Test klampt, tracik IK - with seed\n")
+        print("> Test klampt IK - with seed\n")
         n = 1000
         n_tries = 50
         n_successes_ti = 0
@@ -140,11 +118,7 @@ class TestInverseKinematics(unittest.TestCase):
             solution_klampt = robot.inverse_kinematics_klampt(
                 pose_gt, seed=sample_noisy, positional_tolerance=positional_tol, n_tries=n_tries, verbosity=verbosity
             )
-            solution_tracik = robot.inverse_kinematics_tracik(
-                pose_gt, seed=sample_noisy, positional_tolerance=positional_tol, n_tries=n_tries, verbosity=verbosity
-            )
             klampt_valid, l2_err = self.solution_valid(robot, solution_klampt, pose_gt, positional_tol)
-            tracik_valid, l2_err = self.solution_valid(robot, solution_tracik, pose_gt, positional_tol)
 
             if not klampt_valid:
                 print(
@@ -153,23 +127,14 @@ class TestInverseKinematics(unittest.TestCase):
                     ",",
                     sample_noisy,
                 )
-            if not tracik_valid:
-                print(
-                    f"TracIK failed ({i}/{n}). l2_err: {l2_err} (max is {positional_tol}) pose, seed:\n",
-                    pose_gt,
-                    ",",
-                    sample_noisy,
-                )
             n_successes_kl += 1 if klampt_valid else 0
-            n_successes_ti += 1 if tracik_valid else 0
 
         print(f"Success rate, klampt: {round(100*(n_successes_kl / n), 2)}% ({n_successes_kl}/{n})")
-        print(f"Success rate, tracik: {round(100*(n_successes_ti / n), 2)}% ({n_successes_ti}/{n})")
 
     def test_ik_with_random_seed(self):
-        """Test that fk(ik(fk(sample))) = fk(sample) with a random a seed used by klampt and tracik"""
+        """Test that fk(ik(fk(sample))) = fk(sample) with a random a seed used by klampt"""
         print("\n\n----------------------------------------\n----------------------------------------")
-        print("> Test klampt, tracik IK - with random seed\n")
+        print("> Test klampt IK - with random seed\n")
         n = 1000
         n_tries = 50
         n_successes_ti = 0
@@ -183,20 +148,12 @@ class TestInverseKinematics(unittest.TestCase):
             solution_klampt = robot.inverse_kinematics_klampt(
                 pose_gt, seed=None, positional_tolerance=positional_tol, n_tries=n_tries, verbosity=verbosity
             )
-            solution_tracik = robot.inverse_kinematics_tracik(
-                pose_gt, seed=None, positional_tolerance=positional_tol, n_tries=n_tries, verbosity=verbosity
-            )
             klampt_valid, l2_err = self.solution_valid(robot, solution_klampt, pose_gt, positional_tol)
-            tracik_valid, l2_err = self.solution_valid(robot, solution_tracik, pose_gt, positional_tol)
             if not klampt_valid:
                 print(f"Klampt failed ({i}/{n}). pose:", pose_gt, f"l2_err: {l2_err} (max is {positional_tol})")
-            if not tracik_valid:
-                print(f"TracIK failed ({i}/{n}). pose:", pose_gt, f"l2_err: {l2_err} (max is {positional_tol})")
             n_successes_kl += 1 if klampt_valid else 0
-            n_successes_ti += 1 if tracik_valid else 0
 
         print(f"Success rate, klampt: {round(100*(n_successes_kl / n), 2)}% ({n_successes_kl}/{n})")
-        print(f"Success rate, tracik: {round(100*(n_successes_ti / n), 2)}% ({n_successes_ti}/{n})")
 
 
 if __name__ == "__main__":
