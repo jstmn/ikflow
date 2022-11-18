@@ -4,7 +4,6 @@ import argparse
 import sys
 import os
 
-sys.path.append(os.getcwd())
 
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.ikflow_solver import IkflowSolver

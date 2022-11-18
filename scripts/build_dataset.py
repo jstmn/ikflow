@@ -1,9 +1,6 @@
 import argparse
 from typing import Optional
-import os
-import sys
 
-sys.path.append(os.getcwd())
 
 from ikflow import config
 from ikflow.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range

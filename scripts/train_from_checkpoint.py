@@ -3,10 +3,6 @@ import os
 from ikflow import config
 from time import time
 
-import os
-import sys
-
-sys.path.append(os.getcwd())
 
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.ikflow_solver import IkflowSolver

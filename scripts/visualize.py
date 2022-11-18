@@ -1,14 +1,10 @@
 import argparse
 import yaml
 
-import os
-import sys
-
-sys.path.append(os.getcwd())
 
 from ikflow import visualizations
 from ikflow.utils import set_seed
-from ikflow.ikflow_solver import get_ik_solver
+from ikflow.model_loading import get_ik_solver
 
 set_seed()
 
@@ -45,12 +41,8 @@ if __name__ == "__main__":
         PandaArm
     """
 
-    model_weights_filepath = MODEL_DESCRIPTIONS[args.model_name]["model_weights_filepath"]
-    robot_name = MODEL_DESCRIPTIONS[args.model_name]["robot_name"]
-    hparams = MODEL_DESCRIPTIONS[args.model_name]
-
     # Build IkflowSolver and set weights
-    ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
+    ik_solver, hyper_parameters = get_ik_solver(args.model_name)
 
     fn = getattr(visualizations, args.demo_name)
     fn(ik_solver, **VIS_FN_ARGUMENTS[args.demo_name])

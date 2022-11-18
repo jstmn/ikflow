@@ -1,13 +1,9 @@
 from typing import Tuple
 import unittest
-import os
-import sys
 
-sys.path.append(os.getcwd())
 
 from ikflow.robots import get_all_3d_robots
 from ikflow.robots import RobotModel
-from ikflow.utils import decimal_range
 from tests.ground_truth_kinematics_data import get_gt_samples_and_endpoints
 
 from ikflow.math_utils import geodesic_distance_between_quaternions

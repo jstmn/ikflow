@@ -5,12 +5,11 @@ import os
 import sys
 from time import time
 
-sys.path.append(os.getcwd())
 
 from ikflow.ikflow_solver import IkflowSolver
 from ikflow.robots import RobotModel, get_robot
 from ikflow.utils import set_seed
-from ikflow.ikflow_solver import get_ik_solver
+from ikflow.model_loading import get_ik_solver
 from ikflow.evaluation_utils import get_solution_errors
 
 import torch
@@ -152,13 +151,9 @@ if __name__ == "__main__":
         print("\n-------------")
         print(f"Evaluating model '{model_name}'")
 
-        model_weights_filepath = MODEL_DESCRIPTIONS[model_name]["model_weights_filepath"]
-        robot_name = MODEL_DESCRIPTIONS[model_name]["robot_name"]
-        hparams = MODEL_DESCRIPTIONS[model_name]
-
         # Build IkflowSolver and set weights
-        ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
-        robot_model = get_robot(robot_name)
+        ik_solver, hyper_parameters = get_ik_solver(model_name)
+        robot_model = ik_solver.robot
         testset = robot_model.forward_kinematics_klampt(robot_model.sample(args.testset_size))
 
         # ------------------------

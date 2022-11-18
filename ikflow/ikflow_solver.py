@@ -171,38 +171,3 @@ class IkflowSolver:
         """Set the nn_models state_dict"""
         with open(state_dict_filename, "rb") as f:
             self.nn_model.load_state_dict(pickle.load(f))
-
-
-with open(get_filepath("model_descriptions.yaml"), "r") as f:
-    MODEL_DESCRIPTIONS = yaml.safe_load(f)
-
-
-def get_ik_solver(model_name: str) -> Tuple[IkflowSolver, IkflowModelParameters]:
-    """Build and return a `IkflowSolver` using the model weights saved in the file `model_weights_filepath` for the
-    given robot and with the given hyperparameters
-
-    Args:
-        model_weights_filepath (str): The filepath for the model weights
-        robot_name (str): The name of the robot that the model is for
-        model_hyperparameters (Dict): The hyperparameters used for the NN
-
-    Returns:
-        Tuple[IkflowSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
-                                                            `IkflowModelParameters` parameters object
-    """
-    model_weights_filepath = get_filepath(MODEL_DESCRIPTIONS[model_name]["model_weights_filepath"])
-    robot_name = MODEL_DESCRIPTIONS[model_name]["robot_name"]
-    hparams = MODEL_DESCRIPTIONS[model_name]
-    assert isinstance(robot_name, str), f"robot_name must be a string, got {type(robot_name)}"
-    assert isinstance(hparams, dict), f"model_hyperparameters must be a Dict, got {type(hparams)}"
-    assert os.path.isfile(
-        model_weights_filepath
-    ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
-    robot_model = get_robot(robot_name)
-
-    # Build IkflowSolver and set weights
-    hyper_parameters = IkflowModelParameters()
-    hyper_parameters.__dict__.update(hparams)
-    ik_solver = IkflowSolver(hyper_parameters, robot_model)
-    ik_solver.load_state_dict(model_weights_filepath)
-    return ik_solver, hyper_parameters

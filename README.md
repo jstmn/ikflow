@@ -38,7 +38,7 @@ export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visu
 <!-- 1. Install base ubuntu dependencies -->
 (This includes 20.04 LTS, 18.04 LTS, ...)
 ```
-sudo apt-get install qt5-default   
+sudo apt-get install -y qt5-default   
 ```
 
 ### 2. Install common dependencies
@@ -46,17 +46,13 @@ These installation steps are the same regardless of ubuntu version
 
 Install dependencies:
 ```
-sudo apt-get install -y build-essential qtcreator python3.8-dev python3.8-venv git-lfs 
-```
-Download pretrained models:
-```bash
-git lfs pull origin master
+sudo apt-get install -y build-essential qtcreator python3.8-dev python3.8-venv git-lfs python3-wheel
 ```
 Create a virtual environment:
 ```
 python3.8 -m pip install --user virtualenv
 python3.8 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
 
 
@@ -132,19 +128,7 @@ python train.py \
 
 ## Common errors
 
-1. Pickle error when loading a pretrained model from gitlfs. This happens when the pretrained models haven't been downloaded by gitlfs. For example, they may be 134 bytes (they should be 100+ mb). Run `git lfs pull origin master` 
-```
-Traceback (most recent call last):
-  File "evaluate.py", line 117, in <module>
-    ik_solver, hyper_parameters = get_ik_solver(model_weights_filepath, robot_name, hparams)
-  File "/home/jstm/Projects/ikflow/utils/utils.py", line 55, in get_ik_solver
-    ik_solver.load_state_dict(model_weights_filepath)
-  File "/home/jstm/Projects/ikflow/utils/ik_solvers.py", line 278, in load_state_dict
-    self.nn_model.load_state_dict(pickle.load(f))
-_pickle.UnpicklingError: invalid load key, 'v'.
-```
-
-2. GLUT font retrieval function when running a visualizer. Run `export PYOPENGL_PLATFORM=osmesa` and then try again. See https://bytemeta.vip/repo/MPI-IS/mesh/issues/66
+1. GLUT font retrieval function when running a visualizer. Run `export PYOPENGL_PLATFORM=osmesa` and then try again. See https://bytemeta.vip/repo/MPI-IS/mesh/issues/66
 
 ```
 Traceback (most recent call last):
@@ -169,7 +153,7 @@ Traceback (most recent call last):
 NotImplementedError: Platform does not define a GLUT font retrieval function
 ```
 
-3. If you get this error: `tkinter.TclError: no display name and no $DISPLAY environment variable`, add the lines below to the top of `ik_solvers.py` (anywhere before `import matplotlib.pyplot as plt` should work).
+2. If you get this error: `tkinter.TclError: no display name and no $DISPLAY environment variable`, add the lines below to the top of `ik_solvers.py` (anywhere before `import matplotlib.pyplot as plt` should work).
 ``` python
 import matplotlib
 matplotlib.use("Agg")

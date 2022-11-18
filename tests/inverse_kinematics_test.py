@@ -1,10 +1,7 @@
 from typing import Tuple, Callable
 
 import unittest
-import os
-import sys
 
-sys.path.append(os.getcwd())
 
 from ikflow.robots import RobotModel, PandaArm
 from ikflow.math_utils import geodesic_distance_between_quaternions

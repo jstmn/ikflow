@@ -1,8 +1,5 @@
 import unittest
-import os
-import sys
 
-sys.path.append(os.getcwd())
 
 from ikflow.math_utils import xyzw_to_wxyz, wxyz_to_xyzw
 from ikflow.utils import set_seed

@@ -5,7 +5,6 @@ import sys
 import pickle
 from typing import Dict
 
-sys.path.append(os.getcwd())
 
 import wandb
 import torch

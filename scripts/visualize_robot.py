@@ -4,7 +4,6 @@ import argparse
 import sys
 import os
 
-sys.path.append(os.getcwd())
 
 from ikflow.visualizations import oscillate_joints
 from ikflow.robots import get_robot

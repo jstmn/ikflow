@@ -1,8 +1,5 @@
 import unittest
-import os
-import sys
 
-sys.path.append(os.getcwd())
 
 from ikflow.model import glow_cNF_model
 from ikflow.supporting_types import IkflowModelParameters

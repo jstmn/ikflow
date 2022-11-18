@@ -1,8 +1,5 @@
 import unittest
-import os
-import sys
 
-sys.path.append(os.getcwd())
 
 from ikflow import config
 from ikflow.ikflow_solver import IkflowSolver
