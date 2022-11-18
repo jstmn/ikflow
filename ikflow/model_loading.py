@@ -22,25 +22,20 @@ def download_model(url: str, download_dir: Optional[str] = None) -> str:
     """
     if download_dir is None:
         download_dir = MODELS_DIR
-
     safe_mkdir(download_dir)
     assert os.path.isdir(download_dir), f"Download directory {download_dir} does not exist"
-
     model_name = model_filename(url)
     save_filepath = os.path.join(download_dir, model_name)
-    print(f"download_dir:      {download_dir}")
-    print(f"model_name:        {model_name}")
-    print(f"save_filepath:     {save_filepath}")
-
+    # print(f"download_dir:      {download_dir}")
+    # print(f"model_name:        {model_name}")
+    # print(f"save_filepath:     {save_filepath}")
     if os.path.isfile(save_filepath):
         print(f"file '{save_filepath}' exists already - returning")
         return save_filepath
-
-    print(f"calling urlretrieve()")
-    returned_filename, returned_headers = urlretrieve(url, filename=model_name)
-    print(f"returned_filename: {returned_filename}")
-    print(f"returned_headers:  {returned_headers}")
-
+    # print(f"calling urlretrieve()")
+    returned_filename, returned_headers = urlretrieve(url, filename=save_filepath)
+    # print(f"returned_filename: {returned_filename}")
+    # print(f"returned_headers:  {returned_headers}")
     return save_filepath
 
 
@@ -85,5 +80,4 @@ def get_ik_solver(model_name: str) -> Tuple[IkflowSolver, IkflowModelParameters]
 
 
 if __name__ == "__main__":
-    # ik_solver, hyper_parameters = get_ik_solver("panda_tpm")
-    safe_mkdir(MODELS_DIR)
+    ik_solver, hyper_parameters = get_ik_solver("panda_tpm")

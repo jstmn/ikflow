@@ -8,9 +8,6 @@ from ikflow.model_loading import get_ik_solver
 
 set_seed()
 
-with open("model_descriptions.yaml", "r") as f:
-    MODEL_DESCRIPTIONS = yaml.safe_load(f)
-
 VIS_FN_ARGUMENTS = {"oscillate_target_pose": {"nb_sols": 10, "fixed_latent_noise": True}, "oscillate_latent": {}}
 
 """ Example usage. Note that `model_name` should match an entry in `model_descriptions.yaml`

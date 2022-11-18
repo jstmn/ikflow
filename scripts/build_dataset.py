@@ -1,6 +1,6 @@
 import argparse
 from typing import Optional
-
+import os
 
 from ikflow import config
 from ikflow.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
@@ -152,9 +152,9 @@ def save_dataset_to_disk(
 """
 # Build dataset
 
-python build_dataset.py --robot_name=panda_arm --training_set_size=2500000
-python build_dataset.py --robot_name=panda_arm2 --training_set_size=2500000
-python build_dataset.py --robot_name=valkyrie --training_set_size=10000000
+python scripts/build_dataset.py --robot_name=panda_arm --training_set_size=2500000
+python scripts/build_dataset.py --robot_name=panda_arm2 --training_set_size=2500000
+python scripts/build_dataset.py --robot_name=valkyrie --training_set_size=10000000
 """
 
 

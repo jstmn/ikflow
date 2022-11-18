@@ -1,10 +1,8 @@
-from typing import Optional
 import os
 
-from ikflow import config
 from ikflow.utils import get_sum_joint_limit_range, get_dataset_directory
 
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from pytorch_lightning.core.datamodule import LightningDataModule
 
 import wandb

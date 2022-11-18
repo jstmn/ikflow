@@ -1,5 +1,5 @@
 from typing import List, Callable, Any
-from time import time, sleep
+from time import sleep
 from dataclasses import dataclass
 
 from ikflow.ikflow_solver import IkflowSolver

@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Optional
 
 from ikflow import config
 from ikflow.forward_kinematics import BatchFK, klampt_fk, kinpy_fk

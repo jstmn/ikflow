@@ -1,8 +1,7 @@
-from datetime import datetime
-from multiprocessing.sharedctypes import Value
-import os
 from typing import Tuple, Dict
+from datetime import datetime
 from time import time
+import os
 
 from ikflow import config
 from ikflow.ikflow_solver import IkflowSolver, draw_latent_noise
@@ -31,7 +30,7 @@ def checkpoint_dir(robot_name: str) -> str:
         ckpt_dir_name = f"{robot_name}--{_datetime_str()}--wandb-run-name:{wandb.run.name}/"
     else:
         ckpt_dir_name = f"{robot_name}--{_datetime_str()}/"
-    dir_filepath = os.path.join(config.TRAINING_LOGS_DIRECTORY, ckpt_dir_name)
+    dir_filepath = os.path.join(config.TRAINING_LOGS_DIR, ckpt_dir_name)
     return dir_filepath
 
 

@@ -10,9 +10,6 @@ import numpy as np
 
 set_seed()
 
-with open("model_descriptions.yaml", "r") as f:
-    MODEL_DESCRIPTIONS = yaml.safe_load(f)
-
 
 """ Usage 
 
@@ -24,8 +21,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="example.py - brief example of using IKFlow")
     parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
     args = parser.parse_args()
-
-    assert args.model_name in MODEL_DESCRIPTIONS
 
     # Build IkflowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)

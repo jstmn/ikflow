@@ -2,9 +2,6 @@ import argparse
 import os
 from ikflow import config
 
-import sys
-
-
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.ikflow_solver import IkflowSolver
 from ikflow.robots import get_robot, RobotModel
@@ -59,7 +56,7 @@ _____________
 Example usage
 
 # Real
-python train.py \
+python scripts/train.py \
     --robot_name=panda_arm \
     --nb_nodes=6 \
     --coeff_fn_internal_size=1024 \
@@ -73,8 +70,8 @@ python train.py \
     --run_description="baseline (lr logged)"
 
 
-# Smoke testing - w/ wandb
-python train.py \
+# Smoke test - with wandb
+python scripts/train.py \
     --robot_name=panda_arm \
     --nb_nodes=3 \
     --batch_size=64 \
@@ -84,8 +81,8 @@ python train.py \
     --val_set_size=250 \
     --checkpoint_every=500
 
-# Smoke test
-python train.py \
+# Smoke test - without wandb
+python scripts/train.py \
     --robot_name=valkyrie \
     --batch_size=50 \
     --optimizer=ranger \
@@ -97,7 +94,7 @@ python train.py \
     --disable_wandb
 
 # Test the learning rate scheduler
-python train.py \
+python scripts/train.py \
     --robot_name=panda_arm \
     --learning_rate=1.0 \
     --gamma=0.5 \

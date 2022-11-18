@@ -1,13 +1,10 @@
 from typing import List, Tuple
 import argparse
-import yaml
-import os
-import sys
 from time import time
 
 
 from ikflow.ikflow_solver import IkflowSolver
-from ikflow.robots import RobotModel, get_robot
+from ikflow.robots import RobotModel
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 from ikflow.evaluation_utils import get_solution_errors
@@ -16,9 +13,6 @@ import torch
 import numpy as np
 
 set_seed()
-
-with open("model_descriptions.yaml", "r") as f:
-    MODEL_DESCRIPTIONS = yaml.safe_load(f)
 
 
 def error_stats(
@@ -96,7 +90,7 @@ def pp_results(title, mean_l2_error, mean_angular_error, mean_runtime, runtime_s
 
 """ Usage 
 
-python evaluate.py \
+python scripts/evaluate.py \
     --samples_per_pose=50 \
     --testset_size=500 \
     --n_samples_for_runtime=512 \
@@ -135,57 +129,49 @@ if __name__ == "__main__":
     parser.add_argument("--all", action="store_true", help="Run for all robots in tpms")
     args = parser.parse_args()
 
-    assert (args.model_name is not None) != (args.all), "Only one of 'model_name' or 'all' can be provided"
-
-    if args.model_name is not None:
-        model_names = [args.model_name]
-    else:
-        model_names = [model_name for model_name in MODEL_DESCRIPTIONS]
+    assert args.all is False, f"--all currently unimplemented"
 
     # Get latent distribution parameters
     latent_noise_distribution = "gaussian"
     latent_noise_scale = 0.75
     runtime_n = args.n_samples_for_runtime
 
-    for model_name in model_names:
-        print("\n-------------")
-        print(f"Evaluating model '{model_name}'")
+    print("\n-------------")
+    print(f"Evaluating model '{args.model_name}'")
 
-        # Build IkflowSolver and set weights
-        ik_solver, hyper_parameters = get_ik_solver(model_name)
-        robot_model = ik_solver.robot
-        testset = robot_model.forward_kinematics_klampt(robot_model.sample(args.testset_size))
+    # Build IkflowSolver and set weights
+    ik_solver, hyper_parameters = get_ik_solver(args.model_name)
+    robot_model = ik_solver.robot
+    testset = robot_model.forward_kinematics_klampt(robot_model.sample(args.testset_size))
 
-        # ------------------------
-        # With solution refinement
-        #
-        mean_l2_error, mean_angular_error = error_stats(
-            ik_solver,
-            robot_model,
-            testset,
-            latent_noise_distribution,
-            latent_noise_scale,
-            args.samples_per_pose,
-            refine_solutions=True,
-        )
-        mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=True)
-        pp_results(
-            "IKFlow with solution refinement", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n
-        )
+    # ------------------------
+    # With solution refinement
+    #
+    mean_l2_error, mean_angular_error = error_stats(
+        ik_solver,
+        robot_model,
+        testset,
+        latent_noise_distribution,
+        latent_noise_scale,
+        args.samples_per_pose,
+        refine_solutions=True,
+    )
+    mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=True)
+    pp_results(
+        "IKFlow with solution refinement", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n
+    )
 
-        # ---------------------------
-        # Without solution refinement
-        #
-        mean_l2_error, mean_angular_error = error_stats(
-            ik_solver,
-            robot_model,
-            testset,
-            latent_noise_distribution,
-            latent_noise_scale,
-            args.samples_per_pose,
-            refine_solutions=False,
-        )
-        mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=False)
-        pp_results("Vanilla IKFlow", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n)
-
-    print("Done")
+    # ---------------------------
+    # Without solution refinement
+    #
+    mean_l2_error, mean_angular_error = error_stats(
+        ik_solver,
+        robot_model,
+        testset,
+        latent_noise_distribution,
+        latent_noise_scale,
+        args.samples_per_pose,
+        refine_solutions=False,
+    )
+    mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=False)
+    pp_results("Vanilla IKFlow", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n)

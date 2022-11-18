@@ -1,5 +1,4 @@
-from typing import Tuple, Union, Optional, Callable, Dict
-import csv
+from typing import Tuple, Optional, Callable
 import pathlib
 import os
 import random
@@ -7,17 +6,10 @@ import pkg_resources
 
 from ikflow import config
 
-# from ikflow.ikflow_solver import IkflowSolver
-# from ikflow.supporting_types import IkflowModelParameters
-
 import numpy as np
 import torch
 
-import yaml
-import os
 
-# _______________________
-# Dataset utilities
 def get_dataset_directory(robot: str):
     """Return the path of the directory"""
     return os.path.join(config.DATASET_DIR, robot)
@@ -26,9 +18,6 @@ def get_dataset_directory(robot: str):
 def get_filepath(local_filepath: str):
     return pkg_resources.resource_filename(__name__, local_filepath)
 
-
-# _______________________
-# Model loading utilities
 
 # _____________
 # Pytorch utils
