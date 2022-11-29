@@ -18,6 +18,7 @@ export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visu
 ```
 
 <ins>Ubuntu <= 20.x.y</ins>
+
 (This includes 20.04 LTS, 18.04 LTS, ...)
 ```
 sudo apt-get install -y qt5-default   
@@ -39,12 +40,14 @@ pip install -e .
 ## Getting started
 
 **> Example 1: Use IKFlow to generate IK solutions for the Franka Panda arm**
+
 Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper. Note that the value for `model_name` - in this case `panda_tpm` should match an entry in `model_descriptions.yaml` 
 ```
 python evaluate.py --testset_size=500 --model_name=panda_tpm
 ```
 
 **> Example 2: Visualize the solutions returned by the `panda_tpm` model**
+
 Run the following:
 ```
 python visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
