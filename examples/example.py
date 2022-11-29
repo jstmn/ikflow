@@ -1,10 +1,7 @@
 import argparse
-import yaml
-
 
 from ikflow.utils import set_seed
-from ikflow.ikflow_solver import get_ik_solver
-from ikflow.robots import get_robot
+from ikflow.model_loading import get_ik_solver
 
 import numpy as np
 

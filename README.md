@@ -12,30 +12,12 @@ not in the apt repository for Ubuntu 21.0+ so can't be installed. See https://as
 
 ### 1. Install version specific dependencies
 <ins>Ubuntu >= 21.04</ins>
-<!-- #### Ubuntu >= 21.04 -->
-<!-- **Ubuntu >= 21.04** -->
-
-<!-- 1. Install python3.8 -->
-Install python3.8
-```
-sudo apt update && sudo apt upgrade
-sudo apt install software-properties-common -y
-sudo add-apt-repository ppa:deadsnakes/ppa -y
-sudo apt update
-sudo apt install python3.8 -y
-```
-
-<!-- 2. Install base ubuntu dependencies -->
-Install base ubuntu dependencies
 ```
 sudo apt-get install -y python3-pip qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libosmesa6
 export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visualization script in a new terminal - annoying, I know
 ```
 
 <ins>Ubuntu <= 20.x.y</ins>
-<!-- #### Ubuntu <= 20.x.y -->
-<!-- **Ubuntu <= 20.x.y** -->
-<!-- 1. Install base ubuntu dependencies -->
 (This includes 20.04 LTS, 18.04 LTS, ...)
 ```
 sudo apt-get install -y qt5-default   
@@ -43,8 +25,6 @@ sudo apt-get install -y qt5-default
 
 ### 2. Install common dependencies
 These installation steps are the same regardless of ubuntu version
-
-Install dependencies:
 ```
 sudo apt-get install -y build-essential qtcreator python3.8-dev python3.8-venv git-lfs python3-wheel
 ```
