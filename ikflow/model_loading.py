@@ -26,27 +26,17 @@ def download_model(url: str, download_dir: Optional[str] = None) -> str:
     assert os.path.isdir(download_dir), f"Download directory {download_dir} does not exist"
     model_name = model_filename(url)
     save_filepath = os.path.join(download_dir, model_name)
-    # print(f"download_dir:      {download_dir}")
-    # print(f"model_name:        {model_name}")
-    # print(f"save_filepath:     {save_filepath}")
     if os.path.isfile(save_filepath):
         print(f"file '{save_filepath}' exists already - returning")
         return save_filepath
-    # print(f"calling urlretrieve()")
     returned_filename, returned_headers = urlretrieve(url, filename=save_filepath)
-    # print(f"returned_filename: {returned_filename}")
-    # print(f"returned_headers:  {returned_headers}")
     return save_filepath
 
 
 def model_filename(url: str) -> str:
-    """_summary_
+    """Return the model alias given the url of the model (stored in google cloud presumably).
 
-    Args:
-        url (str): _description_
-
-    Returns:
-        str: _description_
+    Example input/output: https://storage.googleapis.com/ikflow_models/atlas_desert-sweep-6.pkl -> atlas_desert-sweep-6.pkl
     """
     return url.split("/")[-1]
 
