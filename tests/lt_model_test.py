@@ -3,7 +3,7 @@ import unittest
 
 from ikflow import config
 from ikflow.ikflow_solver import IkflowSolver
-from ikflow.robots import get_robot
+from jkinpylib.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.supporting_types import IkflowModelParameters
 
@@ -25,7 +25,7 @@ class LitModelTest(unittest.TestCase):
     def test_gradient_calculated(self):
         batch_size = 10
         batch = (
-            torch.randn((batch_size, self.ik_solver.robot.ndofs)).to(config.device),
+            torch.randn((batch_size, self.ik_solver.robot.n_dofs)).to(config.device),
             torch.randn((batch_size, 7)).to(config.device),
         )
         fixed_latent_noise = torch.randn((5, self.ik_solver.network_width)).to(config.device)

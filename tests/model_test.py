@@ -3,7 +3,7 @@ import unittest
 
 from ikflow.model import glow_cNF_model
 from ikflow.supporting_types import IkflowModelParameters
-from ikflow.robots import get_robot
+from jkinpylib.robots import get_robot
 
 import torch
 

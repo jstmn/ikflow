@@ -19,7 +19,7 @@ setup(
         "tensorboard",
         "wandb",
         "black",
-        "jkinpylib==0.0.3",
+        "jkinpylib==0.0.4",
     ],
     include_package_data=True,
     packages=["ikflow"],

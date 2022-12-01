@@ -5,7 +5,7 @@ import os
 import yaml
 
 from ikflow import config
-from ikflow.robots import get_robot, RobotModel
+from jkinpylib.robots import get_robot, Robot
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.model import glow_cNF_model
 from ikflow.utils import get_filepath
@@ -32,8 +32,8 @@ def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, la
 class IkflowSolver:
     # def __init__(self, hyper_parameters: IkflowModelParameters, robot_model):
     def __init__(
-        self, hyper_parameters: IkflowModelParameters, robot_model: RobotModel
-    ):  # TODO(@jstmn): refactor to enable typehints for RobotModel. Currently this is causing a circular import error
+        self, hyper_parameters: IkflowModelParameters, robot_model: Robot
+    ):  # TODO(@jstmn): refactor to enable typehints for Robot. Currently this is causing a circular import error
         """Initialize an IkflowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
 
@@ -42,12 +42,12 @@ class IkflowSolver:
             self.dim_cond = 8  # [x, ... q3, softflow_scale]   (softflow_scale should be 0 for inference)
         self.network_width = hyper_parameters.dim_latent_space
         self.nn_model = glow_cNF_model(hyper_parameters, robot_model, self.dim_cond, self.network_width)
-        self.ndofs = robot_model.ndofs
+        self.n_dofs = robot_model.n_dofs
         self.robot_model = robot_model
 
     # TODO(@jstmn): Consolidate `robot`, `robot_model`
     @property
-    def robot(self) -> RobotModel:
+    def robot(self) -> Robot:
         return self.robot_model
 
     # TODO(@jstmn): Unit test this function
@@ -59,18 +59,18 @@ class IkflowSolver:
     ) -> Tuple[torch.Tensor, float]:
         """Refine a batch of IK solutions using the klampt IK solver
         Args:
-            ikflow_solutions (torch.Tensor): A batch of IK solutions of the form [batch x ndofs]
+            ikflow_solutions (torch.Tensor): A batch of IK solutions of the form [batch x n_dofs]
             target_pose (Union[List[float], np.ndarray]): The target endpose(s). Must either be of the form
                                                             [x, y, z, q0, q1, q2, q3] or be a [batch x 7] numpy array
         Returns:
-            torch.Tensor: A batch of IK refined solutions [batch x ndofs]
+            torch.Tensor: A batch of IK refined solutions [batch x n_dofs]
         """
         t0 = time()
         b = ikflow_solutions.shape[0]
         if isinstance(target_pose, list):
             target_pose = np.array(target_pose)
         if isinstance(target_pose, np.ndarray) and len(target_pose.shape) == 2:
-            assert target_pose.shape[0] == b, f"target_pose.shape ({target_pose.shape[0]}) != [{b} x {self.ndofs}]"
+            assert target_pose.shape[0] == b, f"target_pose.shape ({target_pose.shape[0]}) != [{b} x {self.n_dofs}]"
 
         ikflow_solutions_np = ikflow_solutions.detach().cpu().numpy()
         refined = ikflow_solutions_np.copy()
@@ -109,7 +109,7 @@ class IkflowSolver:
                                                     gaussian latent space are multiplied by this value.
         Returns:
             Tuple[torch.Tensor, float]:
-                - A [batch x ndofs] batch of IK solutions
+                - A [batch x n_dofs] batch of IK solutions
                 - The runtime of the operation
         """
         assert len(y) == 7
@@ -128,7 +128,7 @@ class IkflowSolver:
         assert latent_noise.shape[0] == m
         assert latent_noise.shape[1] == self.network_width
         output_rev, _ = self.nn_model(latent_noise, c=conditional, rev=True)
-        solutions = output_rev[:, 0 : self.ndofs]
+        solutions = output_rev[:, 0 : self.n_dofs]
         runtime = time() - t0
         if not refine_solutions:
             return solutions, runtime
@@ -160,7 +160,7 @@ class IkflowSolver:
         assert latent_noise.shape[0] == m
         assert latent_noise.shape[1] == self.network_width
         output_rev, _ = self.nn_model(latent_noise, c=conditional, rev=True)
-        solutions = output_rev[:, 0 : self.ndofs]
+        solutions = output_rev[:, 0 : self.n_dofs]
         runtime = time() - t0
         if not refine_solutions:
             return solutions, runtime

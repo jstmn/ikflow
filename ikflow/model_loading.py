@@ -3,7 +3,7 @@ import yaml
 import os
 from urllib.request import urlretrieve
 
-from ikflow.robots import get_robot
+from jkinpylib.robots import get_robot
 from ikflow.utils import safe_mkdir, get_filepath
 from ikflow.ikflow_solver import IkflowSolver
 from ikflow.supporting_types import IkflowModelParameters
@@ -29,7 +29,7 @@ def download_model(url: str, download_dir: Optional[str] = None) -> str:
     if os.path.isfile(save_filepath):
         print(f"file '{save_filepath}' exists already - returning")
         return save_filepath
-    returned_filename, returned_headers = urlretrieve(url, filename=save_filepath)
+    urlretrieve(url, filename=save_filepath)  # returns (filename, headers)
     return save_filepath
 
 

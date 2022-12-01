@@ -4,7 +4,7 @@ from ikflow import config
 
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.ikflow_solver import IkflowSolver
-from ikflow.robots import get_robot, RobotModel
+from jkinpylib.robots import get_robot, Robot
 from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
 from ikflow.utils import boolean_string, non_private_dict
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     base_hparams.zeros_noise_scale = args.zeros_noise_scale
     base_hparams.softflow_enabled = boolean_string(args.softflow_enabled)
 
-    assert isinstance(robot, RobotModel), "Only 3d robots are supported for training currently"
+    assert isinstance(robot, Robot), "Only 3d robots are supported for training currently"
     robot.assert_batch_fk_equal()
     torch.autograd.set_detect_anomaly(True)
 

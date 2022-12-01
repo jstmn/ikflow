@@ -6,7 +6,7 @@ import os
 
 
 from ikflow.visualizations import oscillate_joints
-from ikflow.robots import get_robot
+from jkinpylib.robots import get_robot
 
 """ Example usage
 

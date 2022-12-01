@@ -21,17 +21,17 @@ export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visu
 
 (This includes 20.04 LTS, 18.04 LTS, ...)
 ```
-sudo apt-get install -y qt5-default   
+sudo apt-get install -y qt5-default
 ```
 
 ### 2. Install common dependencies
 These installation steps are the same regardless of ubuntu version
 ```
 sudo apt-get install -y build-essential qtcreator python3.8-dev python3.8-venv git-lfs python3-wheel
+python3.8 -m pip install --user virtualenv
 ```
 Create a virtual environment:
 ```
-python3.8 -m pip install --user virtualenv
 python3.8 -m venv venv && source venv/bin/activate
 pip install -e .
 ```

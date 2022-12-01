@@ -4,7 +4,7 @@ import os
 
 from ikflow import config
 from ikflow.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
-from ikflow.robots import get_robot, RobotModel
+from jkinpylib.robots import get_robot, Robot
 
 import numpy as np
 import torch
@@ -14,7 +14,7 @@ TRAINING_SET_SIZE_SMALL = int(1e5)
 TEST_SET_SIZE = 15000
 
 
-def print_saved_datasets_stats(robots: Optional[RobotModel] = []):
+def print_saved_datasets_stats(robots: Optional[Robot] = []):
     """Printout summary statistics for each dataset. Optionaly print out the default joint limits of all robots in
     `robots`
     """
@@ -52,7 +52,7 @@ def print_saved_datasets_stats(robots: Optional[RobotModel] = []):
 
 # TODO(@jeremysm): Consider adding plots from generated datasets. See `plot_dataset_samples()` in 'Dataset visualization and validation.ipynb'
 def save_dataset_to_disk(
-    robot: RobotModel,
+    robot: Robot,
     dataset_directory: str,
     training_set_size: int,
     test_set_size: int,
@@ -91,10 +91,10 @@ def save_dataset_to_disk(
         raise ValueError("Shouldn't be here")
 
     # Build testset
-    te_samples = robot.sample(test_set_size, solver=solver)
+    te_samples = robot.sample_joint_angles(test_set_size, solver=solver)
     te_endpoints = endpoints_from_samples_3d(te_samples)
 
-    samples = np.zeros((training_set_size, robot.ndofs))
+    samples = np.zeros((training_set_size, robot.n_dofs))
     end_points = np.zeros((training_set_size, 7))
 
     # Build training set
@@ -103,7 +103,7 @@ def save_dataset_to_disk(
         iterator = tqdm.tqdm(iterator)
 
     for i in iterator:
-        samples_i = robot.sample(INTERNAL_BATCH_SIZE)
+        samples_i = robot.sample_joint_angles(INTERNAL_BATCH_SIZE)
         end_points_i = endpoints_from_samples_3d(samples_i)
         samples[i : i + INTERNAL_BATCH_SIZE] = samples_i
         end_points[i : i + INTERNAL_BATCH_SIZE] = end_points_i

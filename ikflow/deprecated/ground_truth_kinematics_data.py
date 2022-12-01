@@ -20,11 +20,11 @@ import numpy as np
 # atlas_data = KnownKinematicMapping(configs=[], poses=[])
 
 
-def get_gt_samples_and_endpoints(robot: robots.RobotModel) -> Tuple[np.array, np.array]:
+def get_gt_samples_and_endpoints(robot: robots.Robot) -> Tuple[np.array, np.array]:
     """Data store for joint space - cartesian space maps. There are better ways to store this, I know.
 
     Args:
-        robot (robots.RobotModel): _description_
+        robot (robots.Robot): _description_
 
     Raises:
         ValueError: _description_

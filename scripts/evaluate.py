@@ -4,7 +4,7 @@ from time import time
 
 
 from ikflow.ikflow_solver import IkflowSolver
-from ikflow.robots import RobotModel
+from jkinpylib.robots import Robot
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 from ikflow.evaluation_utils import get_solution_errors
@@ -17,7 +17,7 @@ set_seed()
 
 def error_stats(
     ik_solver: IkflowSolver,
-    robot: RobotModel,
+    robot: Robot,
     testset: np.ndarray,
     latent_noise_distribution: str,
     latent_noise_scale: float,
@@ -66,7 +66,7 @@ def runtime_stats(ik_solver: IkflowSolver, n_solutions: int, k: int, refine_solu
         Tuple[float, float]: Mean, std of the runtime
     """
     sample_times = []
-    poses = ik_solver.robot_model.forward_kinematics_klampt(ik_solver.robot_model.sample(n_solutions * k))
+    poses = ik_solver.robot_model.forward_kinematics_klampt(ik_solver.robot_model.sample_joint_angles(n_solutions * k))
     with torch.inference_mode():
         for k_i in range(k):
             target_poses = poses[k_i * n_solutions : (k_i + 1) * n_solutions]
@@ -97,21 +97,24 @@ python scripts/evaluate.py \
     --model_name=panda_tpm
 
 Expected output:
+
+    ...
     ----------------------------------------
     > IKFlow with solution refinement
 
-        Average L2 error:      0.6555 mm
-        Average angular error: 0.6084 deg
-        Average runtime:       66.3345 +/- 0.0062 ms (for 512 samples)
-                            0.1296 ms per solution
+        Average L2 error:      0.5837 mm
+        Average angular error: 0.0075 deg
+        Average runtime:       76.1609 +/- 0.0112 ms (for 512 samples)
+                            0.1488 ms per solution
 
     ----------------------------------------
     > Vanilla IKFlow
 
-        Average L2 error:      7.645 mm
-        Average angular error: 1.2644 deg
-        Average runtime:       10.8963 +/- 0.001 ms (for 512 samples)
-                            0.0213 ms per solution
+        Average L2 error:      7.5254 mm
+        Average angular error: 1.6287 deg
+        Average runtime:       10.5191 +/- 0.0 ms (for 512 samples)
+                            0.0205 ms per solution
+
     Done
 """
 
@@ -142,7 +145,7 @@ if __name__ == "__main__":
     # Build IkflowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)
     robot_model = ik_solver.robot
-    testset = robot_model.forward_kinematics_klampt(robot_model.sample(args.testset_size))
+    testset = robot_model.forward_kinematics_klampt(robot_model.sample_joint_angles(args.testset_size))
 
     # ------------------------
     # With solution refinement

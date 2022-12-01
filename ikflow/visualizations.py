@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from ikflow.ikflow_solver import IkflowSolver
 from ikflow import config
-from ikflow import robots
 from ikflow.utils import get_solution_errors
+from jkinpylib.robot import Robot
 
 from klampt.model import coordinates, trajectory
 from klampt import vis
@@ -16,7 +16,7 @@ import torch.optim
 
 
 def _run_demo(
-    robot_model: robots.RobotModel,
+    robot_model: Robot,
     n_worlds: int,
     setup_fn: Callable[[List[WorldModel]], None],
     loop_fn: Callable[[List[WorldModel], Any], None],
@@ -82,7 +82,7 @@ def visualize_fk(ik_solver: IkflowSolver, solver="klampt"):
     from klampt.math import so3
 
     def loop_fn(worlds, _demo_state):
-        x_random = robot.sample(1)
+        x_random = robot.sample_joint_angles(1)
         q_random = robot._x_to_qs(x_random)
         worlds[0].robot(0).setConfig(q_random[0])
 
@@ -246,7 +246,7 @@ def random_target_pose(ik_solver: IkflowSolver, nb_sols=5):
 
     def loop_fn(worlds, _demo_state):
         # Get random sample
-        random_sample = self.robot_model.sample(1)
+        random_sample = self.robot_model.sample_joint_angles(1)
         random_sample_q = self.robot_model._x_to_qs(random_sample)
         worlds[0].robot(0).setConfig(random_sample_q[0])
         target_pose = self.robot_model.forward_kinematics_klampt(random_sample)[0]
@@ -266,7 +266,7 @@ def random_target_pose(ik_solver: IkflowSolver, nb_sols=5):
     self._run_demo(nb_sols + 1, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
 
 
-def oscillate_joints(robot: robots.RobotModel):
+def oscillate_joints(robot: Robot):
     """Set the end effector to a randomly drawn pose. Generate and visualize `nb_sols` solutions for the pose"""
 
     inc = 0.01
@@ -283,7 +283,7 @@ def oscillate_joints(robot: robots.RobotModel):
 
     def loop_fn(worlds, _demo_state):
         no_change = True
-        for i in range(robot.ndofs):
+        for i in range(robot.n_dofs):
             joint_limits = robot.actuated_joints_limits[i]
             if _demo_state.increasing:
                 if _demo_state.q[i] < joint_limits[1]:

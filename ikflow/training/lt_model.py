@@ -57,7 +57,7 @@ class IkfLitModel(LightningModule):
         self.ik_solver = ik_solver
         self.nn_model = ik_solver.nn_model
         self.base_hparams = base_hparams
-        self.ndofs = self.ik_solver.robot.ndofs
+        self.n_dofs = self.ik_solver.robot.n_dofs
         self.dim_tot = self.base_hparams.dim_latent_space
         self.checkpoint_every = checkpoint_every
         self.log_every = log_every
@@ -138,8 +138,8 @@ class IkfLitModel(LightningModule):
         x = x.to(device)
 
         batch_size = y.shape[0]
-        if self.dim_tot > self.ndofs:
-            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.ndofs)).to(device)
+        if self.dim_tot > self.n_dofs:
+            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.n_dofs)).to(device)
             x = torch.cat([x, pad_x], dim=1)
 
         conditional = torch.cat([y, torch.zeros((batch_size, 1)).to(device)], dim=1)
@@ -222,7 +222,7 @@ class IkfLitModel(LightningModule):
         # TODO(@jeremysm): Move this error calculation to evaluation.py
         samples, model_runtime = self.make_samples(ee_pose_target, self.hparams.samples_per_pose)
         ee_pose_ikflow = self.ik_solver.robot.forward_kinematics(
-            samples[:, 0 : self.ik_solver.robot.ndofs].cpu().detach().numpy()
+            samples[:, 0 : self.ik_solver.robot.n_dofs].cpu().detach().numpy()
         )
         # Positional Error
         pos_l2errs = np.linalg.norm(ee_pose_ikflow[:, 0:3] - ee_pose_target[0:3], axis=1)
@@ -295,4 +295,4 @@ class IkfLitModel(LightningModule):
 
         t0 = time()
         output_rev, jac = self.nn_model(latent_noise, c=conditional, rev=True)
-        return output_rev[:, 0 : self.ndofs], time() - t0
+        return output_rev[:, 0 : self.n_dofs], time() - t0

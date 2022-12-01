@@ -3,7 +3,7 @@ from typing import Tuple, Callable
 import unittest
 
 
-from ikflow.robots import RobotModel, PandaArm
+from jkinpylib.robots import Robot, PandaArm
 from ikflow.math_utils import geodesic_distance_between_quaternions
 from ikflow.utils import set_seed
 
@@ -44,9 +44,7 @@ class TestInverseKinematics(unittest.TestCase):
         for i in range(rotational_errors.shape[0]):
             self.assertLess(rotational_errors[i], max_allowable_rotational_err)
 
-    def get_fk_poses(
-        self, robot: RobotModel, samples: np.array
-    ) -> Tuple[np.array, np.array, Tuple[np.array, np.array]]:
+    def get_fk_poses(self, robot: Robot, samples: np.array) -> Tuple[np.array, np.array, Tuple[np.array, np.array]]:
         """Return fk solutions calculated by kinpy, klampt, and batch_fk"""
         kinpy_fk = robot.forward_kinematics_kinpy(samples)
         klampt_fk = robot.forward_kinematics_klampt(samples)
@@ -71,11 +69,11 @@ class TestInverseKinematics(unittest.TestCase):
         l2_err = np.linalg.norm(pose[0:3] - solution_pose[0, 0:3])
         self.assertLess(l2_err, 2 * positional_tol)
 
-    def solution_valid(self, robot: RobotModel, solution: np.ndarray, pose_gt: np.ndarray, positional_tol: float):
+    def solution_valid(self, robot: Robot, solution: np.ndarray, pose_gt: np.ndarray, positional_tol: float):
         if solution is None:
             print(" -> Solution is None, failing")
             return False, -1
-        self.assertEqual(solution.shape, (1, robot.ndofs))
+        self.assertEqual(solution.shape, (1, robot.n_dofs))
         poses_ik = robot.forward_kinematics_klampt(solution)
         self.assertEqual(poses_ik.shape, (1, 7))
         # Check solution error
@@ -108,7 +106,7 @@ class TestInverseKinematics(unittest.TestCase):
         verbosity = 0
         robot = self.panda_arm
 
-        samples = robot.sample(n)
+        samples = robot.sample_joint_angles(n)
         poses_gt = robot.forward_kinematics_klampt(samples)
         samples_noisy = samples + np.random.normal(0, 0.1, samples.shape)
 
@@ -140,7 +138,7 @@ class TestInverseKinematics(unittest.TestCase):
         positional_tol = 1e-4
         verbosity = 0
         robot = self.panda_arm
-        poses_gt = robot.forward_kinematics_klampt(robot.sample(n))
+        poses_gt = robot.forward_kinematics_klampt(robot.sample_joint_angles(n))
 
         for i, pose_gt in enumerate(poses_gt):
             solution_klampt = robot.inverse_kinematics_klampt(

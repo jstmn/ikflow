@@ -6,7 +6,7 @@ from time import time
 
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.ikflow_solver import IkflowSolver
-from ikflow.robots import get_robot
+from jkinpylib.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
 

@@ -1,6 +1,6 @@
 from typing import Tuple, Union, Optional, Callable, Dict
 
-from ikflow.robots import RobotModel, RobotModel, get_robot
+from jkinpylib.robots import Robot, get_robot
 from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow import config
 
@@ -9,20 +9,20 @@ import torch
 
 
 def get_solution_errors(
-    robot_model: RobotModel, solutions: Union[torch.Tensor, np.ndarray], target_pose: np.ndarray
+    robot_model: Robot, solutions: Union[torch.Tensor, np.ndarray], target_pose: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Return the L2 and angular errors of calculated ik solutions for a given target_pose. Note: this function expects
     multiple solutions but only a single target_pose. All of the solutions are assumed to be for the given target_pose
 
     Args:
-        robot_model (RobotModel): The RobotModel which contains the FK function we will use
+        robot_model (Robot): The Robot which contains the FK function we will use
         solutions (Union[torch.Tensor, np.ndarray]): [n x 7] IK solutions for the given target pose
         target_pose (np.ndarray): [7] the target pose the IK solutions were generated for
 
     Returns:
         Tuple[np.ndarray, np.ndarray]: The L2, and angular (rad) errors of IK solutions for the given target_pose
     """
-    ee_pose_ikflow = robot_model.forward_kinematics(solutions[:, 0 : robot_model.ndofs].cpu().detach().numpy())
+    ee_pose_ikflow = robot_model.forward_kinematics(solutions[:, 0 : robot_model.n_dofs].cpu().detach().numpy())
 
     # Positional Error
     l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_pose[0:3], axis=1)

@@ -1,7 +1,7 @@
 from ikflow import config
 
 from ikflow.supporting_types import IkflowModelParameters
-from ikflow.robots import RobotModel
+from jkinpylib.robots import Robot
 
 import FrEIA.framework as Ff
 import FrEIA.modules as Fm
@@ -60,7 +60,7 @@ def subnet_constructor(internal_size: int, n_layers: int, ch_in: int, ch_out: in
         )
 
 
-def glow_cNF_model(params: IkflowModelParameters, robot_model: RobotModel, dim_cond: int, ndim_tot: int):
+def glow_cNF_model(params: IkflowModelParameters, robot_model: Robot, dim_cond: int, ndim_tot: int):
     """
     Build an conditional invertible neural network consisting of a sequence of glow coupling layers, and permutation layers
     """
@@ -76,7 +76,7 @@ def glow_cNF_model(params: IkflowModelParameters, robot_model: RobotModel, dim_c
     # Transform Node to map x_i from joint space to [-1, 1]
     x_invSig = torch.eye(ndim_tot)
     x_Mu = torch.zeros(ndim_tot)
-    for i in range(robot_model.ndofs):
+    for i in range(robot_model.n_dofs):
         x_invSig[i, i] = 1.0 / max(
             abs(robot_model.actuated_joints_limits[i][0]), abs(robot_model.actuated_joints_limits[i][1])
         )
