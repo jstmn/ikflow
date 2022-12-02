@@ -30,7 +30,7 @@ def calculate_ave_runtime(ik_solver: IkflowSolver, n_samples: int):
         for i in range(30):
             pose = np.random.random(7)
             sample_times.append(
-                ik_solver.make_samples(
+                ik_solver.solve(
                     pose,
                     n_samples,
                 )[1]

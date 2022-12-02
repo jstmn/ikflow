@@ -1,14 +1,11 @@
 from typing import List, Tuple, Optional, Union
 import pickle
 from time import time
-import os
-import yaml
 
 from ikflow import config
-from jkinpylib.robots import get_robot, Robot
+from jkinpylib.robots import Robot
 from ikflow.supporting_types import IkflowModelParameters
 from ikflow.model import glow_cNF_model
-from ikflow.utils import get_filepath
 
 import numpy as np
 import torch
@@ -87,11 +84,10 @@ class IkflowSolver:
 
         return torch.from_numpy(refined).to(config.device), time() - t0
 
-    # TODO(@jstm): Rename to 'solve' / 'get_solutions' / 'generate_solutions' / ...
-    def make_samples(
+    def solve(
         self,
         y: List[float],
-        m: int,
+        n: int,
         latent_noise: Optional[torch.Tensor] = None,
         latent_noise_distribution: str = "gaussian",
         latent_noise_scale: float = 1,
@@ -100,9 +96,9 @@ class IkflowSolver:
         """Run the network in reverse to generate samples conditioned on a pose y
         Args:
             y (List[float]): Target endpose of the form [x, y, z, q0, q1, q2, q3]
-            m (int): The number of samples to draw
+            n (int): The number of samples to draw
             latent_noise (Optional[torch.Tensor], optional): A batch of [batch x network_widthal] latent noise vectors.
-                                                                Note that `y` and `m` will be ignored if this variable
+                                                                Note that `y` and `n` will be ignored if this variable
                                                                 is passed. Defaults to None.
             latent_noise_distribution (str): One of ["gaussian", "uniform"]
             latent_noise_scale (float, optional): The scaling factor for the latent noise samples. Samples from the
@@ -117,15 +113,15 @@ class IkflowSolver:
         t0 = time()
 
         # (:, 0:3) is x, y, z, (:, 3:7) is quat
-        conditional = torch.zeros(m, self.dim_cond)
+        conditional = torch.zeros(n, self.dim_cond)
         conditional[:, 0:3] = torch.FloatTensor(y[:3])
         conditional[:, 3 : 3 + 4] = torch.FloatTensor(np.array([y[3:]]))
         conditional = conditional.to(config.device)
 
         latent_noise = draw_latent_noise(
-            latent_noise, latent_noise_distribution, latent_noise_scale, (m, self.network_width)
+            latent_noise, latent_noise_distribution, latent_noise_scale, (n, self.network_width)
         )
-        assert latent_noise.shape[0] == m
+        assert latent_noise.shape[0] == n
         assert latent_noise.shape[1] == self.network_width
         output_rev, _ = self.nn_model(latent_noise, c=conditional, rev=True)
         solutions = output_rev[:, 0 : self.n_dofs]
@@ -135,7 +131,7 @@ class IkflowSolver:
         refined, refinement_runtime = self.refine_solutions(solutions, y)
         return refined, runtime + refinement_runtime
 
-    def make_samples_mult_y(
+    def solve_mult_y(
         self,
         ys: np.array,
         latent_noise: Optional[torch.Tensor] = None,
@@ -143,21 +139,21 @@ class IkflowSolver:
         latent_noise_scale: float = 1,
         refine_solutions: bool = False,
     ) -> Tuple[torch.Tensor, float]:
-        """Same as make_samples, but for multiple ys.
+        """Same as solve, but for multiple ys.
         ys: [batch x 7]
         """
         assert ys.shape[1] == 7
         t0 = time()
-        m = ys.shape[0]
+        n = ys.shape[0]
 
         # Note: No code change required here to handle using/not using softflow.
-        conditional = torch.zeros(m, self.dim_cond)
+        conditional = torch.zeros(n, self.dim_cond)
         conditional[:, 0:7] = torch.FloatTensor(ys)
         conditional = conditional.to(config.device)
         latent_noise = draw_latent_noise(
-            latent_noise, latent_noise_distribution, latent_noise_scale, (m, self.network_width)
+            latent_noise, latent_noise_distribution, latent_noise_scale, (n, self.network_width)
         )
-        assert latent_noise.shape[0] == m
+        assert latent_noise.shape[0] == n
         assert latent_noise.shape[1] == self.network_width
         output_rev, _ = self.nn_model(latent_noise, c=conditional, rev=True)
         solutions = output_rev[:, 0 : self.n_dofs]

@@ -36,7 +36,7 @@ if __name__ == "__main__":
     number_of_solutions = 3
 
     # -> Get some unrefined solutions
-    solution, solution_runtime = ik_solver.make_samples(target_pose, number_of_solutions, refine_solutions=False)
+    solution, solution_runtime = ik_solver.solve(target_pose, number_of_solutions, refine_solutions=False)
     realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_pose[0:3], axis=1)
     print(
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     )
 
     # -> Get some refined solutions
-    solution, solution_runtime = ik_solver.make_samples(target_pose, number_of_solutions, refine_solutions=True)
+    solution, solution_runtime = ik_solver.solve(target_pose, number_of_solutions, refine_solutions=True)
     realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_pose[0:3], axis=1)
     print(
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     """MULTIPLE TARGET-POSES
 
     The following code is for when you want to run IKFlow on multiple target poses at once. The only difference is that 
-    you need to call `make_samples_mult_y` instead of `make_samples`.
+    you need to call `solve_mult_y` instead of `solve`.
     """
     target_poses = np.array(
         [
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     )
 
     # -> unrefined solutions
-    solution, solution_runtime = ik_solver.make_samples_mult_y(target_poses, refine_solutions=False)
+    solution, solution_runtime = ik_solver.solve_mult_y(target_poses, refine_solutions=False)
     realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_poses[:, 0:3], axis=1)
     print(
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     )
 
     # -> refined solutions
-    solution, solution_runtime = ik_solver.make_samples_mult_y(target_poses, refine_solutions=True)
+    solution, solution_runtime = ik_solver.solve_mult_y(target_poses, refine_solutions=True)
     realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_poses[:, 0:3], axis=1)
     print(

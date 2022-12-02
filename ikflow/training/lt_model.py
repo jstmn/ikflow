@@ -220,7 +220,7 @@ class IkfLitModel(LightningModule):
         x, y = batch
         ee_pose_target = y.cpu().detach().numpy()[0]
         # TODO(@jeremysm): Move this error calculation to evaluation.py
-        samples, model_runtime = self.make_samples(ee_pose_target, self.hparams.samples_per_pose)
+        samples, model_runtime = self.solve(ee_pose_target, self.hparams.samples_per_pose)
         ee_pose_ikflow = self.ik_solver.robot.forward_kinematics(
             samples[:, 0 : self.ik_solver.robot.n_dofs].cpu().detach().numpy()
         )
@@ -271,7 +271,7 @@ class IkfLitModel(LightningModule):
         #   "UserWarning: You called `self.log('global_step', ...)` in your `validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32."
         self.log("global_step", float(self.global_step))
 
-    def make_samples(self, y: Tuple[float], m: int) -> Tuple[torch.Tensor, float]:
+    def solve(self, y: Tuple[float], m: int) -> Tuple[torch.Tensor, float]:
         """
         Run the network in reverse to generate samples conditioned on a pose y
                 y: endpose [x, y, z, q0, q1, q2, q3]

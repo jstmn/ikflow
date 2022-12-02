@@ -133,7 +133,7 @@ def oscillate_latent(ik_solver: IkflowSolver):
             rev_input[0, i] = 0.25 * np.cos(_demo_state.counter / 25) - 0.1 * np.cos(_demo_state.counter / 250)
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.make_samples(target_pose, 1, latent_noise=rev_input)[0]
+        ik_solutions = ik_solver.solve(target_pose, 1, latent_noise=rev_input)[0]
         qs = robot._x_to_qs(ik_solutions)
         worlds[1].robot(0).setConfig(qs[0])
 
@@ -205,7 +205,7 @@ def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise
         # _demo_state.target_pose[1] = y
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.make_samples(_demo_state.target_pose, nb_sols, latent_noise=latent)[0]
+        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent_noise=latent)[0]
         l2_errors, ang_errors = get_solution_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
         _demo_state.ave_ang_error = np.rad2deg(np.mean(ang_errors))
@@ -252,7 +252,7 @@ def random_target_pose(ik_solver: IkflowSolver, nb_sols=5):
         target_pose = self.robot.forward_kinematics_klampt(random_sample)[0]
 
         # Get solutions to pose of random sample
-        ik_solutions = self.ik_solver.make_samples(target_pose, nb_sols)[0]
+        ik_solutions = self.ik_solver.solve(target_pose, nb_sols)[0]
         qs = self.robot._x_to_qs(ik_solutions)
         for i in range(nb_sols):
             worlds[i + 1].robot(0).setConfig(qs[i])

@@ -46,7 +46,7 @@ def error_stats(
     with torch.inference_mode():
         for i in range(testset.shape[0]):
             ee_pose_target = testset[i]
-            samples, _ = ik_solver.make_samples(
+            samples, _ = ik_solver.solve(
                 ee_pose_target,
                 samples_per_pose,
                 latent_noise_distribution=latent_noise_distribution,
@@ -72,7 +72,7 @@ def runtime_stats(ik_solver: IkflowSolver, n_solutions: int, k: int, refine_solu
             target_poses = poses[k_i * n_solutions : (k_i + 1) * n_solutions]
             assert target_poses.shape == (n_solutions, 7)
             t0 = time()
-            ik_solver.make_samples_mult_y(target_poses, refine_solutions=refine_solutions)[1]
+            ik_solver.solve_mult_y(target_poses, refine_solutions=refine_solutions)[1]
             sample_times.append(time() - t0)
     return np.mean(sample_times) * 1000, np.std(sample_times)
 

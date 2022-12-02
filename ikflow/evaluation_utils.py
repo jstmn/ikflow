@@ -1,6 +1,6 @@
-from typing import Tuple, Union, Optional, Callable, Dict
+from typing import Tuple, Union
 
-from jkinpylib.robots import Robot, get_robot
+from jkinpylib.robots import Robot
 from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow import config
 
