@@ -178,7 +178,6 @@ if __name__ == "__main__":
     base_hparams.softflow_enabled = boolean_string(args.softflow_enabled)
 
     assert isinstance(robot, Robot), "Only 3d robots are supported for training currently"
-    robot.assert_batch_fk_equal()
     torch.autograd.set_detect_anomaly(True)
 
     # Setup wandb logging

@@ -59,12 +59,12 @@ def get_ik_solver(model_name: str) -> Tuple[IkflowSolver, IkflowModelParameters]
         model_weights_filepath
     ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
 
-    robot_model = get_robot(robot_name)
+    robot = get_robot(robot_name)
 
     # Build IkflowSolver and set weights
     hyper_parameters = IkflowModelParameters()
     hyper_parameters.__dict__.update(hparams)
-    ik_solver = IkflowSolver(hyper_parameters, robot_model)
+    ik_solver = IkflowSolver(hyper_parameters, robot)
     ik_solver.load_state_dict(model_weights_filepath)
     return ik_solver, hyper_parameters
 

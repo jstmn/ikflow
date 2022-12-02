@@ -42,7 +42,7 @@ def calculate_ave_runtime(ik_solver: IkflowSolver, n_samples: int):
 
 """ Example usage
 
-python tools/runtime_eval.py \
+python scripts/runtime_eval.py \
     --nb_nodes_range 4 6 8 10 12 14
 """
 
@@ -82,7 +82,10 @@ if __name__ == "__main__":
     print("----------------|-------------------")
     for nb_nodes in args.nb_nodes_range:
         hparams.nb_nodes = nb_nodes
-        ik_solver = IkflowSolver(hparams, robot, verbosity=0)
+        ik_solver = IkflowSolver(
+            hparams,
+            robot,
+        )
 
         ave_runtime, std = calculate_ave_runtime(ik_solver, args.n_samples_for_runtime)
         print(f"{nb_nodes}\t\t| {ave_runtime:.2f}")

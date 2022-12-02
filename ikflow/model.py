@@ -60,7 +60,7 @@ def subnet_constructor(internal_size: int, n_layers: int, ch_in: int, ch_out: in
         )
 
 
-def glow_cNF_model(params: IkflowModelParameters, robot_model: Robot, dim_cond: int, ndim_tot: int):
+def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, ndim_tot: int):
     """
     Build an conditional invertible neural network consisting of a sequence of glow coupling layers, and permutation layers
     """
@@ -76,10 +76,8 @@ def glow_cNF_model(params: IkflowModelParameters, robot_model: Robot, dim_cond: 
     # Transform Node to map x_i from joint space to [-1, 1]
     x_invSig = torch.eye(ndim_tot)
     x_Mu = torch.zeros(ndim_tot)
-    for i in range(robot_model.n_dofs):
-        x_invSig[i, i] = 1.0 / max(
-            abs(robot_model.actuated_joints_limits[i][0]), abs(robot_model.actuated_joints_limits[i][1])
-        )
+    for i in range(robot.n_dofs):
+        x_invSig[i, i] = 1.0 / max(abs(robot.actuated_joints_limits[i][0]), abs(robot.actuated_joints_limits[i][1]))
     nodes.append(Ff.Node([nodes[-1].out0], Fm.FixedLinearTransform, {"M": x_invSig, "b": x_Mu}))
 
     coupling_block = Fm.GLOWCouplingBlock

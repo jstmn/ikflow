@@ -66,7 +66,7 @@ def runtime_stats(ik_solver: IkflowSolver, n_solutions: int, k: int, refine_solu
         Tuple[float, float]: Mean, std of the runtime
     """
     sample_times = []
-    poses = ik_solver.robot_model.forward_kinematics_klampt(ik_solver.robot_model.sample_joint_angles(n_solutions * k))
+    poses = ik_solver.robot.forward_kinematics_klampt(ik_solver.robot.sample_joint_angles(n_solutions * k))
     with torch.inference_mode():
         for k_i in range(k):
             target_poses = poses[k_i * n_solutions : (k_i + 1) * n_solutions]
@@ -144,15 +144,15 @@ if __name__ == "__main__":
 
     # Build IkflowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)
-    robot_model = ik_solver.robot
-    testset = robot_model.forward_kinematics_klampt(robot_model.sample_joint_angles(args.testset_size))
+    robot = ik_solver.robot
+    testset = robot.forward_kinematics_klampt(robot.sample_joint_angles(args.testset_size))
 
     # ------------------------
     # With solution refinement
     #
     mean_l2_error, mean_angular_error = error_stats(
         ik_solver,
-        robot_model,
+        robot,
         testset,
         latent_noise_distribution,
         latent_noise_scale,
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     #
     mean_l2_error, mean_angular_error = error_stats(
         ik_solver,
-        robot_model,
+        robot,
         testset,
         latent_noise_distribution,
         latent_noise_scale,

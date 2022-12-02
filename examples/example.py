@@ -16,12 +16,14 @@ python examples/example.py --model_name=panda_tpm
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="example.py - brief example of using IKFlow")
-    parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
+    parser.add_argument(
+        "--model_name", type=str, help="Name of the saved model. Defined in ikflow/model_descriptions.yaml"
+    )
     args = parser.parse_args()
 
     # Build IkflowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)
-    robot_model = ik_solver.robot
+    robot = ik_solver.robot
 
     """SINGLE TARGET-POSE
 
@@ -35,7 +37,7 @@ if __name__ == "__main__":
 
     # -> Get some unrefined solutions
     solution, solution_runtime = ik_solver.make_samples(target_pose, number_of_solutions, refine_solutions=False)
-    realized_ee_pose = robot_model.forward_kinematics_klampt(solution.cpu().detach().numpy())
+    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_pose[0:3], axis=1)
     print(
         "\nGot {} ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
@@ -45,7 +47,7 @@ if __name__ == "__main__":
 
     # -> Get some refined solutions
     solution, solution_runtime = ik_solver.make_samples(target_pose, number_of_solutions, refine_solutions=True)
-    realized_ee_pose = robot_model.forward_kinematics_klampt(solution.cpu().detach().numpy())
+    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_pose[0:3], axis=1)
     print(
         "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
@@ -68,7 +70,7 @@ if __name__ == "__main__":
 
     # -> unrefined solutions
     solution, solution_runtime = ik_solver.make_samples_mult_y(target_poses, refine_solutions=False)
-    realized_ee_pose = robot_model.forward_kinematics_klampt(solution.cpu().detach().numpy())
+    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_poses[:, 0:3], axis=1)
     print(
         "\nGot {} ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
@@ -78,7 +80,7 @@ if __name__ == "__main__":
 
     # -> refined solutions
     solution, solution_runtime = ik_solver.make_samples_mult_y(target_poses, refine_solutions=True)
-    realized_ee_pose = robot_model.forward_kinematics_klampt(solution.cpu().detach().numpy())
+    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
     l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_poses[:, 0:3], axis=1)
     print(
         "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(

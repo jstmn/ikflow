@@ -102,7 +102,7 @@ python train.py \
 
 **> Add a trained model to the repo**
 1. Train a model `python train.py ...`. Note down the wandb run id (it should look like '1zkh9zfo')
-2. Download model with `python tools/download_model_from_wandb_checkpoint.py --wandb_run_id=<run_id>`
+2. Download model with `python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=<run_id>`
 3. Add the model to git lfs `git lfs track trained_models/*.pkl`
 4. Add an entry for the model to 'model_descriptions.yaml' using a new alias `<new_alias>`
 5. Use the model `python evaluate.py --model_name=<new_alias>`
@@ -146,7 +146,6 @@ matplotlib.use("Agg")
 1. [ ] ~~Add CPU versions of pretrained model~~
 2. [ ] Add 'light' pretrained models. These are smaller networks for faster inference
 3. [ ] ~~Include a batched jacobian optimizer to enable parallelized solution refinement.~~ Note: This is in the works in a seperate repository
-
 
 
 ## Citation

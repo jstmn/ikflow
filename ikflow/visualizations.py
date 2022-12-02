@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from ikflow.ikflow_solver import IkflowSolver
 from ikflow import config
-from ikflow.utils import get_solution_errors
+from ikflow.evaluation_utils import get_solution_errors
 from jkinpylib.robot import Robot
 
 from klampt.model import coordinates, trajectory
@@ -16,7 +16,7 @@ import torch.optim
 
 
 def _run_demo(
-    robot_model: Robot,
+    robot: Robot,
     n_worlds: int,
     setup_fn: Callable[[List[WorldModel]], None],
     loop_fn: Callable[[List[WorldModel], Any], None],
@@ -28,11 +28,11 @@ def _run_demo(
 ):
     """Internal function for running a demo."""
 
-    worlds = [robot_model._klampt_world_model.copy() for _ in range(n_worlds)]
+    worlds = [robot.klampt_world_model.copy() for _ in range(n_worlds)]
 
     # TODO: Adjust terrain height for each robot
     if load_terrain:
-        terrain_filepath = "urdfs/klampt_resources/terrains/plane.off"
+        terrain_filepath = "ikflow/visualization_resources/klampt_resources/terrains/plane.off"
         res = worlds[0].loadTerrain(terrain_filepath)
         assert res, f"Failed to load terrain '{terrain_filepath}'"
         vis.add("terrain", worlds[0].terrain(0))
@@ -246,14 +246,14 @@ def random_target_pose(ik_solver: IkflowSolver, nb_sols=5):
 
     def loop_fn(worlds, _demo_state):
         # Get random sample
-        random_sample = self.robot_model.sample_joint_angles(1)
-        random_sample_q = self.robot_model._x_to_qs(random_sample)
+        random_sample = self.robot.sample_joint_angles(1)
+        random_sample_q = self.robot._x_to_qs(random_sample)
         worlds[0].robot(0).setConfig(random_sample_q[0])
-        target_pose = self.robot_model.forward_kinematics_klampt(random_sample)[0]
+        target_pose = self.robot.forward_kinematics_klampt(random_sample)[0]
 
         # Get solutions to pose of random sample
         ik_solutions = self.ik_solver.make_samples(target_pose, nb_sols)[0]
-        qs = self.robot_model._x_to_qs(ik_solutions)
+        qs = self.robot._x_to_qs(ik_solutions)
         for i in range(nb_sols):
             worlds[i + 1].robot(0).setConfig(qs[i])
 

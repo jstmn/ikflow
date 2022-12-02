@@ -30,25 +30,24 @@ def draw_latent_noise(user_specified_latent_noise, latent_noise_distribution, la
 
 
 class IkflowSolver:
-    # def __init__(self, hyper_parameters: IkflowModelParameters, robot_model):
+    # def __init__(self, hyper_parameters: IkflowModelParameters, robot):
     def __init__(
-        self, hyper_parameters: IkflowModelParameters, robot_model: Robot
+        self, hyper_parameters: IkflowModelParameters, robot: Robot
     ):  # TODO(@jstmn): refactor to enable typehints for Robot. Currently this is causing a circular import error
         """Initialize an IkflowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
+        self._robot = robot
 
         self.dim_cond = 7  # [x, y, z, q0, q1, q2, q3]
         if hyper_parameters.softflow_enabled:
             self.dim_cond = 8  # [x, ... q3, softflow_scale]   (softflow_scale should be 0 for inference)
         self.network_width = hyper_parameters.dim_latent_space
-        self.nn_model = glow_cNF_model(hyper_parameters, robot_model, self.dim_cond, self.network_width)
-        self.n_dofs = robot_model.n_dofs
-        self.robot_model = robot_model
+        self.nn_model = glow_cNF_model(hyper_parameters, self._robot, self.dim_cond, self.network_width)
+        self.n_dofs = self._robot.n_dofs
 
-    # TODO(@jstmn): Consolidate `robot`, `robot_model`
     @property
     def robot(self) -> Robot:
-        return self.robot_model
+        return self._robot
 
     # TODO(@jstmn): Unit test this function
     def refine_solutions(
@@ -80,7 +79,7 @@ class IkflowSolver:
         for i in range(b):
             if not is_single_pose:
                 pose = target_pose[i]
-            ik_sol = self.robot_model.inverse_kinematics_klampt(
+            ik_sol = self._robot.inverse_kinematics_klampt(
                 pose, seed=ikflow_solutions_np[i], positional_tolerance=positional_tolerance
             )
             if ik_sol is not None:
@@ -88,6 +87,7 @@ class IkflowSolver:
 
         return torch.from_numpy(refined).to(config.device), time() - t0
 
+    # TODO(@jstm): Rename to 'solve' / 'get_solutions' / 'generate_solutions' / ...
     def make_samples(
         self,
         y: List[float],

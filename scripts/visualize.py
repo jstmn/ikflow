@@ -12,8 +12,8 @@ VIS_FN_ARGUMENTS = {"oscillate_target_pose": {"nb_sols": 10, "fixed_latent_noise
 
 """ Example usage. Note that `model_name` should match an entry in `model_descriptions.yaml`
 
-python visualize.py --model_name=panda_tpm --demo_name=oscillate_latent
-python visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
+python scripts/visualize.py --model_name=panda_tpm --demo_name=oscillate_latent
+python scripts/visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
 
 """
 
