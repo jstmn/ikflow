@@ -4,8 +4,8 @@ from time import time
 import os
 
 from ikflow import config
-from ikflow.ikflow_solver import IkflowSolver, draw_latent_noise
-from ikflow.supporting_types import IkflowModelParameters
+from ikflow.ikflow_solver import IKFlowSolver, draw_latent
+from ikflow.model import IkflowModelParameters
 from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow.utils import grad_stats
 
@@ -37,7 +37,7 @@ def checkpoint_dir(robot_name: str) -> str:
 class IkfLitModel(LightningModule):
     def __init__(
         self,
-        ik_solver: IkflowSolver,
+        ik_solver: IKFlowSolver,
         base_hparams: IkflowModelParameters,
         learning_rate: float,
         checkpoint_every: int,
@@ -289,10 +289,10 @@ class IkfLitModel(LightningModule):
         conditional = conditional.to(config.device)
 
         shape = (m, self.dim_tot)
-        latent_noise = draw_latent_noise(None, "gaussian", 1, shape)
-        assert latent_noise.shape[0] == m
-        assert latent_noise.shape[1] == self.dim_tot
+        latent = draw_latent(None, "gaussian", 1, shape)
+        assert latent.shape[0] == m
+        assert latent.shape[1] == self.dim_tot
 
         t0 = time()
-        output_rev, jac = self.nn_model(latent_noise, c=conditional, rev=True)
+        output_rev, jac = self.nn_model(latent, c=conditional, rev=True)
         return output_rev[:, 0 : self.n_dofs], time() - t0

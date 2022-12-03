@@ -5,8 +5,8 @@ from urllib.request import urlretrieve
 
 from jkinpylib.robots import get_robot
 from ikflow.utils import safe_mkdir, get_filepath
-from ikflow.ikflow_solver import IkflowSolver
-from ikflow.supporting_types import IkflowModelParameters
+from ikflow.ikflow_solver import IKFlowSolver
+from ikflow.model import IkflowModelParameters
 from ikflow.config import MODELS_DIR
 
 with open(get_filepath("model_descriptions.yaml"), "r") as f:
@@ -41,13 +41,14 @@ def model_filename(url: str) -> str:
     return url.split("/")[-1]
 
 
-def get_ik_solver(model_name: str) -> Tuple[IkflowSolver, IkflowModelParameters]:
-    """Build and return the `IkflowSolver` for the given model. The input `model_name` should match and index in `model_descriptions.yaml`
+def get_ik_solver(model_name: str) -> Tuple[IKFlowSolver, IkflowModelParameters]:
+    """Build and return the `IKFlowSolver` for the given model. The input `model_name` should match and index in `model_descriptions.yaml`
 
     Returns:
-        Tuple[IkflowSolver, IkflowModelParameters]: A `IkflowSolver` solver and the corresponding
+        Tuple[IKFlowSolver, IkflowModelParameters]: A `IKFlowSolver` solver and the corresponding
                                                             `IkflowModelParameters` parameters object
     """
+    assert model_name in MODEL_DESCRIPTIONS, f"Model name '{model_name}' not found in model descriptions"
     model_weights_url = MODEL_DESCRIPTIONS[model_name]["model_weights_url"]
     robot_name = MODEL_DESCRIPTIONS[model_name]["robot_name"]
     hparams = MODEL_DESCRIPTIONS[model_name]
@@ -61,10 +62,10 @@ def get_ik_solver(model_name: str) -> Tuple[IkflowSolver, IkflowModelParameters]
 
     robot = get_robot(robot_name)
 
-    # Build IkflowSolver and set weights
+    # Build IKFlowSolver and set weights
     hyper_parameters = IkflowModelParameters()
     hyper_parameters.__dict__.update(hparams)
-    ik_solver = IkflowSolver(hyper_parameters, robot)
+    ik_solver = IKFlowSolver(hyper_parameters, robot)
     ik_solver.load_state_dict(model_weights_filepath)
     return ik_solver, hyper_parameters
 

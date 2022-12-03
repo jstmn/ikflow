@@ -2,10 +2,10 @@ import unittest
 
 
 from ikflow import config
-from ikflow.ikflow_solver import IkflowSolver
+from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel
-from ikflow.supporting_types import IkflowModelParameters
+from ikflow.model import IkflowModelParameters
 
 import torch
 
@@ -17,7 +17,7 @@ ROBOT_MODEL = get_robot("panda_arm")
 class LitModelTest(unittest.TestCase):
     def setUp(self) -> None:
         self.hps = IkflowModelParameters()
-        self.ik_solver = IkflowSolver(self.hps, ROBOT_MODEL)
+        self.ik_solver = IKFlowSolver(self.hps, ROBOT_MODEL)
         self.model = IkfLitModel(
             self.ik_solver, self.hps, learning_rate=1.0, checkpoint_every=-1, optimizer_name="adamw"
         )
@@ -28,15 +28,15 @@ class LitModelTest(unittest.TestCase):
             torch.randn((batch_size, self.ik_solver.robot.n_dofs)).to(config.device),
             torch.randn((batch_size, 7)).to(config.device),
         )
-        fixed_latent_noise = torch.randn((5, self.ik_solver.network_width)).to(config.device)
-        zero_response0 = self.ik_solver.solve([0] * 7, n=5, latent_noise=fixed_latent_noise)[0]
+        fixed_latent = torch.randn((5, self.ik_solver.network_width)).to(config.device)
+        zero_response0 = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)[0]
         optimizer = torch.optim.Adadelta(self.model.nn_model.parameters(), lr=self.model.hparams.learning_rate)
 
         self.model.zero_grad()
         loss = self.model.training_step(batch, 0)
         loss.backward()
         optimizer.step()
-        zero_response_f = self.ik_solver.solve([0] * 7, n=5, latent_noise=fixed_latent_noise)[0]
+        zero_response_f = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)[0]
         self.assertFalse(torch.allclose(zero_response0, zero_response_f))
 
     def test_lit_model_has_params(self):

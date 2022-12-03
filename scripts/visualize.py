@@ -8,7 +8,7 @@ from ikflow.model_loading import get_ik_solver
 
 set_seed()
 
-VIS_FN_ARGUMENTS = {"oscillate_target_pose": {"nb_sols": 10, "fixed_latent_noise": True}, "oscillate_latent": {}}
+VIS_FN_ARGUMENTS = {"oscillate_target_pose": {"nb_sols": 10, "fixed_latent": True}, "oscillate_latent": {}}
 
 """ Example usage. Note that `model_name` should match an entry in `model_descriptions.yaml`
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         PandaArm
     """
 
-    # Build IkflowSolver and set weights
+    # Build IKFlowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)
 
     fn = getattr(visualizations, args.demo_name)

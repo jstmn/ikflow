@@ -2,8 +2,8 @@ import argparse
 import os
 from ikflow import config
 
-from ikflow.supporting_types import IkflowModelParameters
-from ikflow.ikflow_solver import IkflowSolver
+from ikflow.model import IkflowModelParameters
+from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot, Robot
 from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
@@ -197,7 +197,7 @@ if __name__ == "__main__":
         wandb_logger = WandbLogger(log_model="all", save_dir=config.WANDB_CACHE_DIR)
 
     data_module = IkfLitDataset(robot.name, args.batch_size, val_set_size=args.val_set_size)
-    ik_solver = IkflowSolver(base_hparams, robot)
+    ik_solver = IKFlowSolver(base_hparams, robot)
     model = IkfLitModel(
         ik_solver=ik_solver,
         base_hparams=base_hparams,

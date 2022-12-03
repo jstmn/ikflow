@@ -4,8 +4,8 @@ from ikflow import config
 from time import time
 
 
-from ikflow.supporting_types import IkflowModelParameters
-from ikflow.ikflow_solver import IkflowSolver
+from ikflow.model import IkflowModelParameters
+from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     ikflow_hparams: IkflowModelParameters = checkpoint["hyper_parameters"]["base_hparams"]
     robot = get_robot(robot_name)
     wandb_logger = WandbLogger(log_model="all", save_dir=config.WANDB_CACHE_DIR)
-    ik_solver = IkflowSolver(ikflow_hparams, robot)
+    ik_solver = IKFlowSolver(ikflow_hparams, robot)
 
     # Checkpoint callback
     checkpoint_callback = ModelCheckpoint(

@@ -27,7 +27,10 @@ panda_tpm:
   rnvp_clamp:             2.5
   robot_name:             'panda_arm'
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda_lucky-pond-7642.pkl'
- 
+
+# TODO: Add panda_arm 'lite' model
+
+
 panda2_lite:
   coupling_layer:         'glow'
   nb_nodes:               8

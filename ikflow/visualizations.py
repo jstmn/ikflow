@@ -2,7 +2,7 @@ from typing import List, Callable, Any
 from time import sleep
 from dataclasses import dataclass
 
-from ikflow.ikflow_solver import IkflowSolver
+from ikflow.ikflow_solver import IKFlowSolver
 from ikflow import config
 from ikflow.evaluation_utils import get_solution_errors
 from jkinpylib.robot import Robot
@@ -59,7 +59,7 @@ def _run_demo(
 """
 
 
-def visualize_fk(ik_solver: IkflowSolver, solver="klampt"):
+def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
     """Set the robot to a random config. Visualize the poses returned by fk"""
 
     assert solver in ["klampt", "batch_fk"]
@@ -103,7 +103,7 @@ def visualize_fk(ik_solver: IkflowSolver, solver="klampt"):
     _run_demo(robot, n_worlds, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
 
 
-def oscillate_latent(ik_solver: IkflowSolver):
+def oscillate_latent(ik_solver: IKFlowSolver):
     """Fixed end pose, oscillate through the latent space"""
 
     n_worlds = 2
@@ -133,7 +133,7 @@ def oscillate_latent(ik_solver: IkflowSolver):
             rev_input[0, i] = 0.25 * np.cos(_demo_state.counter / 25) - 0.1 * np.cos(_demo_state.counter / 250)
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.solve(target_pose, 1, latent_noise=rev_input)[0]
+        ik_solutions = ik_solver.solve(target_pose, 1, latent=rev_input)[0]
         qs = robot._x_to_qs(ik_solutions)
         worlds[1].robot(0).setConfig(qs[0])
 
@@ -150,14 +150,14 @@ def oscillate_latent(ik_solver: IkflowSolver):
 
 
 # TODO(@jeremysm): Add/flesh out plots. Consider plotting each solutions x, or error
-def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise=True):
+def oscillate_target_pose(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
     """Oscillating target pose"""
 
     initial_target_pose = np.array([0, 0.5, 0.25, 1.0, 0.0, 0.0, 0.0])
     time_p_loop = 0.01
     title = "Solutions for oscillating target pose"
     latent = None
-    if fixed_latent_noise:
+    if fixed_latent:
         latent = torch.randn((nb_sols, ik_solver.network_width)).to(config.device)
 
     robot = ik_solver.robot
@@ -205,7 +205,7 @@ def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise
         # _demo_state.target_pose[1] = y
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent_noise=latent)[0]
+        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)[0]
         l2_errors, ang_errors = get_solution_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
         _demo_state.ave_ang_error = np.rad2deg(np.mean(ang_errors))
@@ -231,7 +231,7 @@ def oscillate_target_pose(ik_solver: IkflowSolver, nb_sols=5, fixed_latent_noise
     )
 
 
-def random_target_pose(ik_solver: IkflowSolver, nb_sols=5):
+def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
     """Set the end effector to a randomly drawn pose. Generate and visualize `nb_sols` solutions for the pose"""
 
     def setup_fn(worlds):

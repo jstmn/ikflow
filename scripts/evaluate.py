@@ -3,7 +3,7 @@ import argparse
 from time import time
 
 
-from ikflow.ikflow_solver import IkflowSolver
+from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import Robot
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
@@ -16,11 +16,11 @@ set_seed()
 
 
 def error_stats(
-    ik_solver: IkflowSolver,
+    ik_solver: IKFlowSolver,
     robot: Robot,
     testset: np.ndarray,
-    latent_noise_distribution: str,
-    latent_noise_scale: float,
+    latent_distribution: str,
+    latent_scale: float,
     samples_per_pose: int,
     refine_solutions: bool,
 ) -> Tuple[float, float]:
@@ -29,10 +29,10 @@ def error_stats(
     NOTE: Returns L2 error in millimeters and angular error in degrees
 
     Args:
-        ik_solver (IkflowSolver): _description_
+        ik_solver (IKFlowSolver): _description_
         testset (np.ndarray): _description_
-        latent_noise_distribution (str): _description_
-        latent_noise_scale (float): _description_
+        latent_distribution (str): _description_
+        latent_scale (float): _description_
         samples_per_pose (int): _description_
 
     Returns:
@@ -49,8 +49,8 @@ def error_stats(
             samples, _ = ik_solver.solve(
                 ee_pose_target,
                 samples_per_pose,
-                latent_noise_distribution=latent_noise_distribution,
-                latent_noise_scale=latent_noise_scale,
+                latent_distribution=latent_distribution,
+                latent_scale=latent_scale,
                 refine_solutions=refine_solutions,
             )
             l2_errors, ang_errors = get_solution_errors(robot, samples, ee_pose_target)
@@ -59,7 +59,7 @@ def error_stats(
     return 1000 * np.mean(l2_errs), float(np.rad2deg(np.mean(ang_errors)))
 
 
-def runtime_stats(ik_solver: IkflowSolver, n_solutions: int, k: int, refine_solutions: bool) -> Tuple[float, float]:
+def runtime_stats(ik_solver: IKFlowSolver, n_solutions: int, k: int, refine_solutions: bool) -> Tuple[float, float]:
     """Collect runtime statistics for the given `ik_solver`. NOTE: Returns runtime in milliseconds
 
     Returns:
@@ -72,7 +72,7 @@ def runtime_stats(ik_solver: IkflowSolver, n_solutions: int, k: int, refine_solu
             target_poses = poses[k_i * n_solutions : (k_i + 1) * n_solutions]
             assert target_poses.shape == (n_solutions, 7)
             t0 = time()
-            ik_solver.solve_mult_y(target_poses, refine_solutions=refine_solutions)[1]
+            ik_solver.solve_n_poses(target_poses, refine_solutions=refine_solutions)[1]
             sample_times.append(time() - t0)
     return np.mean(sample_times) * 1000, np.std(sample_times)
 
@@ -135,14 +135,14 @@ if __name__ == "__main__":
     assert args.all is False, f"--all currently unimplemented"
 
     # Get latent distribution parameters
-    latent_noise_distribution = "gaussian"
-    latent_noise_scale = 0.75
+    latent_distribution = "gaussian"
+    latent_scale = 0.75
     runtime_n = args.n_samples_for_runtime
 
     print("\n-------------")
     print(f"Evaluating model '{args.model_name}'")
 
-    # Build IkflowSolver and set weights
+    # Build IKFlowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)
     robot = ik_solver.robot
     testset = robot.forward_kinematics_klampt(robot.sample_joint_angles(args.testset_size))
@@ -154,8 +154,8 @@ if __name__ == "__main__":
         ik_solver,
         robot,
         testset,
-        latent_noise_distribution,
-        latent_noise_scale,
+        latent_distribution,
+        latent_scale,
         args.samples_per_pose,
         refine_solutions=True,
     )
@@ -171,8 +171,8 @@ if __name__ == "__main__":
         ik_solver,
         robot,
         testset,
-        latent_noise_distribution,
-        latent_noise_scale,
+        latent_distribution,
+        latent_scale,
         args.samples_per_pose,
         refine_solutions=False,
     )

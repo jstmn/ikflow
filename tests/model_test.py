@@ -2,7 +2,7 @@ import unittest
 
 
 from ikflow.model import glow_cNF_model
-from ikflow.supporting_types import IkflowModelParameters
+from ikflow.model import IkflowModelParameters
 from jkinpylib.robots import get_robot
 
 import torch
@@ -16,6 +16,11 @@ class ModelTest(unittest.TestCase):
         params = IkflowModelParameters()
         robot = get_robot("panda_arm")
         model = glow_cNF_model(params, robot, dim_cond=7, ndim_tot=9)
+
+    def test_accuracy(self):
+        """Download a trained model, check that the expected accuracy is achieved when it is evaluated on a test set"""
+        # TODO: Implement this test
+        pass
 
 
 if __name__ == "__main__":

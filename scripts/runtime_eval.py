@@ -5,19 +5,19 @@ import sys
 import os
 
 
-from ikflow.supporting_types import IkflowModelParameters
-from ikflow.ikflow_solver import IkflowSolver
+from ikflow.model import IkflowModelParameters
+from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot
 
 import torch
 import numpy as np
 
 
-def calculate_ave_runtime(ik_solver: IkflowSolver, n_samples: int):
+def calculate_ave_runtime(ik_solver: IKFlowSolver, n_samples: int):
     """_summary_
 
     Args:
-        ik_solver (IkflowSolver): _description_
+        ik_solver (IKFlowSolver): _description_
         n_samples (int): _description_
 
     Returns:
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     print("----------------|-------------------")
     for nb_nodes in args.nb_nodes_range:
         hparams.nb_nodes = nb_nodes
-        ik_solver = IkflowSolver(
+        ik_solver = IKFlowSolver(
             hparams,
             robot,
         )
