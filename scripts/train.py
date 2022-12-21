@@ -36,6 +36,7 @@ DEFAULT_Y_NOISE_SCALE = 1e-7
 DEFAULT_ZEROS_NOISE_SCALE = 1e-3
 
 # Training parameters
+DEFAULT_OPTIMIZER = "adamw"
 DEFAULT_LR = 1e-4
 DEFAULT_BATCH_SIZE = 128
 DEFAULT_N_EPOCHS = 100
@@ -57,7 +58,7 @@ Example usage
 
 # Real
 python scripts/train.py \
-    --robot_name=panda_arm \
+    --robot_name=fetch \
     --nb_nodes=6 \
     --coeff_fn_internal_size=1024 \
     --coeff_fn_config=3 \
@@ -67,12 +68,11 @@ python scripts/train.py \
     --log_every=5000 \
     --eval_every=10000 \
     --val_set_size=500 \
-    --run_description="baseline (lr logged)"
-
+    --run_description="baseline"
 
 # Smoke test - with wandb
 python scripts/train.py \
-    --robot_name=panda_arm \
+    --robot_name=fetch \
     --nb_nodes=3 \
     --batch_size=64 \
     --learning_rate=0.0005 \
@@ -83,9 +83,8 @@ python scripts/train.py \
 
 # Smoke test - without wandb
 python scripts/train.py \
-    --robot_name=valkyrie \
+    --robot_name=fetch \
     --batch_size=50 \
-    --optimizer=ranger \
     --log_every=25 \
     --eval_every=100 \
     --val_set_size=100 \
@@ -124,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("--zeros_noise_scale", type=float, default=DEFAULT_ZEROS_NOISE_SCALE)
 
     # Training parameters
-    parser.add_argument("--optimizer", type=str, default="adamw")
+    parser.add_argument("--optimizer", type=str, default=DEFAULT_OPTIMIZER)
     parser.add_argument("--batch_size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--gamma", type=float, default=DEFAULT_GAMMA)
     parser.add_argument("--learning_rate", type=float, default=DEFAULT_LR)

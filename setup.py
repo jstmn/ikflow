@@ -43,6 +43,7 @@ setup(
         "wandb",
         "black",
         "jkinpylib==0.0.4",
+        "more_itertools",
     ],
     include_package_data=True,
     packages=["ikflow"],

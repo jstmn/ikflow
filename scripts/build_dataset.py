@@ -1,6 +1,7 @@
 import argparse
 from typing import Optional
 import os
+from time import time
 
 from ikflow import config
 from ikflow.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
@@ -87,7 +88,12 @@ def save_dataset_to_disk(
         elif solver == "kinpy":
             return robot.forward_kinematics_kinpy(sample)
         elif solver == "batch_fk":
-            return robot.forward_kinematics_batch(sample)
+            return (
+                robot.forward_kinematics_batch(torch.tensor(sample, dtype=torch.float32, device=config.device))[0]
+                .detach()
+                .cpu()
+                .numpy()
+            )
         raise ValueError("Shouldn't be here")
 
     # Build testset
@@ -152,6 +158,7 @@ def save_dataset_to_disk(
 """
 # Build dataset
 
+python scripts/build_dataset.py --robot_name=fetch --training_set_size=10000000
 python scripts/build_dataset.py --robot_name=panda_arm --training_set_size=2500000
 python scripts/build_dataset.py --robot_name=panda_arm2 --training_set_size=2500000
 python scripts/build_dataset.py --robot_name=valkyrie --training_set_size=10000000
@@ -169,7 +176,9 @@ if __name__ == "__main__":
     # Build dataset
     print(f"Building dataset for robot: {robot}")
     dset_directory = get_dataset_directory(robot.name)
+    t0 = time()
     save_dataset_to_disk(
         robot, dset_directory, args.training_set_size, TEST_SET_SIZE, solver="klampt", progress_bar=True
     )
+    print(f"Saved dataset with {args.training_set_size} samples in {time() - t0:.2f} seconds")
     print_saved_datasets_stats()
