@@ -2,17 +2,18 @@ from typing import List, Callable, Any
 from time import sleep
 from dataclasses import dataclass
 
-from ikflow.ikflow_solver import IKFlowSolver
-from ikflow import config
-from ikflow.evaluation_utils import get_solution_errors
 from jkinpylib.robot import Robot
-
+from klampt.math import so3
 from klampt.model import coordinates, trajectory
 from klampt import vis
 from klampt import WorldModel
 import numpy as np
 import torch
 import torch.optim
+
+from ikflow.ikflow_solver import IKFlowSolver
+from ikflow import config
+from ikflow.evaluation_utils import get_solution_errors
 
 
 def _run_demo(
@@ -78,8 +79,6 @@ def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
         vis.add("coordinates", coordinates.manager())
         vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
         vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
-
-    from klampt.math import so3
 
     def loop_fn(worlds, _demo_state):
         x_random = robot.sample_joint_angles(1)

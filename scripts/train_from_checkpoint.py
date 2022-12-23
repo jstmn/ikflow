@@ -81,7 +81,9 @@ if __name__ == "__main__":
     # Create training objects
     ikflow_hparams: IkflowModelParameters = checkpoint["hyper_parameters"]["base_hparams"]
     robot = get_robot(robot_name)
+    # TODO(@jstm): Try wandb.restore() (see https://wandb.ai/cayush/pytorchlightning/reports/Use-PyTorch-Lightning-with-Weights-Biases--Vmlldzo2NjQ1Mw#:~:text=wandb.restore(%27EarlyStoppingADam%2D32%2D0.001.pth%27))
     wandb_logger = WandbLogger(log_model="all", save_dir=config.WANDB_CACHE_DIR)
+
     ik_solver = IKFlowSolver(ikflow_hparams, robot)
 
     # Checkpoint callback

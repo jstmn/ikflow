@@ -18,9 +18,10 @@ class IkfLitDataset(LightningDataModule):
         self._log_hyperparams = True
 
         dataset_directory = get_dataset_directory(self._robot_name)
-        assert os.path.isdir(
-            dataset_directory
-        ), f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet?"
+        assert os.path.isdir(dataset_directory), (
+            f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet? (try"
+            f" `python scripts/build_dataset.py --robot_name={robot_name} --training_set_size=10000000`)"
+        )
 
         self._samples_tr = torch.load(os.path.join(dataset_directory, "samples_tr.pt")).to("cuda:0")
         self._endpoints_tr = torch.load(os.path.join(dataset_directory, "endpoints_tr.pt")).to("cuda:0")

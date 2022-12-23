@@ -9,6 +9,8 @@ from ikflow.model import IkflowModelParameters
 from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow.utils import grad_stats
 
+from jkinpylib.robots import Fetch
+from jkinpylib.conversions import quaternion_product_np, quaternion_inverse_np
 import wandb
 import numpy as np
 import torch
@@ -18,6 +20,16 @@ from ikflow.thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001
 device = "cuda"
+
+ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING = {Fetch.name: [np.array([0, 1.5707, 0, 0, 0, 3.141592, 0])]}
+
+_IK_SOLUTION_TABLE_COLUMNS = ["global_step", "target_pose", "solution", "realized_pose", "error", "joint_types"]
+ik_solution_table = wandb.Table(data=[], columns=_IK_SOLUTION_TABLE_COLUMNS)
+
+
+def _np_to_str(x: np.ndarray) -> str:
+    assert x.ndim == 1
+    return str([round(x_i, 4) for x_i in x.tolist()])
 
 
 def _datetime_str() -> str:
@@ -220,7 +232,7 @@ class IkfLitModel(LightningModule):
         x, y = batch
         ee_pose_target = y.cpu().detach().numpy()[0]
         # TODO(@jeremysm): Move this error calculation to evaluation.py
-        samples, model_runtime = self.solve(ee_pose_target, self.hparams.samples_per_pose)
+        samples, model_runtime = self.solve(ee_pose_target, self.hparams.samples_per_pose, return_runtime=True)
         ee_pose_ikflow = self.ik_solver.robot.forward_kinematics(
             samples[:, 0 : self.ik_solver.robot.n_dofs].cpu().detach().numpy()
         )
@@ -267,11 +279,51 @@ class IkfLitModel(LightningModule):
         )
 
         # B/c pytorch lightning is dumb (https://github.com/Lightning-AI/lightning/issues/12724)
-        # self.global_step converted to torch.float32 because of the following warning:
+        # self.global_step converted to float because of the following warning:
         #   "UserWarning: You called `self.log('global_step', ...)` in your `validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32."
         self.log("global_step", float(self.global_step))
+        self.log_ik_solutions_to_wandb_table()
 
-    def solve(self, y: Tuple[float], m: int) -> Tuple[torch.Tensor, float]:
+    def log_ik_solutions_to_wandb_table(self, k: int = 3):
+        """Log `k` solutions for each of the target poses in ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING to wandb"""
+        if wandb.run is None:
+            print("wandb not initialized, skipping logging solution table")
+            return
+
+        # TODO:
+        # see https://github.com/wandb/wandb/issues/1826
+        #
+        robot = self.ik_solver.robot
+        if robot.name not in ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING:
+            return
+
+        target_poses = ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING[robot.name]
+        joint_types = robot.actuated_joint_types
+
+        for i, target_pose in enumerate(target_poses):
+            solutions = self.solve(target_pose, k)  # (k, n_dofs)
+            realized_poses = robot.forward_kinematics(solutions.cpu().detach().numpy())
+            errors_xyz = realized_poses[:, 0:3] - target_pose[0:3]
+            q_target = np.tile(target_pose[3:7], (k, 1))
+            q_realized = realized_poses[:, 3:7]
+            # see https://gamedev.stackexchange.com/a/68184
+            q_error = quaternion_product_np(q_target, quaternion_inverse_np(q_realized))
+            errors = np.hstack([errors_xyz, q_error])
+            assert errors.shape == (k, 7)
+            for j in range(k):
+                ik_solution_table.add_data(
+                    int(self.global_step),
+                    _np_to_str(target_pose),
+                    _np_to_str(solutions[j]),
+                    _np_to_str(realized_poses[j]),
+                    _np_to_str(errors[j]),
+                    str(joint_types),
+                )
+
+        new_table = wandb.Table(data=ik_solution_table.data, columns=_IK_SOLUTION_TABLE_COLUMNS)
+        wandb.log({f"{self.ik_solver.robot.name}_solution_table": new_table, "global_step": float(self.global_step)})
+
+    def solve(self, y: Tuple[float], m: int, return_runtime: bool = False) -> Tuple[torch.Tensor, float]:
         """
         Run the network in reverse to generate samples conditioned on a pose y
                 y: endpose [x, y, z, q0, q1, q2, q3]
@@ -295,4 +347,6 @@ class IkfLitModel(LightningModule):
 
         t0 = time()
         output_rev, jac = self.nn_model(latent, c=conditional, rev=True)
-        return output_rev[:, 0 : self.n_dofs], time() - t0
+        if return_runtime:
+            return output_rev[:, 0 : self.n_dofs], time() - t0
+        return output_rev[:, 0 : self.n_dofs]
