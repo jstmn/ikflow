@@ -1,10 +1,8 @@
+from typing import Dict
 import argparse
 import os
 from time import time
-import sys
 import pickle
-from typing import Dict
-
 
 import wandb
 import torch
@@ -23,10 +21,8 @@ def format_state_dict(state_dict: Dict) -> Dict:
     for k, v in state_dict.items():
         # Check that the original state dict is malformatted first
         assert k[0:len_prefix] == bad_prefix
-
         k_new = k[len_prefix:]
         updated[k_new] = v
-        print(k_new)
     return updated
 
 
@@ -34,7 +30,7 @@ def format_state_dict(state_dict: Dict) -> Dict:
 _____________
 Example usage
  
-python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=1zkh9ofo
+python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=1vhgo90v
 """
 
 if __name__ == "__main__":
@@ -75,6 +71,7 @@ if __name__ == "__main__":
 
     # Save model's state_dict
     # TODO(@jstmn): Save the global_step aswell
-    model_state_dict_filepath = os.path.join(f"trained_models/{robot_name}-{run_name}.pkl")
+    model_state_dict_filepath = os.path.join(f"{robot_name}-{run_name}.pkl")
     with open(model_state_dict_filepath, "wb") as f:
         pickle.dump(state_dict, f)
+        print(f"Saved model's state_dict to {model_state_dict_filepath}")

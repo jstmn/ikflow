@@ -93,6 +93,7 @@ def pp_results(title, mean_l2_error, mean_angular_error, mean_runtime, runtime_s
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda_liteplus_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm
+python scripts/evaluate.py --testset_size=500 --model_name=fetch_full_temp_tpm
 
 
 

@@ -50,7 +50,7 @@ python evaluate.py --testset_size=500 --model_name=panda_tpm
 
 Run the following:
 ```
-python visualize.py --model_name=panda_tpm --demo_name=oscillate_target_pose
+python visualize.py --model_name=panda_tpm --demo_name=oscillate_target
 ```
 ![alt text](../media/panda_tpm_oscillate_x-2022-08-26.gif?raw=true)
 

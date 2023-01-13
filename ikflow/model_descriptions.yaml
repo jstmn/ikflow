@@ -33,6 +33,21 @@ panda_lite_tpm:
 
 
 # ===========================================================
+# === Fetch
+# 
+
+fetch_full_temp_tpm:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       8
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'fetch'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch-youthful-bird-49.pkl'
+
+
+# ===========================================================
 # === Robonaut2
 #
 

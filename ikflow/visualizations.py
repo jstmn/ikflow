@@ -3,6 +3,7 @@ from time import sleep
 from dataclasses import dataclass
 
 from jkinpylib.robot import Robot
+from jkinpylib.robots import Panda, Fetch
 from klampt.math import so3
 from klampt.model import coordinates, trajectory
 from klampt import vis
@@ -16,6 +17,27 @@ from ikflow import config
 from ikflow.evaluation_utils import get_solution_errors
 
 
+_OSCILLATE_LATENT_TARGET_POSES = {
+    Panda.name: np.array([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0]),
+    Fetch.name: np.array([0.45, 0.65, 0.55, 1.0, 0.0, 0.0, 0.0]),
+}
+
+_TARGET_POSE_FUNCTIONS = {
+    Panda.name: lambda counter: np.array([0.25 * np.sin(counter / 50), 0.5, 0.25, 1.0, 0.0, 0.0, 0.0]),
+    Fetch.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
+}
+
+PI = np.pi
+
+
+def _plot_pose(name: str, pose: np.ndarray, hide_label: bool = False):
+    vis.add(
+        name,
+        coordinates.Frame(name=name, worldCoordinates=(so3.from_quaternion(pose[3:]), pose[0:3])),
+        hide_label=hide_label,
+    )
+
+
 def _run_demo(
     robot: Robot,
     n_worlds: int,
@@ -24,8 +46,8 @@ def _run_demo(
     viz_update_fn: Callable[[List[WorldModel], Any], None],
     demo_state: Any = None,
     time_p_loop: float = 2.5,
-    title="Anonymous demo",
-    load_terrain=False,
+    title: str = "Anonymous demo",
+    load_terrain: bool = True,
 ):
     """Internal function for running a demo."""
 
@@ -107,8 +129,11 @@ def oscillate_latent(ik_solver: IKFlowSolver):
 
     n_worlds = 2
     time_p_loop = 0.01
+    time_dilation = 0.75
     title = "Fixed end pose with oscillation through the latent space"
     robot = ik_solver.robot
+    target_pose = _OSCILLATE_LATENT_TARGET_POSES[ik_solver.robot.name]
+    rev_input = torch.zeros(1, ik_solver.network_width).to(config.device)
 
     def setup_fn(worlds):
         vis.add(f"robot_1", worlds[1].robot(0))
@@ -117,42 +142,51 @@ def oscillate_latent(ik_solver: IKFlowSolver):
 
         # Axis
         vis.add("coordinates", coordinates.manager())
+        _plot_pose("target_pose.", target_pose, hide_label=True)
         vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
         vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
 
-    target_pose = np.array([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0])
-    rev_input = torch.zeros(1, ik_solver.network_width).to(config.device)
+        # Configure joint angle plot
+        vis.addPlot("joint_vector")
+        vis.setPlotDuration("joint_vector", 5)
+        vis.setPlotRange("joint_vector", -PI, PI)
 
     @dataclass
     class DemoState:
         counter: int
+        last_joint_vector: np.ndarray
 
     def loop_fn(worlds, _demo_state):
         for i in range(ik_solver.network_width):
-            rev_input[0, i] = 0.25 * np.cos(_demo_state.counter / 25) - 0.1 * np.cos(_demo_state.counter / 250)
+            counter = time_dilation * _demo_state.counter
+            rev_input[0, i] = (
+                0.5 * np.cos(counter / 25) - 0.5 * np.cos(counter / 250) + 0.25 * np.sin(counter / (2500 + i * 500))
+            )
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.solve(target_pose, 1, latent=rev_input)[0]
-        qs = robot._x_to_qs(ik_solutions)
+        solutions = ik_solver.solve(target_pose, 1, latent=rev_input)[0]
+        solutions = solutions.detach().cpu().numpy()
+        qs = robot._x_to_qs(solutions)
         worlds[1].robot(0).setConfig(qs[0])
 
         # Update _demo_state
         _demo_state.counter += 1
+        _demo_state.last_joint_vector = solutions[0]
 
     def viz_update_fn(worlds, _demo_state):
-        return
+        for i in range(3):
+            vis.logPlot(f"joint_vector", f"joint_{i}", _demo_state.last_joint_vector[i])
 
-    demo_state = DemoState(counter=0)
+    demo_state = DemoState(counter=0, last_joint_vector=np.zeros(robot.n_dofs))
     _run_demo(
         robot, n_worlds, setup_fn, loop_fn, viz_update_fn, demo_state=demo_state, time_p_loop=time_p_loop, title=title
     )
 
 
 # TODO(@jeremysm): Add/flesh out plots. Consider plotting each solutions x, or error
-def oscillate_target_pose(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
+def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
     """Oscillating target pose"""
 
-    initial_target_pose = np.array([0, 0.5, 0.25, 1.0, 0.0, 0.0, 0.0])
     time_p_loop = 0.01
     title = "Solutions for oscillating target pose"
     latent = None
@@ -160,6 +194,7 @@ def oscillate_target_pose(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True)
         latent = torch.randn((nb_sols, ik_solver.network_width)).to(config.device)
 
     robot = ik_solver.robot
+    target_pose_fn = _TARGET_POSE_FUNCTIONS[robot.name]
 
     def setup_fn(worlds):
         vis.add("coordinates", coordinates.manager())
@@ -191,17 +226,8 @@ def oscillate_target_pose(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True)
         ave_angular_error: float
 
     def loop_fn(worlds, _demo_state):
-        # TODO(@jeremysm): Implement a method to easily change end pose arcs
-
         # Update target pose
-        x = 0.25 * np.sin(_demo_state.counter / 50)
-        _demo_state.target_pose[0] = x
-
-        # Circle with radius .5 centered at origin
-        # x = .5 * np.cos(_demo_state.counter / 25)
-        # y = .5 * np.sin(_demo_state.counter / 25)
-        # _demo_state.target_pose[0] = x
-        # _demo_state.target_pose[1] = y
+        _demo_state.target_pose = target_pose_fn(_demo_state.counter)
 
         # Get solutions to pose of random sample
         ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)[0]
@@ -219,13 +245,12 @@ def oscillate_target_pose(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True)
         _demo_state.counter += 1
 
     def viz_update_fn(worlds, _demo_state):
-        line = trajectory.Trajectory([1, 0], [_demo_state.target_pose[0:3], [0, 0, 0]])
-        vis.add("target_pose.", line)
+        _plot_pose("target_pose.", _demo_state.target_pose)
         vis.logPlot("target_pose", "target_pose x", _demo_state.target_pose[0])
         vis.logPlot("solution_error", "l2 (mm)", _demo_state.ave_l2_error)
         vis.logPlot("solution_error", "angular (deg)", _demo_state.ave_ang_error)
 
-    demo_state = DemoState(counter=0, target_pose=initial_target_pose.copy(), ave_l2_error=0, ave_angular_error=0)
+    demo_state = DemoState(counter=0, target_pose=target_pose_fn(0), ave_l2_error=0, ave_angular_error=0)
     _run_demo(
         robot, nb_sols, setup_fn, loop_fn, viz_update_fn, demo_state=demo_state, time_p_loop=time_p_loop, title=title
     )
