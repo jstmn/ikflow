@@ -11,7 +11,7 @@ import torch
 
 torch.manual_seed(0)
 
-ROBOT_MODEL = get_robot("panda_arm")
+ROBOT_MODEL = get_robot("panda")
 
 
 class LitModelTest(unittest.TestCase):

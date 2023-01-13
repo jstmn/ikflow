@@ -159,8 +159,7 @@ def save_dataset_to_disk(
 # Build dataset
 
 python scripts/build_dataset.py --robot_name=fetch --training_set_size=10000000
-python scripts/build_dataset.py --robot_name=panda_arm --training_set_size=2500000
-python scripts/build_dataset.py --robot_name=panda_arm2 --training_set_size=2500000
+python scripts/build_dataset.py --robot_name=panda --training_set_size=2500000
 python scripts/build_dataset.py --robot_name=valkyrie --training_set_size=10000000
 """
 

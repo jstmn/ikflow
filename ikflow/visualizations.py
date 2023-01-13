@@ -206,11 +206,12 @@ def oscillate_target_pose(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True)
         # Get solutions to pose of random sample
         ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)[0]
         l2_errors, ang_errors = get_solution_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
+
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
         _demo_state.ave_ang_error = np.rad2deg(np.mean(ang_errors))
 
         # Update viz with solutions
-        qs = robot._x_to_qs(ik_solutions)
+        qs = robot._x_to_qs(ik_solutions.detach().cpu().numpy())
         for i in range(nb_sols):
             worlds[i].robot(0).setConfig(qs[i])
 

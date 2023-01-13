@@ -14,7 +14,7 @@ class ModelTest(unittest.TestCase):
     def test_glow_cNF_model(self):
         """Smoke test - checks that glow_cNF_model() returns"""
         params = IkflowModelParameters()
-        robot = get_robot("panda_arm")
+        robot = get_robot("panda")
         model = glow_cNF_model(params, robot, dim_cond=7, ndim_tot=9)
 
     def test_accuracy(self):

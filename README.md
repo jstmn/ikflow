@@ -76,7 +76,7 @@ The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to 
 
 First, create a dataset for the robot:
 ```
-python build_dataset.py --robot_name=panda_arm --training_set_size=2500000
+python build_dataset.py --robot_name=panda --training_set_size=2500000
 ```
 
 Then start a training run:
@@ -89,7 +89,7 @@ export WANDB_PROJECT=ikflow
 export WANDB_ENTITY=<your wandb entity name>
 
 python train.py \
-    --robot_name=panda_arm \
+    --robot_name=panda \
     --nb_nodes=8 \
     --dim_latent_space=7 \
     --batch_size=128 \

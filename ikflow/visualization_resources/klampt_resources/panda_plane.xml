@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<world>
-  <robot name="panda" file="urdfs/panda_arm/urdf/panda.urdf" />
-  <terrain file="urdfs/klampt_resources/terrains/plane.off" />
-</world>

@@ -94,7 +94,7 @@ python scripts/train.py \
 
 # Test the learning rate scheduler
 python scripts/train.py \
-    --robot_name=panda_arm \
+    --robot_name=panda \
     --learning_rate=1.0 \
     --gamma=0.5 \
     --step_lr_every=10 \

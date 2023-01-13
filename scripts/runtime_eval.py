@@ -73,7 +73,7 @@ if __name__ == "__main__":
     hparams.dim_latent_space = args.dim_latent_space
     hparams.coeff_fn_config = args.coeff_fn_config
     hparams.coeff_fn_internal_size = args.coeff_fn_internal_size
-    robot = get_robot("panda_arm")
+    robot = get_robot("panda")
 
     print(f"Average runtime for {args.n_samples_for_runtime} samples")
 

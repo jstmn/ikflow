@@ -2,15 +2,15 @@ from typing import List, Tuple
 import argparse
 from time import time
 
+import torch
+import numpy as np
+from jkinpylib.robots import Robot
 
 from ikflow.ikflow_solver import IKFlowSolver
-from jkinpylib.robots import Robot
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 from ikflow.evaluation_utils import get_solution_errors
 
-import torch
-import numpy as np
 
 set_seed()
 
@@ -90,11 +90,20 @@ def pp_results(title, mean_l2_error, mean_angular_error, mean_runtime, runtime_s
 
 """ Usage 
 
+python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm
+python scripts/evaluate.py --testset_size=500 --model_name=panda_liteplus_tpm
+python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm
+
+
+
+
 python scripts/evaluate.py \
     --samples_per_pose=50 \
     --testset_size=500 \
     --n_samples_for_runtime=512 \
-    --model_name=panda_tpm
+    --do_refinement \
+    --model_name=panda_full_tpm
+
 
 Expected output:
 
@@ -129,6 +138,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--testset_size", default=500, type=int)
     parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
+    parser.add_argument("--do_refinement", action="store_true", help="Run refine solutions")
     parser.add_argument("--all", action="store_true", help="Run for all robots in tpms")
     args = parser.parse_args()
 
@@ -150,19 +160,20 @@ if __name__ == "__main__":
     # ------------------------
     # With solution refinement
     #
-    mean_l2_error, mean_angular_error = error_stats(
-        ik_solver,
-        robot,
-        testset,
-        latent_distribution,
-        latent_scale,
-        args.samples_per_pose,
-        refine_solutions=True,
-    )
-    mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=True)
-    pp_results(
-        "IKFlow with solution refinement", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n
-    )
+    if args.do_refinement:
+        mean_l2_error, mean_angular_error = error_stats(
+            ik_solver,
+            robot,
+            testset,
+            latent_distribution,
+            latent_scale,
+            args.samples_per_pose,
+            refine_solutions=True,
+        )
+        mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=True)
+        pp_results(
+            "IKFlow with solution refinement", mean_l2_error, mean_angular_error, mean_runtime, runtime_std, runtime_n
+        )
 
     # ---------------------------
     # Without solution refinement

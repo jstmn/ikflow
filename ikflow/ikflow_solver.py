@@ -32,14 +32,14 @@ class IKFlowSolver:
         assert isinstance(hyper_parameters, IkflowModelParameters)
         assert isinstance(robot, Robot)
         self._robot = robot
-        self.dim_cond = (
-            7  # Dimensionality of the conditional vector. Without softflow it's 7: [x, y, z, q0, q1, q2, q3]
-        )
+        self.dim_cond = 7
         if hyper_parameters.softflow_enabled:
             self.dim_cond = 8  # [x, ... q3, softflow_scale]   (softflow_scale should be 0 for inference)
         self._network_width = hyper_parameters.dim_latent_space
+
+        # Note: Changing `nn_model` to `_nn_model` may break the logic in 'download_model_from_wandb_checkpoint.py'
         self.nn_model = glow_cNF_model(hyper_parameters, self._robot, self.dim_cond, self._network_width)
-        self.n_dofs = self._robot.n_dofs
+        self.n_dofs = self.robot.n_dofs
 
     @property
     def robot(self) -> Robot:
@@ -48,6 +48,13 @@ class IKFlowSolver:
     @property
     def network_width(self) -> int:
         return self._network_width
+
+    @property
+    def conditional_size(self) -> int:
+        """Dimensionality of the conditional vector. Without softflow it's 7: [x, y, z, q0, q1, q2, q3]. With softflow
+        its 8: [x, ... q3, softflow_scale]  (softflow_scale should be 0 for inference)
+        """
+        return self.dim_cond
 
     # TODO(@jstmn): Unit test this function
     def refine_solutions(

@@ -10,7 +10,7 @@ from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow.utils import grad_stats
 
 from jkinpylib.robots import Fetch
-from jkinpylib.conversions import quaternion_product_np, quaternion_inverse_np
+from jkinpylib.conversions import quaternion_product, quaternion_inverse
 import wandb
 import numpy as np
 import torch
@@ -21,6 +21,7 @@ from ikflow.thirdparty.ranger import RangerVA  # from ranger913A.py
 zeros_noise_scale = 0.0001
 device = "cuda"
 
+# TODO: the pose for Fetch doesn't look right
 ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING = {Fetch.name: [np.array([0, 1.5707, 0, 0, 0, 3.141592, 0])]}
 
 _IK_SOLUTION_TABLE_COLUMNS = ["global_step", "target_pose", "solution", "realized_pose", "error", "joint_types"]
@@ -107,7 +108,7 @@ class IkfLitModel(LightningModule):
 
         """
         Create a learning rate scheduler and configure it to update every k optimization steps instead of k epochs. 
-        
+
         Quick rant: updating the lr scheduler based on epochs is a pain and dumb and bad engineering practice.
             Complaint #1: It makes the learning rate decay dependent on your dataset size. If you change your dataset 
                 all the sudden your learning processes is fundamentally altered. Dataset size will always be a 
@@ -307,7 +308,7 @@ class IkfLitModel(LightningModule):
             q_target = np.tile(target_pose[3:7], (k, 1))
             q_realized = realized_poses[:, 3:7]
             # see https://gamedev.stackexchange.com/a/68184
-            q_error = quaternion_product_np(q_target, quaternion_inverse_np(q_realized))
+            q_error = quaternion_product(q_target, quaternion_inverse(q_realized))
             errors = np.hstack([errors_xyz, q_error])
             assert errors.shape == (k, 7)
             for j in range(k):

@@ -10,7 +10,7 @@ from jkinpylib.robots import get_robot
 
 """ Example usage
 
-python scripts/visualize_robot.py --robot_name=panda_arm
+python scripts/visualize_robot.py --robot_name=panda
 python scripts/visualize_robot.py --robot_name=robonaut2
 python scripts/visualize_robot.py --robot_name=valkyrie
 python scripts/visualize_robot.py --robot_name=baxter
@@ -18,7 +18,7 @@ python scripts/visualize_robot.py --robot_name=baxter
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
-    parser.add_argument("--robot_name", type=str, help="Example: 'panda_arm', 'baxter', ...")
+    parser.add_argument("--robot_name", type=str, help="Example: 'panda', 'baxter', ...")
     args = parser.parse_args()
 
     """

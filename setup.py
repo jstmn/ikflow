@@ -44,6 +44,7 @@ setup(
         "black",
         "jkinpylib==0.0.4",
         "more_itertools",
+        "PyQt5",
     ],
     include_package_data=True,
     packages=["ikflow"],
