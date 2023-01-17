@@ -1,7 +1,6 @@
 import unittest
 
-
-from ikflow.math_utils import xyzw_to_wxyz, wxyz_to_xyzw, rotation_matrix_from_quaternion, geodesic_distance
+from jkinpylib.conversions import xyzw_to_wxyz, wxyz_to_xyzw, rotation_matrix_from_quaternion, geodesic_distance
 from ikflow.utils import set_seed
 
 import torch

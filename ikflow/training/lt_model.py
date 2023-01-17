@@ -6,11 +6,15 @@ import os
 from ikflow import config
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters
-from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow.utils import grad_stats
 
 from jkinpylib.robots import Fetch
-from jkinpylib.conversions import quaternion_product, quaternion_inverse
+from jkinpylib.conversions import (
+    quaternion_product,
+    quaternion_inverse,
+    rotation_matrix_from_quaternion,
+    geodesic_distance,
+)
 import wandb
 import numpy as np
 import torch

@@ -97,7 +97,7 @@ def save_dataset_to_disk(
         raise ValueError("Shouldn't be here")
 
     # Build testset
-    te_samples = robot.sample_joint_angles(test_set_size, solver=solver)
+    te_samples = robot.sample_joint_angles(test_set_size)
     te_endpoints = endpoints_from_samples_3d(te_samples)
 
     samples = np.zeros((training_set_size, robot.n_dofs))

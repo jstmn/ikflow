@@ -1,7 +1,7 @@
 from typing import Tuple, Union
 
 from jkinpylib.robots import Robot
-from ikflow.math_utils import rotation_matrix_from_quaternion, geodesic_distance
+from jkinpylib.conversions import rotation_matrix_from_quaternion, geodesic_distance
 from ikflow import config
 
 import numpy as np
