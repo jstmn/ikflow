@@ -96,8 +96,6 @@ python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_full_temp_tpm
 
 
-
-
 python scripts/evaluate.py \
     --samples_per_pose=50 \
     --testset_size=500 \

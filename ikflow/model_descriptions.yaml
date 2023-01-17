@@ -44,7 +44,18 @@ fetch_full_temp_tpm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch-youthful-bird-49.pkl'
+
+  # Average L2 error:      11.9735 mm
+  # Average angular error: 1.145 deg
+  # model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch-youthful-bird-49.pkl'
+
+  # Average L2 error:      11.1458 mm
+  # Average angular error: 0.971 deg
+  # model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__youthful-bird-49__global_step%3D6.0M.pkl'
+
+  # Average L2 error:      9.1512 mm
+  # Average angular error: 1.1142 deg
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__wobbly-blaze-54__global_step%3D6.0M.pkl'
 
 
 # ===========================================================
