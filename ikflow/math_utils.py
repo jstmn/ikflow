@@ -1,7 +1,12 @@
+from typing import Union
+
 import torch
 import numpy as np
 
 from ikflow import config
+from ikflow.config import DEFAULT_TORCH_DTYPE
+
+PT_NP_TYPE = Union[np.ndarray, torch.Tensor]
 
 
 def wxyz_to_xyzw(q: np.ndarray) -> np.ndarray:
@@ -60,7 +65,8 @@ def MMD_multiscale(x, y, c_list, a_list, reduce=True):
         return XX + YY - 2.0 * XY
 
 
-def geodesic_distance_between_quaternions(q1: np.array, q2: np.array) -> np.array:
+# TODO: Benchmark speed when running this with numpy. Does it matter if its slow?
+def geodesic_distance_between_quaternions(q1: PT_NP_TYPE, q2: PT_NP_TYPE) -> PT_NP_TYPE:
     """
     Given rows of quaternions q1 and q2, compute the geodesic distance between each
     """
@@ -70,9 +76,18 @@ def geodesic_distance_between_quaternions(q1: np.array, q2: np.array) -> np.arra
     assert q1.shape[0] == q2.shape[0]
     assert q1.shape[1] == q2.shape[1]
 
-    q1_R9 = rotation_matrix_from_quaternion(torch.Tensor(q1).to(config.device))
-    q2_R9 = rotation_matrix_from_quaternion(torch.Tensor(q2).to(config.device))
-    return geodesic_distance(q1_R9, q2_R9).cpu().data.numpy()
+    if isinstance(q1, np.ndarray):
+        q1_R9 = rotation_matrix_from_quaternion(torch.tensor(q1, device="cpu", dtype=DEFAULT_TORCH_DTYPE))
+        q2_R9 = rotation_matrix_from_quaternion(torch.tensor(q2, device="cpu", dtype=DEFAULT_TORCH_DTYPE))
+
+    if isinstance(q1, torch.Tensor):
+        q1_R9 = rotation_matrix_from_quaternion(q1)
+        q2_R9 = rotation_matrix_from_quaternion(q2)
+
+    distance = geodesic_distance(q1_R9, q2_R9)
+    if isinstance(q1, np.ndarray):
+        distance = distance.numpy()
+    return distance
 
 
 def quaternion_to_rpy(q: np.array):
@@ -116,11 +131,8 @@ Shape:
 
 
 def angle_axis_to_rotation_matrix(angle_axis: torch.Tensor) -> torch.Tensor:
-    if not isinstance(angle_axis, torch.Tensor):
-        raise TypeError("Input type is not a torch.Tensor. Got {}".format(type(angle_axis)))
-
-    if not angle_axis.shape[-1] == 3:
-        raise ValueError("Input size must be a (*, 3) tensor. Got {}".format(angle_axis.shape))
+    assert isinstance(angle_axis, torch.Tensor), f"Expected torch.Tensor. Got {type(angle_axis)}"
+    assert angle_axis.shape[-1] == 3, f"Expected tensor shape to tbe [batch x 3]. Got {angle_axis.shape}"
 
     """A simple fix is to add the already previously defined eps to theta2 instead of to theta. Although that could result in
     theta being very small compared to eps, so I've included theta2+eps and theta+eps."""
@@ -200,11 +212,20 @@ def compute_pose_from_rotation_matrix(T_pose, r_matrix):
     return out_poses.view(batch, joint_num, 3)
 
 
+_TORCH_EPS_CPU = torch.tensor(1e-8, dtype=DEFAULT_TORCH_DTYPE, device="cpu")
+_TORCH_EPS_CUDA = torch.tensor(1e-8, dtype=DEFAULT_TORCH_DTYPE, device="cuda")
+
+
 # batch*n
-def normalize_vector(v, return_mag=False):
+def normalize_vector(v: torch.Tensor, return_mag=False):
     batch = v.shape[0]
     v_mag = torch.sqrt(v.pow(2).sum(1))  # batch
-    v_mag = torch.max(v_mag, torch.autograd.Variable(torch.FloatTensor([1e-8]).to(config.device)))
+
+    if v.is_cuda:
+        v_mag = torch.max(v_mag, _TORCH_EPS_CUDA)
+    else:
+        v_mag = torch.max(v_mag, _TORCH_EPS_CPU)
+    # v_mag = torch.max(v_mag, torch.autograd.Variable(torch.FloatTensor([1e-8]).to(config.device)))
     v_mag = v_mag.view(batch, 1).expand(batch, v.shape[1])
     v = v / v_mag
     if return_mag == True:
@@ -325,7 +346,7 @@ def compute_rotation_matrix_from_ortho5d(a):
 
 
 # quaternion batch*4
-def rotation_matrix_from_quaternion(quaternion):
+def rotation_matrix_from_quaternion(quaternion: torch.Tensor):
     batch = quaternion.shape[0]
 
     quat = normalize_vector(quaternion).contiguous()
@@ -498,14 +519,18 @@ def compute_rotation_matrix_from_euler_sin_cos(euler_sin_cos):
 # matrices batch*3*3
 # both matrix are orthogonal rotation matrices
 # out theta between 0 to 180 degree batch
-def geodesic_distance(m1, m2):
+def geodesic_distance(m1: torch.Tensor, m2: torch.Tensor):
     batch = m1.shape[0]
     m = torch.bmm(m1, m2.transpose(1, 2))  # batch*3*3
 
     cos = (m[:, 0, 0] + m[:, 1, 1] + m[:, 2, 2] - 1) / 2
-    cos = torch.min(cos, torch.autograd.Variable(torch.ones(batch).to(config.device)))
-    cos = torch.max(cos, torch.autograd.Variable(torch.ones(batch).to(config.device)) * -1)
-    theta = torch.acos(cos)
+    # cos = torch.min(cos, torch.ones(batch, device=m1.device, dtype=m1.dtype))
+    # cos = torch.max(cos, torch.ones(batch, device=m1.device, dtype=m1.dtype) * -1)
+    # theta = torch.acos(cos)
+
+    # See https://github.com/pytorch/pytorch/issues/8069#issuecomment-700397641
+    epsilon = 1e-7 
+    theta = torch.acos(torch.clamp(cos, -1 + epsilon, 1 - epsilon))
     return theta
 
 

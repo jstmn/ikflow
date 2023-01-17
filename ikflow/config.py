@@ -4,6 +4,7 @@ import os
 
 # /
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
+DEFAULT_TORCH_DTYPE = torch.float32
 
 # ~/.cache/ikflow/
 DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".cache/ikflow/")
