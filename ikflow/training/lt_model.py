@@ -12,8 +12,8 @@ from jkinpylib.robots import Fetch
 from jkinpylib.conversions import (
     quaternion_product,
     quaternion_inverse,
-    rotation_matrix_from_quaternion,
-    geodesic_distance,
+    quaternion_to_rotation_matrix,
+    geodesic_distance_between_rotation_matrices,
 )
 import wandb
 import numpy as np
@@ -247,9 +247,9 @@ class IkfLitModel(LightningModule):
         rot_target = np.tile(ee_pose_target[3:], (self.hparams.samples_per_pose, 1))
         rot_output = ee_pose_ikflow[:, 3:]
 
-        output_R9 = rotation_matrix_from_quaternion(torch.Tensor(rot_output).to(device))
-        target_R9 = rotation_matrix_from_quaternion(torch.Tensor(rot_target).to(device))
-        angular_rad_errs = geodesic_distance(target_R9, output_R9).cpu().data.numpy()
+        output_R9 = quaternion_to_rotation_matrix(torch.Tensor(rot_output).to(device))
+        target_R9 = quaternion_to_rotation_matrix(torch.Tensor(rot_target).to(device))
+        angular_rad_errs = geodesic_distance_between_rotation_matrices(target_R9, output_R9).cpu().data.numpy()
 
         return {"l2_errs": pos_l2errs, "angular_errs": angular_rad_errs, "model_runtime": model_runtime}
 

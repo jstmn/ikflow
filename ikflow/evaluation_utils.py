@@ -1,7 +1,7 @@
 from typing import Tuple, Union
 
 from jkinpylib.robots import Robot
-from jkinpylib.conversions import rotation_matrix_from_quaternion, geodesic_distance
+from jkinpylib.conversions import quaternion_to_rotation_matrix, geodesic_distance_between_rotation_matrices
 from ikflow import config
 
 import numpy as np
@@ -32,8 +32,8 @@ def get_solution_errors(
     rot_target = np.tile(target_pose[3:], (n_solutions, 1))
     rot_output = ee_pose_ikflow[:, 3:]
 
-    output_R9 = rotation_matrix_from_quaternion(torch.tensor(rot_output, device=config.device))
-    target_R9 = rotation_matrix_from_quaternion(torch.tensor(rot_target, device=config.device))
-    ang_errors = geodesic_distance(target_R9, output_R9).detach().cpu().numpy()
+    output_R9 = quaternion_to_rotation_matrix(torch.tensor(rot_output, device=config.device))
+    target_R9 = quaternion_to_rotation_matrix(torch.tensor(rot_target, device=config.device))
+    ang_errors = geodesic_distance_between_rotation_matrices(target_R9, output_R9).detach().cpu().numpy()
     assert l2_errors.shape == ang_errors.shape
     return l2_errors, ang_errors
