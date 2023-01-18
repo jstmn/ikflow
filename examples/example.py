@@ -1,5 +1,6 @@
 import argparse
 
+from ikflow.evaluation_utils import get_solution_errors
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 
@@ -10,7 +11,7 @@ set_seed()
 
 """ Usage 
 
-python examples/example.py --model_name=panda_tpm
+python examples/example.py --model_name=panda_full_tpm
 
 """
 
@@ -33,25 +34,25 @@ if __name__ == "__main__":
     target_pose = np.array(
         [0.5, 0.5, 0.5, 1, 0, 0, 0]
     )  # Note: quaternions format for ikflow is [w x y z] (I have learned this the hard way...)
-    number_of_solutions = 3
+    number_of_solutions = 5
 
     # -> Get some unrefined solutions
-    solution, solution_runtime = ik_solver.solve(target_pose, number_of_solutions, refine_solutions=False)
-    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
-    l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_pose[0:3], axis=1)
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve(
+        target_pose, number_of_solutions, refine_solutions=False, return_detailed=True
+    )
     print(
-        "\nGot {} ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
-            number_of_solutions, round(solution_runtime * 1000, 3), l2_errors * 1000
+        "\nGot {} ikflow solutions in {} ms. The mean L2 error of the solutions = {} (cm)".format(
+            number_of_solutions, round(runtime * 1000, 3), l2_errors * 100
         )
     )
 
     # -> Get some refined solutions
-    solution, solution_runtime = ik_solver.solve(target_pose, number_of_solutions, refine_solutions=True)
-    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
-    l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_pose[0:3], axis=1)
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve(
+        target_pose, number_of_solutions, refine_solutions=True, return_detailed=True
+    )
     print(
-        "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
-            number_of_solutions, round(solution_runtime * 1000, 3), l2_errors * 1000
+        "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (cm)".format(
+            number_of_solutions, round(runtime * 1000, 3), l2_errors * 100
         )
     )
 
@@ -69,22 +70,22 @@ if __name__ == "__main__":
     )
 
     # -> unrefined solutions
-    solution, solution_runtime = ik_solver.solve_n_poses(target_poses, refine_solutions=False)
-    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
-    l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_poses[:, 0:3], axis=1)
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve_n_poses(
+        target_poses, refine_solutions=False, return_detailed=True
+    )
     print(
-        "\nGot {} ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
-            target_poses.shape[0], round(solution_runtime * 1000, 3), l2_errors * 1000
+        "\nGot {} ikflow solutions in {} ms. The L2 error of the solutions = {} (cm)".format(
+            target_poses.shape[0], round(runtime * 1000, 3), l2_errors * 100
         )
     )
 
     # -> refined solutions
-    solution, solution_runtime = ik_solver.solve_n_poses(target_poses, refine_solutions=True)
-    realized_ee_pose = robot.forward_kinematics_klampt(solution.cpu().detach().numpy())
-    l2_errors = np.linalg.norm(realized_ee_pose[:, 0:3] - target_poses[:, 0:3], axis=1)
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve_n_poses(
+        target_poses, refine_solutions=True, return_detailed=True
+    )
     print(
-        "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (mm)".format(
-            target_poses.shape[0], round(solution_runtime * 1000, 3), l2_errors * 1000
+        "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (cm)".format(
+            target_poses.shape[0], round(runtime * 1000, 3), l2_errors * 100
         )
     )
 

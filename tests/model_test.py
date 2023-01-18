@@ -1,11 +1,9 @@
 import unittest
 
-
-from ikflow.model import glow_cNF_model
-from ikflow.model import IkflowModelParameters
-from jkinpylib.robots import get_robot
-
 import torch
+
+from ikflow.model import glow_cNF_model, IkflowModelParameters
+from jkinpylib.robots import get_robot
 
 torch.manual_seed(0)
 
