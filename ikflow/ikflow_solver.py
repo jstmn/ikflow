@@ -124,13 +124,10 @@ class IKFlowSolver:
 
         # Format and return output
         if return_detailed:
-            (
-                l2_errors,
-                angular_errors,
-                joint_limits_respected,
-                self_collisions_respected,
-            ) = calculate_solution_performance(self.robot, conditional[:, 0:7], solutions)
-            return solutions, l2_errors, angular_errors, joint_limits_respected, self_collisions_respected, time() - t0
+            l2_errors, angular_errors, joint_limits_exceeded, self_collisions = calculate_solution_performance(
+                self.robot, conditional[:, 0:7], solutions
+            )
+            return solutions, l2_errors, angular_errors, joint_limits_exceeded, self_collisions, time() - t0
         return solutions
 
     def _validate_solve_input(
@@ -198,10 +195,9 @@ class IKFlowSolver:
                 - torch.Tensor: [n] tensor of angular errors of the IK solutions. The error is the geodesic distance
                                     between the realized orientation of the robot's end effector from the IK solutions
                                     and the targe orientation.
-                - torch.Tensor: [n] tensor of bool values indicating whether each IK solutions is within the robots
-                                    joint limits.
-                - torch.Tensor: [n] tensor of bool values indicating whether each IK solutions is a self colliding
-                                    configuration.
+                - torch.Tensor: [n] tensor of bools indicating whether each IK solutions has exceeded the robots joint
+                                    limits.
+                - torch.Tensor: [n] tensor of bools indicating whether each IK solutions is self colliding.
                 - float: The runtime of the operation
         """
         t0 = time()
