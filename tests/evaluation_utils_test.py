@@ -25,15 +25,11 @@ class EvaluationUtilsTest(unittest.TestCase):
 
         # np.sqrt((1 - 0.088 )**2 +  (1 - 0.0 )**2 + (1 - 0.926 )**2 ) = 1.355440887681938
         l2_error_expected = 1.355440887681938
-
-        # from pyquaternion import Quaternion
-        # q1 = Quaternion([1.0, 0.0, 0.0, 0.0]); q2 = Quaternion([0.0, 0.92387953, 0.38268343, 0.0])
-        # print(Quaternion.absolute_distance(q1, q2 ))
-        angular_error_expected = 1.4142135600925292
+        angular_error_expected = 3.1415927  # From https://www.andre-gaschler.com/rotationconverter/
 
         l2_error_returned, angular_error_returned = get_solution_errors(robot, solutions, target_pose)
         self.assertAlmostEqual(l2_error_returned[0].item(), l2_error_expected)
-        self.assertAlmostEqual(angular_error_returned[0].item(), angular_error_expected)
+        self.assertAlmostEqual(angular_error_returned[0].item(), angular_error_expected, delta=5e-4)
 
 
 if __name__ == "__main__":

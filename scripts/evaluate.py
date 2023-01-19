@@ -46,7 +46,7 @@ def error_stats(
     with torch.inference_mode():
         for i in range(testset.shape[0]):
             ee_pose_target = testset[i]
-            samples, _ = ik_solver.solve(
+            samples = ik_solver.solve(
                 ee_pose_target,
                 samples_per_pose,
                 latent_distribution=latent_distribution,
@@ -91,7 +91,6 @@ def pp_results(title, mean_l2_error, mean_angular_error, mean_runtime, runtime_s
 """ Usage 
 
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm
-python scripts/evaluate.py --testset_size=500 --model_name=panda_liteplus_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_full_temp_tpm
 
@@ -106,6 +105,7 @@ python scripts/evaluate.py \
 
 Expected output:
 
+    ...
     ...
     ----------------------------------------
     > IKFlow with solution refinement

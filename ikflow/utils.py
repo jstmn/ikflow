@@ -126,7 +126,6 @@ def non_private_dict(d):
 
 def safe_mkdir(dir_name: str):
     """Create a directory `dir_name`. May include multiple levels of new directories"""
-    print(f"safe_mkdir(): Creating directory '{dir_name}'")
     pathlib.Path(dir_name).mkdir(exist_ok=True, parents=True)
 
 

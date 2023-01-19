@@ -29,7 +29,7 @@ def format_state_dict(state_dict: Dict) -> Dict:
 """
 _____________
 Example usage
- 
+
 python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=1vhgo90v
 """
 
@@ -44,14 +44,12 @@ if __name__ == "__main__":
 
     wandb_project = os.getenv("WANDB_PROJECT")
     wandb_entity = os.getenv("WANDB_ENTITY")
-    assert wandb_project is not None, (
-        "The 'WANDB_PROJECT' environment variable is not set. Either set it with the appropriate wandb project name"
-        " (`export WANDB_PROJECT=<your wandb project name>`), or add '--disable_wandb'"
-    )
-    assert wandb_entity is not None, (
-        "The 'WANDB_ENTITY' environment variable is not set. Either set it with the appropriate wandb entity"
-        " (`export WANDB_ENTITY=<your wandb username>`), or add '--disable_wandb'"
-    )
+    assert (
+        wandb_project is not None
+    ), "The 'WANDB_PROJECT' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
+    assert (
+        wandb_entity is not None
+    ), "The 'WANDB_ENTITY' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
 
     t0 = time()
     api = wandb.Api()

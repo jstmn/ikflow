@@ -151,20 +151,30 @@ def oscillate_latent(ik_solver: IKFlowSolver):
         vis.setPlotDuration("joint_vector", 5)
         vis.setPlotRange("joint_vector", -PI, PI)
 
+        # Configure joint angle plot
+        vis.addPlot("latent_vector")
+        vis.setPlotDuration("latent_vector", 5)
+        vis.setPlotRange("latent_vector", -1.25, 1.25)
+
     @dataclass
     class DemoState:
         counter: int
         last_joint_vector: np.ndarray
+        last_latent: np.ndarray
 
     def loop_fn(worlds, _demo_state):
         for i in range(ik_solver.network_width):
             counter = time_dilation * _demo_state.counter
+            offset = 2 * PI * i / ik_solver.network_width
             rev_input[0, i] = (
-                0.5 * np.cos(counter / 25) - 0.5 * np.cos(counter / 250) + 0.25 * np.sin(counter / (2500 + i * 500))
+                0.5 * np.cos(counter / 25 + offset)
+                - 0.5 * np.cos(counter / 100 + offset)
+                + 0.25 * np.sin(counter / (100 + i * 100))
             )
+        _demo_state.last_latent = rev_input.detach().cpu().numpy()[0]
 
         # Get solutions to pose of random sample
-        solutions = ik_solver.solve(target_pose, 1, latent=rev_input)[0]
+        solutions = ik_solver.solve(target_pose, 1, latent=rev_input)
         solutions = solutions.detach().cpu().numpy()
         qs = robot._x_to_qs(solutions)
         worlds[1].robot(0).setConfig(qs[0])
@@ -176,8 +186,12 @@ def oscillate_latent(ik_solver: IKFlowSolver):
     def viz_update_fn(worlds, _demo_state):
         for i in range(3):
             vis.logPlot(f"joint_vector", f"joint_{i}", _demo_state.last_joint_vector[i])
+        for i in range(3):
+            vis.logPlot(f"latent_vector", f"latent_{i}", _demo_state.last_latent[i])
 
-    demo_state = DemoState(counter=0, last_joint_vector=np.zeros(robot.n_dofs))
+    demo_state = DemoState(
+        counter=0, last_joint_vector=np.zeros(robot.n_dofs), last_latent=np.zeros(ik_solver.network_width)
+    )
     _run_demo(
         robot, n_worlds, setup_fn, loop_fn, viz_update_fn, demo_state=demo_state, time_p_loop=time_p_loop, title=title
     )
@@ -230,7 +244,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         _demo_state.target_pose = target_pose_fn(_demo_state.counter)
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)[0]
+        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)
         l2_errors, ang_errors = get_solution_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
 
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
@@ -277,7 +291,7 @@ def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
         target_pose = self.robot.forward_kinematics_klampt(random_sample)[0]
 
         # Get solutions to pose of random sample
-        ik_solutions = self.ik_solver.solve(target_pose, nb_sols)[0]
+        ik_solutions = self.ik_solver.solve(target_pose, nb_sols)
         qs = self.robot._x_to_qs(ik_solutions)
         for i in range(nb_sols):
             worlds[i + 1].robot(0).setConfig(qs[i])

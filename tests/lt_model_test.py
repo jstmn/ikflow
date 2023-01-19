@@ -29,14 +29,14 @@ class LitModelTest(unittest.TestCase):
             torch.randn((batch_size, 7)).to(config.device),
         )
         fixed_latent = torch.randn((5, self.ik_solver.network_width)).to(config.device)
-        zero_response0 = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)[0]
+        zero_response0 = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)
         optimizer = torch.optim.Adadelta(self.model.nn_model.parameters(), lr=self.model.hparams.learning_rate)
 
         self.model.zero_grad()
         loss = self.model.training_step(batch, 0)
         loss.backward()
         optimizer.step()
-        zero_response_f = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)[0]
+        zero_response_f = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)
         self.assertFalse(torch.allclose(zero_response0, zero_response_f))
 
     def test_lit_model_has_params(self):

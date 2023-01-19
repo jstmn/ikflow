@@ -18,7 +18,9 @@ python examples/example.py --model_name=panda_full_tpm
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="example.py - brief example of using IKFlow")
     parser.add_argument(
-        "--model_name", type=str, help="Name of the saved model. Defined in ikflow/model_descriptions.yaml"
+        "--model_name",
+        type=str,
+        help="Name of the saved model ('panda_full_tpm' should work). Defined in ikflow/model_descriptions.yaml",
     )
     args = parser.parse_args()
 
@@ -66,6 +68,8 @@ if __name__ == "__main__":
             [0.25, 0, 0.5, 1, 0, 0, 0],
             [0.35, 0, 0.5, 1, 0, 0, 0],
             [0.45, 0, 0.5, 1, 0, 0, 0],
+            [0.55, 0, 0.5, 1, 0, 0, 0],
+            [0.65, 0, 0.5, 1, 0, 0, 0],
         ]
     )
 

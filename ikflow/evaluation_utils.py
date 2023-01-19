@@ -6,6 +6,7 @@ from jkinpylib.robots import Panda
 from jkinpylib.conversions import (
     quaternion_to_rotation_matrix,
     geodesic_distance_between_rotation_matrices,
+    geodesic_distance_between_quaternions,
     PT_NP_TYPE,
     DEFAULT_TORCH_DTYPE,
 )
@@ -33,6 +34,7 @@ def get_solution_errors(
     """
     assert isinstance(solutions, torch.Tensor)
     is_multi_y = len(target_pose.shape) == 2
+    n_solutions = solutions.shape[0]
 
     if isinstance(target_pose, torch.Tensor):
         target_pose = target_pose.detach().cpu().numpy()
@@ -41,8 +43,7 @@ def get_solution_errors(
         print("Heads up: It may be faster to run get_solution_errors() with pytorch directly on the cpu/gpu")
 
     ee_pose_ikflow = robot.forward_kinematics(solutions[:, 0 : robot.n_dofs].detach().cpu().numpy())
-
-    print("ee_pose_ikflow:", ee_pose_ikflow)
+    rot_output = ee_pose_ikflow[:, 3:]
 
     # Positional Error
     if is_multi_y:
@@ -51,25 +52,22 @@ def get_solution_errors(
         l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_pose[0:3], axis=1)
 
     # Angular Error
-    n_solutions = solutions.shape[0]
     if is_multi_y:
         rot_target = target_pose[:, 3:]
     else:
         rot_target = np.tile(target_pose[3:], (n_solutions, 1))
-    rot_output = ee_pose_ikflow[:, 3:]
-
-    # TODO: 'rot_target: [[1. 0. 0. 0.]]' from tests/evaluation_utils_test.py is wrong.
-    print("rot_target:", rot_target)
+    assert rot_target.shape == rot_output.shape
 
     # Surprisingly, this is almost always faster to calculate on the gpu than on the cpu. I would expect the opposite
     # for low number of solutions (< 200).
-    output_R9 = quaternion_to_rotation_matrix(torch.tensor(rot_output, device=config.device, dtype=torch.float32))
-    target_R9 = quaternion_to_rotation_matrix(torch.tensor(rot_target, device=config.device, dtype=torch.float32))
-    ang_errors = geodesic_distance_between_rotation_matrices(target_R9, output_R9).detach().cpu().numpy()
+    q_target_pt = torch.tensor(rot_target, device=config.device, dtype=torch.float32)
+    q_current_pt = torch.tensor(rot_output, device=config.device, dtype=torch.float32)
+    ang_errors = geodesic_distance_between_quaternions(q_target_pt, q_current_pt).detach().cpu().numpy()
     assert l2_errors.shape == ang_errors.shape
     return l2_errors, ang_errors
 
 
+# TODO: Implement
 def calculate_joint_limits_respected(configs: torch.Tensor, joint_limits: List[Tuple[float, float]]) -> torch.Tensor:
     """Calculate if the given configs are within the specified joint limits
 
@@ -83,6 +81,7 @@ def calculate_joint_limits_respected(configs: torch.Tensor, joint_limits: List[T
     return torch.zeros(configs.shape[0], dtype=torch.bool)
 
 
+# TODO: Implement
 def calculate_self_collisions_respected(robot: Robot, configs: torch.Tensor) -> torch.Tensor:
     """Calculate if the given configs will cause the robot to collide with itself
 

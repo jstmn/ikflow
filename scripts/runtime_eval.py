@@ -1,9 +1,5 @@
 import argparse
-
-# Update sys.path so you can run this file from the projects root directory
-import sys
-import os
-
+from time import time
 
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
@@ -29,12 +25,9 @@ def calculate_ave_runtime(ik_solver: IKFlowSolver, n_samples: int):
     with torch.inference_mode():
         for i in range(30):
             pose = np.random.random(7)
-            sample_times.append(
-                ik_solver.solve(
-                    pose,
-                    n_samples,
-                )[1]
-            )
+            t0 = time()
+            ik_solver.solve(pose, n_samples)
+            sample_times.append(time() - t0)
     sample_time_100 = 1000 * np.mean(sample_times)  # to milleseconds
     sample_time_100_std = np.std(sample_times)
     return sample_time_100, sample_time_100_std
