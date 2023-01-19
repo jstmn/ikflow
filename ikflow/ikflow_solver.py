@@ -9,14 +9,7 @@ import torch
 from ikflow import config
 from ikflow.config import DEFAULT_TORCH_DTYPE
 from ikflow.model import IkflowModelParameters, glow_cNF_model
-from ikflow.evaluation_utils import (
-    get_solution_errors,
-    calculate_joint_limits_respected,
-    calculate_self_collisions_respected,
-)
-
-
-RETURN_DETAILED_TYPE = Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float]
+from ikflow.evaluation_utils import calculate_solution_performance, RETURN_DETAILED_TYPE
 
 
 def draw_latent(
@@ -104,7 +97,13 @@ class IKFlowSolver:
         return torch.tensor(refined, device=out_device, dtype=DEFAULT_TORCH_DTYPE)
 
     def _solve_return_helper(
-        self, conditional: torch.Tensor, latent: torch.Tensor, refine_solutions: bool, return_detailed: bool, t0: float
+        self,
+        conditional: torch.Tensor,
+        latent: torch.Tensor,
+        clamp_to_joint_limits: bool,
+        refine_solutions: bool,
+        return_detailed: bool,
+        t0: float,
     ):
         """Internal function to call IKFlow, and format and return the output"""
         assert latent.shape[0] == conditional.shape[0]
@@ -115,6 +114,9 @@ class IKFlowSolver:
         output_rev, _ = self.nn_model(latent, c=conditional, rev=True)
         solutions = output_rev[:, 0 : self.n_dofs]
 
+        if clamp_to_joint_limits:
+            solutions = self.robot.clamp_to_joint_limits(solutions)
+
         # Refine if requested
         if refine_solutions:
             target_pose_s = conditional.detach().cpu().numpy()[:, 0:7]
@@ -122,9 +124,12 @@ class IKFlowSolver:
 
         # Format and return output
         if return_detailed:
-            l2_errors, angular_errors, joint_limits_respected, self_collisions_respected = self.info_on_solutions(
-                conditional[:, 0:7], solutions
-            )
+            (
+                l2_errors,
+                angular_errors,
+                joint_limits_respected,
+                self_collisions_respected,
+            ) = calculate_solution_performance(self.robot, conditional[:, 0:7], solutions)
             return solutions, l2_errors, angular_errors, joint_limits_respected, self_collisions_respected, time() - t0
         return solutions
 
@@ -148,27 +153,6 @@ class IKFlowSolver:
     # --- Public methods
     #
 
-    def info_on_solutions(self, target_poses: torch.Tensor, solutions: torch.Tensor) -> RETURN_DETAILED_TYPE:
-        """Return detailed information about a batch of solutions.
-
-        Returns:
-            - torch.Tensor: [n] tensor of positional errors of the IK solutions. The error is the L2 norm of the
-                                realized poses of the solutions and the target pose.
-            - torch.Tensor: [n] tensor of angular errors of the IK solutions. The error is the geodesic distance
-                                between the realized orientation of the robot's end effector from the IK solutions
-                                and the targe orientation.
-            - torch.Tensor: [n] tensor of bool values indicating whether each IK solutions is within the robots
-                                joint limits.
-            - torch.Tensor: [n] tensor of bool values indicating whether each IK solutions is a self colliding
-                                configuration.
-        """
-        assert isinstance(target_poses, torch.Tensor), f"target_poses must be a torch.Tensor (got {type(target_poses)})"
-        assert isinstance(solutions, torch.Tensor), f"solutions must be a torch.Tensor (got {type(solutions)})"
-        l2_errors, angular_errors = get_solution_errors(self.robot, solutions, target_poses)
-        joint_limits_respected = calculate_joint_limits_respected(solutions, self.robot.actuated_joints_limits)
-        self_collisions_respected = calculate_self_collisions_respected(self.robot, solutions)
-        return l2_errors, angular_errors, joint_limits_respected, self_collisions_respected
-
     def solve(
         self,
         y: List[float],
@@ -176,6 +160,7 @@ class IKFlowSolver:
         latent: Optional[torch.Tensor] = None,
         latent_distribution: str = "gaussian",
         latent_scale: float = 1.0,
+        clamp_to_joint_limits: bool = False,
         refine_solutions: bool = False,
         return_detailed: bool = False,
     ) -> Union[torch.Tensor, RETURN_DETAILED_TYPE]:
@@ -196,7 +181,11 @@ class IKFlowSolver:
                                             through the network. If None, the latent vectors are drawn from the
                                             distribution 'latent_distribution' with scale 'latent_scale'.
             latent_distribution (str): One of ["gaussian", "uniform"]
-            latent_scale (float, optional): The scaling factor for the latent. Latent vectors are multiplied by this value.
+            latent_scale (float, optional): The scaling factor for the latent. Latent vectors are multiplied by this
+                                            value.
+            clamp_to_joint_limits (bool): Clamp the generated IK solutions to within the joint limits of the robot. Will
+                                            increase the error of the solutions.
+            refine_solutions (bool): Optimize the solutions using a traditional gradient descent based IK solver.
             return_detailed (bool): Flag to return stats about the solutions. See returns below for more details.
 
         Returns:
@@ -217,7 +206,7 @@ class IKFlowSolver:
         """
         t0 = time()
         assert len(y) == 7, (
-            f"IKFlowSolver.solve() expects a 1d list or numpy array of length 7 (got {y}). This probably means you want"
+            f"IKFlowSolver.solve() expects a 1d list or numpy array of length 7 (got {y}). This means you probably want"
             " to call solve_n_poses() instead"
         )
         self._validate_solve_input(latent, latent_distribution, latent_scale, refine_solutions, return_detailed)
@@ -227,16 +216,19 @@ class IKFlowSolver:
         with torch.inference_mode():
             # Get latent
             # (:, 0:3) is x, y, z, (:, 3:7) is quat
-            conditional = torch.zeros(n, self.dim_cond)
+            conditional = torch.zeros(n, self.dim_cond, device=config.device, dtype=DEFAULT_TORCH_DTYPE)
+            # conditional = torch.zeros(n, self.dim_cond)
             conditional[:, 0:3] = torch.tensor(y[:3])
             conditional[:, 3 : 3 + 4] = torch.tensor(np.array([y[3:]]))
-            conditional = conditional.to(config.device)
+            # conditional = conditional.to(config.device)
 
             # Get latent
             latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
 
             # Run model, format and return output
-            return self._solve_return_helper(conditional, latent, refine_solutions, return_detailed, t0)
+            return self._solve_return_helper(
+                conditional, latent, clamp_to_joint_limits, refine_solutions, return_detailed, t0
+            )
 
     def solve_n_poses(
         self,
@@ -244,10 +236,11 @@ class IKFlowSolver:
         latent: Optional[torch.Tensor] = None,
         latent_distribution: str = "gaussian",
         latent_scale: float = 1.0,
+        clamp_to_joint_limits: bool = False,
         refine_solutions: bool = False,
         return_detailed: bool = False,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float]]:
-        """Same as solve, but for multiple ys.
+        """Same as solve(), but with a batch of target poses.
         ys: [batch x 7]
         """
         t0 = time()
@@ -270,7 +263,9 @@ class IKFlowSolver:
             latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
 
             # Run model, format and return output
-            return self._solve_return_helper(conditional, latent, refine_solutions, return_detailed, t0)
+            return self._solve_return_helper(
+                conditional, latent, clamp_to_joint_limits, refine_solutions, return_detailed, t0
+            )
 
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""

@@ -16,10 +16,27 @@ import numpy as np
 import torch
 
 DEVICE_TEMP = "cuda"
+RETURN_DETAILED_TYPE = Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float]
+
+
+def _get_target_pose_batch(target_pose: PT_NP_TYPE, n_solutions: int) -> torch.Tensor:
+    """Return a batch of target poses. If the target_pose is a single pose, then it will be tiled to match the number of
+    solutions. If the target_pose is a batch of poses, then it will be returned as is.
+
+    Args:
+        target_pose (PT_NP_TYPE): [7] or [n x 7] the target pose(s) to calculate errors for
+        n_solutions (int): The number of solutions we are calculating errors for
+    """
+    if target_pose.shape[0] == 7:
+        if isinstance(target_pose, torch.Tensor):
+            return target_pose.repeat(n_solutions, 1)
+        else:
+            return np.tile(target_pose, (n_solutions, 1))
+    return target_pose
 
 
 def get_solution_errors(
-    robot: Robot, solutions: torch.Tensor, target_pose: PT_NP_TYPE
+    robot: Robot, solutions: torch.Tensor, target_poses_in: PT_NP_TYPE
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Return the L2 and angular errors of calculated ik solutions for a given target_pose. Note: this function expects
     multiple solutions but only a single target_pose. All of the solutions are assumed to be for the given target_pose
@@ -32,30 +49,24 @@ def get_solution_errors(
     Returns:
         Tuple[np.ndarray, np.ndarray]: The L2, and angular (rad) errors of IK solutions for the given target_pose
     """
-    assert isinstance(solutions, torch.Tensor)
-    is_multi_y = len(target_pose.shape) == 2
+    assert isinstance(
+        target_poses_in, (np.ndarray, torch.Tensor)
+    ), f"target_poses must be a torch.Tensor or np.ndarray (got {type(target_poses_in)})"
+    assert isinstance(solutions, torch.Tensor), f"solutions must be a torch.Tensor (got {type(solutions)})"
     n_solutions = solutions.shape[0]
-
-    if isinstance(target_pose, torch.Tensor):
-        target_pose = target_pose.detach().cpu().numpy()
-
-    if solutions.shape[0] >= 1000:
+    if n_solutions >= 1000:
         print("Heads up: It may be faster to run get_solution_errors() with pytorch directly on the cpu/gpu")
+
+    if isinstance(target_poses_in, torch.Tensor):
+        target_poses_in = target_poses_in.detach().cpu().numpy()
+    target_poses = _get_target_pose_batch(target_poses_in, solutions.shape[0])
 
     ee_pose_ikflow = robot.forward_kinematics(solutions[:, 0 : robot.n_dofs].detach().cpu().numpy())
     rot_output = ee_pose_ikflow[:, 3:]
 
     # Positional Error
-    if is_multi_y:
-        l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_pose[:, 0:3], axis=1)
-    else:
-        l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_pose[0:3], axis=1)
-
-    # Angular Error
-    if is_multi_y:
-        rot_target = target_pose[:, 3:]
-    else:
-        rot_target = np.tile(target_pose[3:], (n_solutions, 1))
+    l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_poses[:, 0:3], axis=1)
+    rot_target = target_poses[:, 3:]
     assert rot_target.shape == rot_output.shape
 
     # Surprisingly, this is almost always faster to calculate on the gpu than on the cpu. I would expect the opposite
@@ -63,12 +74,11 @@ def get_solution_errors(
     q_target_pt = torch.tensor(rot_target, device=config.device, dtype=torch.float32)
     q_current_pt = torch.tensor(rot_output, device=config.device, dtype=torch.float32)
     ang_errors = geodesic_distance_between_quaternions(q_target_pt, q_current_pt).detach().cpu().numpy()
-    assert l2_errors.shape == ang_errors.shape
     return l2_errors, ang_errors
 
 
 # TODO: Implement
-def calculate_joint_limits_respected(configs: torch.Tensor, joint_limits: List[Tuple[float, float]]) -> torch.Tensor:
+def calculate_joint_limits_exceeded(configs: torch.Tensor, joint_limits: List[Tuple[float, float]]) -> torch.Tensor:
     """Calculate if the given configs are within the specified joint limits
 
     Args:
@@ -78,11 +88,11 @@ def calculate_joint_limits_respected(configs: torch.Tensor, joint_limits: List[T
     Returns:
         torch.Tensor: [batch] tensor of bools indicating if the given configs are within the specified joint limits
     """
-    return torch.zeros(configs.shape[0], dtype=torch.bool)
+    return torch.ones(configs.shape[0], dtype=torch.bool)
 
 
 # TODO: Implement
-def calculate_self_collisions_respected(robot: Robot, configs: torch.Tensor) -> torch.Tensor:
+def calculate_self_collisions(robot: Robot, configs: torch.Tensor) -> torch.Tensor:
     """Calculate if the given configs will cause the robot to collide with itself
 
     Args:
@@ -92,7 +102,34 @@ def calculate_self_collisions_respected(robot: Robot, configs: torch.Tensor) -> 
     Returns:
         torch.Tensor: [batch] tensor of bools indicating if the given configs will self-collide
     """
-    return torch.zeros(configs.shape[0], dtype=torch.bool)
+    return torch.ones(configs.shape[0], dtype=torch.bool)
+
+
+# TODO: Consider renaming
+def calculate_solution_performance(
+    robot: Robot, target_poses_in: PT_NP_TYPE, solutions: torch.Tensor
+) -> RETURN_DETAILED_TYPE:
+    """Return detailed information about a batch of solutions.
+
+    Returns:
+        - torch.Tensor: [n] tensor of positional errors of the IK solutions. The error is the L2 norm of the
+                            realized poses of the solutions and the target pose.
+        - torch.Tensor: [n] tensor of angular errors of the IK solutions. The error is the geodesic distance
+                            between the realized orientation of the robot's end effector from the IK solutions
+                            and the targe orientation.
+        - torch.Tensor: [n] tensor of bools indicating whether each IK solutions has exceeded the robots joint
+                            limits.
+        - torch.Tensor: [n] tensor of bools indicating whether each IK solutions is self colliding.
+    """
+    assert isinstance(
+        target_poses_in, (np.ndarray, torch.Tensor)
+    ), f"target_poses must be a torch.Tensor or np.ndarray (got {type(target_poses_in)})"
+    assert isinstance(solutions, torch.Tensor), f"solutions must be a torch.Tensor (got {type(solutions)})"
+    target_poses = _get_target_pose_batch(target_poses_in, solutions.shape[0])
+    l2_errors, angular_errors = get_solution_errors(robot, solutions, target_poses)
+    joint_limits_respected = calculate_joint_limits_exceeded(solutions, robot.actuated_joints_limits)
+    self_collisions_respected = calculate_self_collisions(robot, solutions)
+    return l2_errors, angular_errors, joint_limits_respected, self_collisions_respected
 
 
 """ Benchmarking get_solution_errors():
