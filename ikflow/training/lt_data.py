@@ -1,19 +1,27 @@
 import os
-
-from ikflow.utils import get_sum_joint_limit_range, get_dataset_directory
+from typing import List
 
 from torch.utils.data import DataLoader
 from pytorch_lightning.core.datamodule import LightningDataModule
-
 import wandb
 import torch
 
+from ikflow.config import ALL_DATASET_TAGS
+from ikflow.utils import get_sum_joint_limit_range, get_dataset_directory, get_dataset_filepaths
+
 
 class IkfLitDataset(LightningDataModule):
-    def __init__(self, robot_name: str, batch_size: int, val_set_size: int = 500, prepare_data_per_node=True):
+    def __init__(
+        self, robot_name: str, batch_size: int, val_set_size: int, dataset_tags: List[str], prepare_data_per_node=True
+    ):
+        for tag in dataset_tags:
+            assert tag in ALL_DATASET_TAGS
+
         self._robot_name = robot_name
         self._batch_size = batch_size
         self._val_set_size = val_set_size
+
+        # If set to True will call prepare_data() on LOCAL_RANK=0 for every node. If set to False will only call from NODE_RANK=0, LOCAL_RANK=0.
         self.prepare_data_per_node = prepare_data_per_node
         self._log_hyperparams = True
 
@@ -22,11 +30,13 @@ class IkfLitDataset(LightningDataModule):
             f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet? (try"
             f" `python scripts/build_dataset.py --robot_name={robot_name} --training_set_size=10000000`)"
         )
-
-        self._samples_tr = torch.load(os.path.join(dataset_directory, "samples_tr.pt")).to("cuda:0")
-        self._endpoints_tr = torch.load(os.path.join(dataset_directory, "endpoints_tr.pt")).to("cuda:0")
-        self._samples_te = torch.load(os.path.join(dataset_directory, "samples_te.pt")).to("cuda:0")
-        self._endpoints_te = torch.load(os.path.join(dataset_directory, "endpoints_te.pt")).to("cuda:0")
+        samples_tr_file_path, poses_tr_file_path, samples_te_file_path, poses_te_file_path, _ = get_dataset_filepaths(
+            dataset_directory, dataset_tags
+        )
+        self._samples_tr = torch.load(samples_tr_file_path).to("cuda:0")
+        self._endpoints_tr = torch.load(poses_tr_file_path).to("cuda:0")
+        self._samples_te = torch.load(samples_te_file_path).to("cuda:0")
+        self._endpoints_te = torch.load(poses_te_file_path).to("cuda:0")
 
         self._sum_joint_limit_range = get_sum_joint_limit_range(self._samples_tr)
 

@@ -1,23 +1,24 @@
 import argparse
 import os
-from ikflow import config
 
-from ikflow.model import IkflowModelParameters
-from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot, Robot
-from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
-from ikflow.training.lt_data import IkfLitDataset
-from ikflow.utils import boolean_string, non_private_dict
-
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
 
 # sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
 from pytorch_lightning import Trainer, seed_everything
-
 import wandb
 import torch
+
+from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
+from ikflow import config
+from ikflow.model import IkflowModelParameters
+from ikflow.ikflow_solver import IKFlowSolver
+from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
+from ikflow.training.lt_data import IkfLitDataset
+from ikflow.utils import boolean_string, non_private_dict
+
 
 DEFAULT_MAX_EPOCHS = 5000
 SEED = 0
@@ -60,14 +61,11 @@ Example usage
 python scripts/train.py \
     --robot_name=fetch \
     --nb_nodes=6 \
-    --coeff_fn_internal_size=1024 \
-    --coeff_fn_config=3 \
-    --dim_latent_space=9 \
-    --batch_size=128 \
     --learning_rate=0.00025 \
     --log_every=5000 \
     --eval_every=10000 \
     --val_set_size=500 \
+    --dataset_tags non-self-colliding \
     --run_description="baseline"
 
 # Smoke test - with wandb
@@ -79,17 +77,18 @@ python scripts/train.py \
     --log_every=250 \
     --eval_every=100 \
     --val_set_size=250 \
+    --dataset_tags non-self-colliding \
     --checkpoint_every=500
 
 # Smoke test - without wandb
 python scripts/train.py \
     --robot_name=fetch \
-    --batch_size=50 \
     --log_every=25 \
+    --batch_size=64 \
     --eval_every=100 \
     --val_set_size=100 \
-    --dim_latent_space=10 \
     --checkpoint_every=500 \
+    --dataset_tags non-self-colliding \
     --disable_wandb
 
 # Test the learning rate scheduler
@@ -98,6 +97,7 @@ python scripts/train.py \
     --learning_rate=1.0 \
     --gamma=0.5 \
     --step_lr_every=10 \
+    --dataset_tags non-self-colliding \
     --disable_wandb
 """
 
@@ -138,12 +138,18 @@ if __name__ == "__main__":
     parser.add_argument("--val_set_size", type=int, default=DEFAULT_VAL_SET_SIZE)
     parser.add_argument("--log_every", type=int, default=DEFAULT_LOG_EVERY)
     parser.add_argument("--checkpoint_every", type=int, default=DEFAULT_CHECKPOINT_EVERY)
+    parser.add_argument("--dataset_tags", nargs="+", type=str)
     parser.add_argument("--run_description", type=str)
     parser.add_argument("--disable_progress_bar", action="store_true")
     parser.add_argument("--disable_wandb", action="store_true")
 
     args = parser.parse_args()
+    print("Args:")
+    print(" ".join(f"{k}={v}" for k, v in vars(args).items()))
 
+    assert (
+        DATASET_TAG_NON_SELF_COLLIDING in args.dataset_tags
+    ), "The 'non-self-colliding' dataset should be specified (for now)"
     assert args.optimizer in ["ranger", "adadelta", "adamw"]
     assert 0 <= args.lambd and args.lambd <= 1
 
@@ -194,8 +200,10 @@ if __name__ == "__main__":
             config=cfg,
         )
         wandb_logger = WandbLogger(log_model="all", save_dir=config.WANDB_CACHE_DIR)
+        run = wandb.run
+        run.tags = run.tags + tuple(args.dataset_tags)
 
-    data_module = IkfLitDataset(robot.name, args.batch_size, val_set_size=args.val_set_size)
+    data_module = IkfLitDataset(robot.name, args.batch_size, args.val_set_size, args.dataset_tags)
     ik_solver = IKFlowSolver(base_hparams, robot)
     model = IkfLitModel(
         ik_solver=ik_solver,

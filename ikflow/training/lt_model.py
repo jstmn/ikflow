@@ -15,6 +15,7 @@ import numpy as np
 import torch
 from pytorch_lightning.core.module import LightningModule
 
+from ikflow.training.training_utils import get_softflow_noise
 from ikflow import config
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters
@@ -159,7 +160,13 @@ class IkfLitModel(LightningModule):
             pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.n_dofs)).to(device)
             x = torch.cat([x, pad_x], dim=1)
 
-        conditional = torch.cat([y, torch.zeros((batch_size, 1)).to(device)], dim=1)
+        # Add softflow noise
+        if self.base_hparams.softflow_enabled:
+            c, v = get_softflow_noise(x, self.base_hparams.softflow_noise_scale)
+            x = x + v
+            conditional = torch.cat([y, c], dim=1)
+        else:
+            conditional = torch.cat([y, torch.zeros((batch_size, 1)).to(device)], dim=1)
 
         output, jac = self.nn_model.forward(x, c=conditional, jac=True)
         zz = torch.sum(output**2, dim=1)

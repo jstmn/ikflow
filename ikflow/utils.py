@@ -1,18 +1,35 @@
-from typing import Tuple, Optional, Callable
+from typing import Tuple, Optional, Callable, List
 import pathlib
 import os
 import random
 import pkg_resources
 
-from ikflow import config
-
 import numpy as np
 import torch
+
+from ikflow.config import DATASET_DIR, ALL_DATASET_TAGS, DATASET_TAG_NON_SELF_COLLIDING
+from ikflow import config
 
 
 def get_dataset_directory(robot: str):
     """Return the path of the directory"""
     return os.path.join(config.DATASET_DIR, robot)
+
+
+def get_dataset_filepaths(dataset_directory: str, tags: List[str]):
+    """Return the filepaths of the tensors in a dataset"""
+
+    def filename_w_tags(filename: str):
+        for i, tag in enumerate(tags):
+            filename = filename + f"__tag{i}={tag}"
+        return filename
+
+    samples_tr_file_path = os.path.join(dataset_directory, filename_w_tags("samples_tr.pt"))
+    poses_tr_file_path = os.path.join(dataset_directory, filename_w_tags("endpoints_tr.pt"))
+    samples_te_file_path = os.path.join(dataset_directory, filename_w_tags("samples_te.pt"))
+    poses_te_file_path = os.path.join(dataset_directory, filename_w_tags("endpoints_te.pt"))
+    info_filepath = os.path.join(dataset_directory, filename_w_tags("info.txt"))
+    return samples_tr_file_path, poses_tr_file_path, samples_te_file_path, poses_te_file_path, info_filepath
 
 
 def get_filepath(local_filepath: str):

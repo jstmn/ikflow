@@ -1,10 +1,16 @@
 import argparse
-from typing import Optional
+from typing import Optional, List
 import os
 from time import time
 
-from ikflow import config
-from ikflow.utils import get_dataset_directory, safe_mkdir, print_tensor_stats, get_sum_joint_limit_range
+from ikflow.config import DATASET_DIR, ALL_DATASET_TAGS, DATASET_TAG_NON_SELF_COLLIDING
+from ikflow.utils import (
+    get_dataset_directory,
+    safe_mkdir,
+    print_tensor_stats,
+    get_sum_joint_limit_range,
+    get_dataset_filepaths,
+)
 from jkinpylib.robots import get_robot, Robot
 
 import numpy as np
@@ -15,7 +21,7 @@ TRAINING_SET_SIZE_SMALL = int(1e5)
 TEST_SET_SIZE = 15000
 
 
-def print_saved_datasets_stats(robots: Optional[Robot] = []):
+def print_saved_datasets_stats(tags: List[str], robots: Optional[Robot] = []):
     """Printout summary statistics for each dataset. Optionaly print out the default joint limits of all robots in
     `robots`
     """
@@ -38,7 +44,7 @@ def print_saved_datasets_stats(robots: Optional[Robot] = []):
     print(f"----- {sp} ------------ {sp} ---------------")
 
     # For each child directory (for each robot) in config.DATASET_DIR:
-    for dataset_directory, dirs, files in os.walk(config.DATASET_DIR):
+    for dataset_directory, dirs, files in os.walk(DATASET_DIR):
         # Ignore the config.DATASET_DIR itself. os.walk returns the parent direcory followed by all child
         # directories
         if len(dirs) > 0:
@@ -46,7 +52,9 @@ def print_saved_datasets_stats(robots: Optional[Robot] = []):
 
         dataset_name = dataset_directory.split("/")[-1]
         robot_name = dataset_name.split("_")[0]
-        samples_tr = torch.load(os.path.join(dataset_directory, "samples_tr.pt"))
+
+        samples_tr_file_path, _, _, _, _ = get_dataset_filepaths(dataset_directory, tags)
+        samples_tr = torch.load(samples_tr_file_path)
         sum_joint_range = get_sum_joint_limit_range(samples_tr)
         print(f"{robot_name} {sp} {dataset_name} {sp} {sum_joint_range}")
 
@@ -57,83 +65,65 @@ def save_dataset_to_disk(
     dataset_directory: str,
     training_set_size: int,
     test_set_size: int,
-    progress_bar=True,
-    solver="klampt",
-    return_if_existing_dir=False,
+    only_non_self_colliding: bool,
+    tags: List[str],
 ):
     """
     Save training & testset numpy arrays to the provided directory
     """
     INTERNAL_BATCH_SIZE = 5000
 
-    assert solver in ["klampt", "kinpy", "batch_fk"]
-    assert (
-        training_set_size % INTERNAL_BATCH_SIZE == 0
-    ), f"Datset size must be divisble by {INTERNAL_BATCH_SIZE} (because I am lazy programmer)"
-
-    dir_exists = os.path.isdir(dataset_directory)
-    if return_if_existing_dir and dir_exists:
-        print(
-            f"save_dataset_to_disk(): '{dataset_directory}' exists already and return_if_existing_dir is enabled,"
-            " returning"
-        )
-        return
-    if dir_exists:
-        print(f"Warning, directory '{dataset_directory}' already exists. Overwriting")
     safe_mkdir(dataset_directory)
+    if only_non_self_colliding:
+        assert DATASET_TAG_NON_SELF_COLLIDING in tags, (
+            f"Error: If `only_non_self_colliding` is True, then the tag '{DATASET_TAG_NON_SELF_COLLIDING}' should be in"
+            " `tags`"
+        )
 
-    def endpoints_from_samples_3d(sample):
-        if solver == "klampt":
-            return robot.forward_kinematics_klampt(sample)
-        elif solver == "kinpy":
-            return robot.forward_kinematics_kinpy(sample)
-        elif solver == "batch_fk":
-            return (
-                robot.forward_kinematics_batch(torch.tensor(sample, dtype=torch.float32, device=config.device))[0]
-                .detach()
-                .cpu()
-                .numpy()
-            )
-        raise ValueError("Shouldn't be here")
+    def get_samples_and_poses(n):
+        samples = np.zeros((n, robot.n_dofs))
+        poses = np.zeros((n, 7))
+        counter = 0
+        with tqdm.tqdm(total=n) as pbar:
+            while True:
+                samples_i = robot.sample_joint_angles(INTERNAL_BATCH_SIZE)
+
+                for i in range(samples_i.shape[0]):
+                    sample = samples_i[i]
+                    if only_non_self_colliding and robot.config_self_collides(sample):
+                        continue
+
+                    pose = robot.forward_kinematics_klampt(sample[None, :])
+                    samples[counter] = sample
+                    poses[counter] = pose
+                    counter += 1
+                    pbar.update(1)
+
+                    if counter == n:
+                        return samples, poses
 
     # Build testset
-    te_samples = robot.sample_joint_angles(test_set_size)
-    te_endpoints = endpoints_from_samples_3d(te_samples)
-
-    samples = np.zeros((training_set_size, robot.n_dofs))
-    end_points = np.zeros((training_set_size, 7))
-
-    # Build training set
-    iterator = range(0, training_set_size, INTERNAL_BATCH_SIZE)
-    if progress_bar:
-        iterator = tqdm.tqdm(iterator)
-
-    for i in iterator:
-        samples_i = robot.sample_joint_angles(INTERNAL_BATCH_SIZE)
-        end_points_i = endpoints_from_samples_3d(samples_i)
-        samples[i : i + INTERNAL_BATCH_SIZE] = samples_i
-        end_points[i : i + INTERNAL_BATCH_SIZE] = end_points_i
+    samples_te, poses_te = get_samples_and_poses(test_set_size)
+    samples_tr, poses_tr = get_samples_and_poses(training_set_size)
 
     # Save training set
-    samples_tr_file_path = os.path.join(dataset_directory, "samples_tr.pt")
-    endpoints_tr_file_path = os.path.join(dataset_directory, "endpoints_tr.pt")
-    samples_te_file_path = os.path.join(dataset_directory, "samples_te.pt")
-    endpoints_te_file_path = os.path.join(dataset_directory, "endpoints_te.pt")
-    info_filepath = os.path.join(dataset_directory, "info.txt")
+    (
+        samples_tr_file_path,
+        poses_tr_file_path,
+        samples_te_file_path,
+        poses_te_file_path,
+        info_filepath,
+    ) = get_dataset_filepaths(dataset_directory, tags)
 
-    samples_tr = torch.from_numpy(samples[0 : training_set_size - 1 - INTERNAL_BATCH_SIZE, :]).float()
-    endpoints_tr = torch.from_numpy(end_points[0 : training_set_size - 1 - INTERNAL_BATCH_SIZE, :]).float()
-    samples_te = torch.from_numpy(te_samples).float()
-    endpoints_te = torch.from_numpy(te_endpoints).float()
+    samples_tr = torch.tensor(samples_tr, dtype=torch.float32)
+    poses_tr = torch.tensor(poses_tr, dtype=torch.float32)
+    samples_te = torch.tensor(samples_te, dtype=torch.float32)
+    poses_te = torch.tensor(poses_te, dtype=torch.float32)
 
-    for arr in [samples_tr, samples_te]:
+    # Sanity check
+    for arr in [samples_tr, samples_te, poses_tr, poses_te]:
         for i in range(arr.shape[1]):
             assert torch.std(arr[:, i]) > 0.001, f"Error: Column {i} in samples has zero stdev"
-
-    for arr in [endpoints_tr, endpoints_te]:
-        for i in range(arr.shape[1]):
-            if torch.std(arr[:, i]) < 0.001:
-                print(f"Warning: Array column {i} has non zero stdev")
 
     with open(info_filepath, "w") as f:
         f.write("Dataset info")
@@ -141,26 +131,37 @@ def save_dataset_to_disk(
         f.write(f"  dataset_directory: {dataset_directory}\n")
         f.write(f"  training_set_size: {training_set_size}\n")
         f.write(f"  test_set_size:     {test_set_size}\n")
-        f.write(f"  solver:            {solver}\n")
 
         # Sanity check arrays.
         print_tensor_stats(samples_tr, writable=f, name="samples_tr")
-        print_tensor_stats(endpoints_tr, writable=f, name="endpoints_tr")
+        print_tensor_stats(poses_tr, writable=f, name="poses_tr")
         print_tensor_stats(samples_te, writable=f, name="samples_te")
-        print_tensor_stats(endpoints_te, writable=f, name="endpoints_te")
+        print_tensor_stats(poses_te, writable=f, name="poses_te")
 
     torch.save(samples_tr, samples_tr_file_path)
-    torch.save(endpoints_tr, endpoints_tr_file_path)
+    torch.save(poses_tr, poses_tr_file_path)
     torch.save(samples_te, samples_te_file_path)
-    torch.save(endpoints_te, endpoints_te_file_path)
+    torch.save(poses_te, poses_te_file_path)
+
+
+def _get_tags(args):
+    tags = []
+    if args.only_non_self_colliding:
+        tags.append(DATASET_TAG_NON_SELF_COLLIDING)
+    else:
+        print("====" * 10)
+        print("WARNING: Saving dataset with self-colliding configurations. This is not recommended.")
+    tags.sort()
+    for tag in tags:
+        assert tag in ALL_DATASET_TAGS
+    return tags
 
 
 """
 # Build dataset
 
-python scripts/build_dataset.py --robot_name=fetch --training_set_size=10000000
-python scripts/build_dataset.py --robot_name=panda --training_set_size=2500000
-python scripts/build_dataset.py --robot_name=valkyrie --training_set_size=10000000
+python scripts/build_dataset.py --robot_name=fetch --training_set_size=25000000 --only_non_self_colliding
+python scripts/build_dataset.py --robot_name=panda --training_set_size=25000000 --only_non_self_colliding
 """
 
 
@@ -168,16 +169,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--robot_name", type=str)
     parser.add_argument("--training_set_size", type=int, default=int(2.5 * 1e6))
+    parser.add_argument("--only_non_self_colliding", action="store_true")
     args = parser.parse_args()
 
     robot = get_robot(args.robot_name)
+    tags = _get_tags(args)
 
     # Build dataset
     print(f"Building dataset for robot: {robot}")
     dset_directory = get_dataset_directory(robot.name)
     t0 = time()
     save_dataset_to_disk(
-        robot, dset_directory, args.training_set_size, TEST_SET_SIZE, solver="klampt", progress_bar=True
+        robot,
+        dset_directory,
+        args.training_set_size,
+        TEST_SET_SIZE,
+        args.only_non_self_colliding,
+        tags,
     )
     print(f"Saved dataset with {args.training_set_size} samples in {time() - t0:.2f} seconds")
-    print_saved_datasets_stats()
+    print_saved_datasets_stats(tags)
