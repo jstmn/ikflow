@@ -4,12 +4,7 @@ from time import time
 import os
 
 from jkinpylib.robots import Fetch
-from jkinpylib.conversions import (
-    quaternion_product,
-    quaternion_inverse,
-    quaternion_to_rotation_matrix,
-    geodesic_distance_between_rotation_matrices,
-)
+from jkinpylib.conversions import quaternion_product, quaternion_inverse
 import wandb
 import numpy as np
 import torch
@@ -204,7 +199,13 @@ class IkfLitModel(LightningModule):
         loss, loss_data, force_log = self.ml_loss_fn(batch)
 
         if (self.global_step % self.log_every == 0 and self.global_step > 0) or force_log:
-            log_data = {"tr/loss": loss.item(), "tr/time_p_batch": time() - t0, "tr/learning_rate": self.get_lr()}
+            time_per_batch = time() - t0
+            log_data = {
+                "tr/loss": loss.item(),
+                "tr/time_p_batch": time_per_batch,
+                "tr/batches_p_sec": 1.0 / time_per_batch,
+                "tr/learning_rate": self.get_lr(),
+            }
             log_data.update(loss_data)
             self.safe_log_metrics(log_data)
 

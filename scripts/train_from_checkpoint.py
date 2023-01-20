@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     # Train
     model = IkfLitModel.load_from_checkpoint(ckpt_filepath, ik_solver=ik_solver)
-    data_module = IkfLitDataset(robot_name, run_cfg["batch_size"], val_set_size=run_cfg["val_set_size"])
+    data_module = IkfLitDataset(robot_name, run_cfg["batch_size"], run_cfg["val_set_size"], run_cfg["dataset_tags"])
 
     trainer = Trainer(
         # resume_from_checkpoint=ckpt_filepath, # 'Please pass `Trainer.fit(ckpt_path=)` directly instead'
