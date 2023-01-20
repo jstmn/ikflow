@@ -8,9 +8,8 @@ from jkinpylib.robots import Robot
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow.utils import set_seed
-from ikflow.config import device
 from ikflow.model_loading import get_ik_solver
-from ikflow.evaluation_utils import get_solution_errors, calculate_solution_performance
+from ikflow.evaluation import evaluate_solutions
 
 
 set_seed()
@@ -48,7 +47,7 @@ def error_stats(
                 clamp_to_joint_limits=clamp_to_joint_limits,
                 refine_solutions=refine_solutions,
             )
-            l2_errors, ang_errors, joint_limits_exceeded, self_collisions = calculate_solution_performance(
+            l2_errors, ang_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
                 robot, ee_pose_target, samples
             )
             l2_errs.append(l2_errors)

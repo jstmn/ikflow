@@ -9,7 +9,7 @@ import torch
 from ikflow import config
 from ikflow.config import DEFAULT_TORCH_DTYPE
 from ikflow.model import IkflowModelParameters, glow_cNF_model
-from ikflow.evaluation_utils import calculate_solution_performance, RETURN_DETAILED_TYPE
+from ikflow.evaluation import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
 
 
 def draw_latent(
@@ -124,7 +124,7 @@ class IKFlowSolver:
 
         # Format and return output
         if return_detailed:
-            l2_errors, angular_errors, joint_limits_exceeded, self_collisions = calculate_solution_performance(
+            l2_errors, angular_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
                 self.robot, conditional[:, 0:7], solutions
             )
             return solutions, l2_errors, angular_errors, joint_limits_exceeded, self_collisions, time() - t0
@@ -160,7 +160,7 @@ class IKFlowSolver:
         clamp_to_joint_limits: bool = False,
         refine_solutions: bool = False,
         return_detailed: bool = False,
-    ) -> Union[torch.Tensor, RETURN_DETAILED_TYPE]:
+    ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Run the network in reverse to generate samples conditioned on a pose y
 
         Example usage(s):

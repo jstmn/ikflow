@@ -1,6 +1,6 @@
 import argparse
 
-from ikflow.evaluation_utils import get_solution_errors
+from ikflow.evaluation import solution_pose_errors
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 

@@ -14,7 +14,7 @@ import torch.optim
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow import config
-from ikflow.evaluation_utils import get_solution_errors
+from ikflow.evaluation import solution_pose_errors
 
 
 _OSCILLATE_LATENT_TARGET_POSES = {
@@ -245,7 +245,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
 
         # Get solutions to pose of random sample
         ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)
-        l2_errors, ang_errors = get_solution_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
+        l2_errors, ang_errors = solution_pose_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
 
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
         _demo_state.ave_ang_error = np.rad2deg(np.mean(ang_errors))
