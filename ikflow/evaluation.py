@@ -96,8 +96,8 @@ def calculate_joint_limits_exceeded(configs: torch.Tensor, joint_limits: List[Tu
     Returns:
         torch.Tensor: [batch] tensor of bools indicating if the given configs have exceeded the specified joint limits
     """
-    toolarge = configs > torch.tensor([x[1] for x in joint_limits], dtype=torch.float32)
-    toosmall = configs < torch.tensor([x[0] for x in joint_limits], dtype=torch.float32)
+    toolarge = configs > torch.tensor([x[1] for x in joint_limits], dtype=torch.float32, device=configs.device)
+    toosmall = configs < torch.tensor([x[0] for x in joint_limits], dtype=torch.float32, device=configs.device)
     return torch.logical_or(toolarge, toosmall).any(dim=1)
 
 
@@ -115,11 +115,17 @@ def calculate_self_collisions(robot: Robot, configs: torch.Tensor) -> torch.Tens
     return torch.tensor(is_self_colliding, dtype=torch.bool)
 
 
+# TODO: What type should this return? Right now its a mix of torch.Tensor and np.ndarray
 def evaluate_solutions(
     robot: Robot, target_poses_in: PT_NP_TYPE, solutions: torch.Tensor
 ) -> SOLUTION_EVALUATION_RESULT_TYPE:
     """Return detailed information about a batch of solutions. See the comment at the top of this file for a description
     of the SOLUTION_EVALUATION_RESULT_TYPE type - that's the type that this function returns
+
+    Example usage:
+        l2_errors, ang_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
+            robot, ee_pose_target, samples
+        )
     """
     assert isinstance(
         target_poses_in, (np.ndarray, torch.Tensor)

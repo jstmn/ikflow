@@ -66,10 +66,10 @@ if __name__ == "__main__":
     ckpt_filepath = os.path.join(download_dir, "model.ckpt")
     checkpoint = torch.load(ckpt_filepath, map_location=lambda storage, loc: storage)
     state_dict = format_state_dict(checkpoint["state_dict"])
+    global_step = str(checkpoint["global_step"] / 1e6) + "M"
 
     # Save model's state_dict
     # TODO(@jstmn): Save the global_step aswell
-    model_state_dict_filepath = os.path.join(f"{robot_name}-{run_name}.pkl")
+    model_state_dict_filepath = os.path.join(f"{robot_name}__{run_name}__global_step={global_step}.pkl")
     with open(model_state_dict_filepath, "wb") as f:
         pickle.dump(state_dict, f)
-        print(f"Saved model's state_dict to {model_state_dict_filepath}")

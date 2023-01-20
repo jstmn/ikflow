@@ -120,14 +120,21 @@ python scripts/evaluate.py \
 
 
 
+Without clamping - 'python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm'
+    Average L2 error:              7.2215 mm
+    Average angular error:         1.2086 deg
+    Percent joint limits exceeded: 16.696 %
+    Percent self-colliding:        12.82 %
+    Average runtime:               6.0951 +/- 0.0 ms (for 100 samples)
+                                   0.061 ms per solution
 
-# Without clamping - 'python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm'
-#     Average L2 error:      7.2215 mm
-#     Average angular error: 1.2086 deg
-
-# With clamping - 'python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --clamp_to_joint_limits'
-#     Average L2 error:      10.6461 mm
-#     Average angular error: 2.2901 deg
+With clamping - 'python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --clamp_to_joint_limits'
+    Average L2 error:              10.6461 mm
+    Average angular error:         2.2901 deg
+    Percent joint limits exceeded: 0.0 %
+    Percent self-colliding:        12.56 %
+    Average runtime:               6.4351 +/- 0.0 ms (for 100 samples)
+                                   0.0644 ms per solution
 
 
 
