@@ -62,6 +62,7 @@ class IkfLitModel(LightningModule):
         step_lr_every: int = int(int(2.5 * 1e6) / 64),  # #batches to see 2.5million datapoints w/ batch size=64
         weight_decay: float = 1.8e-05,
         optimizer_name: str = "ranger",
+        sigmoid_on_output: bool = False,
     ):
         # `learning_rate`, `gamma`, `samples_per_pose`, etc. saved to self.hparams
 
@@ -161,7 +162,7 @@ class IkfLitModel(LightningModule):
             x = x + v
             conditional = torch.cat([y, c], dim=1)
         else:
-            conditional = torch.cat([y, torch.zeros((batch_size, 1)).to(device)], dim=1)
+            conditional = y
 
         output, jac = self.nn_model.forward(x, c=conditional, jac=True)
         zz = torch.sum(output**2, dim=1)

@@ -35,6 +35,7 @@ DEFAULT_COEFF_FN_INTERNAL_SIZE = 1024
 DEFAULT_COEFF_FN_CONFIG = 3
 DEFAULT_Y_NOISE_SCALE = 1e-7
 DEFAULT_ZEROS_NOISE_SCALE = 1e-3
+DEFAULT_SIGMOID_ON_OUTPUT = False
 
 # Training parameters
 DEFAULT_OPTIMIZER = "adamw"
@@ -68,19 +69,36 @@ python scripts/train.py \
     --dataset_tags non-self-colliding \
     --run_description="baseline"
 
-# Smoke test - with wandb
+# Smoke test - wandb enabled
 python scripts/train.py \
-    --robot_name=fetch \
-    --nb_nodes=3 \
-    --batch_size=64 \
+    --robot_name=panda \
+    --nb_nodes=6 \
+    --batch_size=128 \
     --learning_rate=0.0005 \
     --log_every=250 \
     --eval_every=100 \
     --val_set_size=250 \
+    --sigmoid_on_output=True \
     --dataset_tags non-self-colliding \
     --checkpoint_every=500
 
-# Smoke test - without wandb
+
+python scripts/train.py \
+    --robot_name=panda \
+    --nb_nodes=6 \
+    --batch_size=64 \
+    --learning_rate=0.0005 \
+    --log_every=250 \
+    --eval_every=250 \
+    --val_set_size=250 \
+    --softflow_enabled=False \
+    --dim_latent_space=7 \
+    --dataset_tags non-self-colliding \
+    --checkpoint_every=50000
+
+    --sigmoid_on_output=True \
+
+# Smoke test - wandb disabled
 python scripts/train.py \
     --robot_name=fetch \
     --log_every=25 \
@@ -89,6 +107,7 @@ python scripts/train.py \
     --val_set_size=100 \
     --checkpoint_every=500 \
     --dataset_tags non-self-colliding \
+    --sigmoid_on_output=True \
     --disable_wandb
 
 # Test the learning rate scheduler
@@ -114,13 +133,16 @@ if __name__ == "__main__":
     parser.add_argument("--coupling_layer", type=str, default=DEFAULT_COUPLING_LAYER)
     parser.add_argument("--rnvp_clamp", type=float, default=DEFAULT_RNVP_CLAMP)
     parser.add_argument("--softflow_noise_scale", type=float, default=DEFAULT_SOFTFLOW_NOISE_SCALE)
-    parser.add_argument("--softflow_enabled", type=bool, default=DEFAULT_SOFTFLOW_ENABLED)
+    # NOTE: NEVER use 'bool' type with argparse. It will cause you pain and suffering.
+    parser.add_argument("--softflow_enabled", type=str, default=DEFAULT_SOFTFLOW_ENABLED)
     parser.add_argument("--nb_nodes", type=int, default=DEFAULT_N_NODES)
     parser.add_argument("--dim_latent_space", type=int, default=DEFAULT_DIM_LATENT_SPACE)
     parser.add_argument("--coeff_fn_config", type=int, default=DEFAULT_COEFF_FN_CONFIG)
     parser.add_argument("--coeff_fn_internal_size", type=int, default=DEFAULT_COEFF_FN_INTERNAL_SIZE)
     parser.add_argument("--y_noise_scale", type=float, default=DEFAULT_Y_NOISE_SCALE)
     parser.add_argument("--zeros_noise_scale", type=float, default=DEFAULT_ZEROS_NOISE_SCALE)
+    # See note above about pain and suffering.
+    parser.add_argument("--sigmoid_on_output", type=str, default=DEFAULT_SIGMOID_ON_OUTPUT)
 
     # Training parameters
     parser.add_argument("--optimizer", type=str, default=DEFAULT_OPTIMIZER)
@@ -145,7 +167,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print("Args:")
-    print(" ".join(f"{k}={v}" for k, v in vars(args).items()))
+    print(", ".join(f"{k}={v}" for k, v in vars(args).items()))
 
     assert (
         DATASET_TAG_NON_SELF_COLLIDING in args.dataset_tags
@@ -181,8 +203,10 @@ if __name__ == "__main__":
     base_hparams.y_noise_scale = args.y_noise_scale
     base_hparams.zeros_noise_scale = args.zeros_noise_scale
     base_hparams.softflow_enabled = boolean_string(args.softflow_enabled)
+    base_hparams.sigmoid_on_output = boolean_string(args.sigmoid_on_output)
+    print()
+    print(base_hparams)
 
-    assert isinstance(robot, Robot), "Only 3d robots are supported for training currently"
     torch.autograd.set_detect_anomaly(False)
 
     # Setup wandb logging
@@ -217,6 +241,7 @@ if __name__ == "__main__":
         step_lr_every=args.step_lr_every,
         weight_decay=args.weight_decay,
         optimizer_name=args.optimizer,
+        sigmoid_on_output=boolean_string(args.sigmoid_on_output),
     )
 
     # Checkpoint callback

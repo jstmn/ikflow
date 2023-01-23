@@ -32,6 +32,10 @@ class IKFlowSolver:
         """Initialize an IKFlowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
         assert isinstance(robot, Robot)
+        if hyper_parameters.softflow_enabled:
+            assert (
+                not hyper_parameters.sigmoid_on_output
+            ), f"sigmoid_on_output and softflow are incompatible, disable one or the other"
         self._robot = robot
         self.dim_cond = 7
         if hyper_parameters.softflow_enabled:

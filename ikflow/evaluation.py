@@ -24,6 +24,7 @@ DEVICE_TEMP = "cuda"
                     realized orientation of the robot's end effector from the IK solutions and the targe orientation.
 - torch.Tensor: [n] tensor of bools indicating whether each IK solutions has exceeded the robots joint limits.
 - torch.Tensor: [n] tensor of bools indicating whether each IK solutions is self colliding.
+- float: Runtime
 """
 SOLUTION_EVALUATION_RESULT_TYPE = Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float]
 

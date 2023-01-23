@@ -40,6 +40,23 @@ def get_filepath(local_filepath: str):
 # Pytorch utils
 
 
+def assert_joint_angle_tensor_in_joint_limits(joints_limits, x: torch.Tensor, description: str, eps: float):
+    """Validate that a tensor of joint angles is within the joint limits of the robot."""
+    for i, (lower, upper) in enumerate(joints_limits):
+        max_elem = torch.max(x[:, i]).item()
+        min_elem = torch.min(x[:, i]).item()
+        error_lower = min_elem - (lower - eps)
+        error_upper = max_elem - (upper + eps)
+        assert min_elem >= lower - eps, (
+            f"[{description}] Joint angle {min_elem} is less than lower limit {lower} (minus eps={eps}) for joint {i} -"
+            f" error = {error_lower}\n limits(joint_{i}) = ({lower}, {upper})"
+        )
+        assert max_elem <= upper + eps, (
+            f"[{description}] Max element {max_elem} is greater than upper limit {upper} (plus eps={eps}) for joint"
+            f" {i} - error = {error_upper}\n  limits(joint_{i}) = ({lower}, {upper})"
+        )
+
+
 def set_seed(seed=0):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)

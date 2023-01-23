@@ -10,6 +10,7 @@ from ikflow.utils import (
     print_tensor_stats,
     get_sum_joint_limit_range,
     get_dataset_filepaths,
+    assert_joint_angle_tensor_in_joint_limits,
 )
 from jkinpylib.robots import get_robot, Robot
 
@@ -53,10 +54,16 @@ def print_saved_datasets_stats(tags: List[str], robots: Optional[Robot] = []):
         dataset_name = dataset_directory.split("/")[-1]
         robot_name = dataset_name.split("_")[0]
 
-        samples_tr_file_path, _, _, _, _ = get_dataset_filepaths(dataset_directory, tags)
-        samples_tr = torch.load(samples_tr_file_path)
-        sum_joint_range = get_sum_joint_limit_range(samples_tr)
-        print(f"{robot_name} {sp} {dataset_name} {sp} {sum_joint_range}")
+        try:
+            samples_tr_file_path, _, _, _, _ = get_dataset_filepaths(dataset_directory, tags)
+            samples_tr = torch.load(samples_tr_file_path)
+            sum_joint_range = get_sum_joint_limit_range(samples_tr)
+            print(f"{robot_name} {sp} {dataset_name} {sp} {sum_joint_range}")
+        except FileNotFoundError:
+            samples_tr_file_path, _, _, _, _ = get_dataset_filepaths(dataset_directory, ALL_DATASET_TAGS)
+            samples_tr = torch.load(samples_tr_file_path)
+            sum_joint_range = get_sum_joint_limit_range(samples_tr)
+            print(f"{robot_name} {sp} {dataset_name} {sp} {sum_joint_range}")
 
 
 # TODO(@jeremysm): Consider adding plots from generated datasets. See `plot_dataset_samples()` in 'Dataset visualization and validation.ipynb'
@@ -67,6 +74,7 @@ def save_dataset_to_disk(
     test_set_size: int,
     only_non_self_colliding: bool,
     tags: List[str],
+    joint_limit_eps: float = 1e-6,
 ):
     """
     Save training & testset numpy arrays to the provided directory
@@ -86,7 +94,7 @@ def save_dataset_to_disk(
         counter = 0
         with tqdm.tqdm(total=n) as pbar:
             while True:
-                samples_i = robot.sample_joint_angles(INTERNAL_BATCH_SIZE)
+                samples_i = robot.sample_joint_angles(INTERNAL_BATCH_SIZE, joint_limit_eps=joint_limit_eps)
 
                 for i in range(samples_i.shape[0]):
                     sample = samples_i[i]
@@ -124,6 +132,8 @@ def save_dataset_to_disk(
     for arr in [samples_tr, samples_te, poses_tr, poses_te]:
         for i in range(arr.shape[1]):
             assert torch.std(arr[:, i]) > 0.001, f"Error: Column {i} in samples has zero stdev"
+    assert_joint_angle_tensor_in_joint_limits(robot.actuated_joints_limits, samples_tr, "samples_tr", 0.0)
+    assert_joint_angle_tensor_in_joint_limits(robot.actuated_joints_limits, samples_te, "samples_te", 0.0)
 
     with open(info_filepath, "w") as f:
         f.write("Dataset info")
@@ -186,6 +196,7 @@ if __name__ == "__main__":
         TEST_SET_SIZE,
         args.only_non_self_colliding,
         tags,
+        joint_limit_eps=0.004363323129985824,  # np.deg2rad(0.25)
     )
     print(f"Saved dataset with {args.training_set_size} samples in {time() - t0:.2f} seconds")
     print_saved_datasets_stats(tags)
