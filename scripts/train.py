@@ -169,6 +169,9 @@ if __name__ == "__main__":
     print("Args:")
     print(", ".join(f"{k}={v}" for k, v in vars(args).items()))
 
+    if args.dataset_tags is None:
+        args.dataset_tags = []
+
     assert (
         DATASET_TAG_NON_SELF_COLLIDING in args.dataset_tags
     ), "The 'non-self-colliding' dataset should be specified (for now)"
