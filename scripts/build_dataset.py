@@ -66,7 +66,8 @@ def print_saved_datasets_stats(tags: List[str], robots: Optional[Robot] = []):
             print(f"{robot_name} {sp} {dataset_name} {sp} {sum_joint_range}")
 
 
-# TODO(@jeremysm): Consider adding plots from generated datasets. See `plot_dataset_samples()` in 'Dataset visualization and validation.ipynb'
+# TODO(@jeremysm): Consider adding plots from generated datasets. See `plot_dataset_samples()` in 'Dataset visualization
+# and validation.ipynb'
 def save_dataset_to_disk(
     robot: Robot,
     dataset_directory: str,
@@ -79,7 +80,6 @@ def save_dataset_to_disk(
     """
     Save training & testset numpy arrays to the provided directory
     """
-    INTERNAL_BATCH_SIZE = 5000
 
     safe_mkdir(dataset_directory)
     if only_non_self_colliding:
@@ -88,31 +88,19 @@ def save_dataset_to_disk(
             " `tags`"
         )
 
-    def get_samples_and_poses(n):
-        samples = np.zeros((n, robot.n_dofs))
-        poses = np.zeros((n, 7))
-        counter = 0
-        with tqdm.tqdm(total=n) as pbar:
-            while True:
-                samples_i = robot.sample_joint_angles(INTERNAL_BATCH_SIZE, joint_limit_eps=joint_limit_eps)
-
-                for i in range(samples_i.shape[0]):
-                    sample = samples_i[i]
-                    if only_non_self_colliding and robot.config_self_collides(sample):
-                        continue
-
-                    pose = robot.forward_kinematics_klampt(sample[None, :])
-                    samples[counter] = sample
-                    poses[counter] = pose
-                    counter += 1
-                    pbar.update(1)
-
-                    if counter == n:
-                        return samples, poses
-
     # Build testset
-    samples_te, poses_te = get_samples_and_poses(test_set_size)
-    samples_tr, poses_tr = get_samples_and_poses(training_set_size)
+    samples_te, poses_te = robot.sample_joint_angles_and_poses(
+        test_set_size,
+        joint_limit_eps=joint_limit_eps,
+        only_non_self_colliding=only_non_self_colliding,
+        tqdm_enabled=True,
+    )
+    samples_tr, poses_tr = robot.sample_joint_angles_and_poses(
+        training_set_size,
+        joint_limit_eps=joint_limit_eps,
+        only_non_self_colliding=only_non_self_colliding,
+        tqdm_enabled=True,
+    )
 
     # Save training set
     (

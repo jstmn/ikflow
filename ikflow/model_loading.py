@@ -13,6 +13,15 @@ with open(get_filepath("model_descriptions.yaml"), "r") as f:
     MODEL_DESCRIPTIONS = yaml.safe_load(f)
 
 
+def _assert_model_downloaded_correctly(filepath: str):
+    filesize_bytes = os.path.getsize(filepath)
+    filesize_mb = filesize_bytes * 0.000001  # Appriximate MB
+    assert filesize_mb > 10, (
+        f"Model weights saved at '{filepath}' has only {filesize_mb} MB - was it saved correctly? Tip: Check that the"
+        " file is publically available on GCP."
+    )
+
+
 def download_model(url: str, download_dir: Optional[str] = None) -> str:
     """Download the model at the url `url` to the given directory. download_dir defaults to MODELS_DIR
 
@@ -27,9 +36,10 @@ def download_model(url: str, download_dir: Optional[str] = None) -> str:
     model_name = model_filename(url)
     save_filepath = os.path.join(download_dir, model_name)
     if os.path.isfile(save_filepath):
-        print(f"file '{save_filepath}' exists already - returning")
+        _assert_model_downloaded_correctly(save_filepath)
         return save_filepath
     urlretrieve(url, filename=save_filepath)  # returns (filename, headers)
+    _assert_model_downloaded_correctly(save_filepath)
     return save_filepath
 
 

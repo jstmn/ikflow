@@ -1,12 +1,21 @@
-# Note: 'tpm' is short for 'top performing model'.
-
+# Notes:
+# 1. 'tpm' is short for 'top performing model'.
+# 2. 'nsc' is short for 'non self colliding'. This means the dataset used for training has only non self-colliding configs.
+#     These models will typically return 3-6% self colliding solutions
 
 # ===========================================================
 # === Panda
 # 
 
-# Average L2 error:      7.2215 mm
-# Average angular error: 1.2086 deg
+# ----------------------------------------
+# > Results for PANDA_FULL_TPM
+#   solutions clamped to joint limits: True
+#   non-self-colliding testset:        True
+#   Average L2 error:              10.6033 mm
+#   Average angular error:         4.6068 deg
+#   Percent joint limits exceeded: 0.0 %
+#   Percent self-colliding:        5.424 %
+
 panda_full_tpm:
   coupling_layer:         'glow'
   nb_nodes:               12
@@ -19,8 +28,34 @@ panda_full_tpm:
   # Note: trained on panda_arm_stanford
 
 
-# Average L2 error:      11.5808 mm
-# Average angular error: 3.9182 deg
+# ----------------------------------------
+# > Results for PANDA_FULL_NSC_TPM
+#   solutions clamped to joint limits: True
+#   non-self-colliding testset:        True
+#   Average L2 error:              9.9437 mm
+#   Average angular error:         4.2494 deg
+#   Percent joint limits exceeded: 0.0 %
+#   Percent self-colliding:        4.532 %
+panda_full_nsc_tpm:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       7
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'panda'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda__lively-firebrand-77__global_step%3D3.75M.pkl'
+
+
+
+# ----------------------------------------
+# > Results for PANDA_LITE_TPM
+#   solutions clamped to joint limits: True
+#   non-self-colliding testset:        True
+#   Average L2 error:              14.2045 mm
+#   Average angular error:         8.4359 deg
+#   Percent joint limits exceeded: 0.0 %
+#   Percent self-colliding:        6.2 %
 panda_lite_tpm:
   coupling_layer:         'glow'
   nb_nodes:               6
@@ -36,6 +71,14 @@ panda_lite_tpm:
 # === Fetch
 # 
 
+# ----------------------------------------
+# > Results for FETCH_FULL_TEMP_TPM
+#   solutions clamped to joint limits: True
+#   non-self-colliding testset:        True
+#   Average L2 error:              14.3024 mm
+#   Average angular error:         1.1363 deg
+#   Percent joint limits exceeded: 0.0 %
+#   Percent self-colliding:        3.588 %
 fetch_full_temp_tpm:
   coupling_layer:         'glow'
   nb_nodes:               12
@@ -44,18 +87,51 @@ fetch_full_temp_tpm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch'
-
-  # Average L2 error:      11.9735 mm
-  # Average angular error: 1.145 deg
-  # model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch-youthful-bird-49.pkl'
-
-  # Average L2 error:      11.1458 mm
-  # Average angular error: 0.971 deg
-  # model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__youthful-bird-49__global_step%3D6.0M.pkl'
-
-  # Average L2 error:      9.1512 mm
-  # Average angular error: 1.1142 deg
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__wobbly-blaze-54__global_step%3D6.0M.pkl'
+
+
+# ----------------------------------------
+# > Results for FETCH_FULL_TEMP_NSC_TPM
+#   solutions clamped to joint limits: True
+#   non-self-colliding testset:        True
+#   Average L2 error:              16.7506 mm
+#   Average angular error:         1.0489 deg
+#   Percent joint limits exceeded: 0.0 %
+#   Percent self-colliding:        3.116 %
+fetch_full_temp_nsc_tpm:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       8
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'fetch'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__sleek-microwave-65__global_step%3D3.75M.pkl'
+
+
+
+# ===========================================================
+# === Iiwa7
+# 
+
+# ----------------------------------------
+# > Results for IIWA7_FULL_TEMP_NSC_TPM   (at ~ 1.75m training steps)
+#   solutions clamped to joint limits: True
+#   non-self-colliding testset:        True
+#   Average L2 error:              19.875 mm
+#   Average angular error:         2.8739 deg
+#   Percent joint limits exceeded: 0.0 %
+#   Percent self-colliding:        0.04 %
+iiwa7_full_temp_nsc_tpm:
+  coupling_layer:         'glow'
+  nb_nodes:               12
+  dim_latent_space:       10
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'iiwa7'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/iiwa7__serene-snowball-78__global_step%3D1.75M.pkl'
+
 
 
 # ===========================================================

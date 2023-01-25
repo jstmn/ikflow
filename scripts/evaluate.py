@@ -1,21 +1,27 @@
-from typing import List, Tuple
+from typing import List, Tuple, TypedDict
 import argparse
 from time import time
+from collections import namedtuple
 
 import torch
 import numpy as np
 from jkinpylib.robots import Robot
 
 from ikflow.ikflow_solver import IKFlowSolver
-from ikflow.utils import set_seed
+from ikflow.utils import set_seed, boolean_string
 from ikflow.model_loading import get_ik_solver
 from ikflow.evaluation import evaluate_solutions
 
 
 set_seed()
 
+ErrorStats = namedtuple(
+    "ErrorStats", "mean_l2_error_mm mean_angular_error_deg pct_joint_limits_exceeded pct_self_colliding"
+)
+RuntimeStats = namedtuple("RuntimeStats", "mean_runtime_ms runtime_std nb_solutions")
 
-def error_stats(
+
+def calculate_error_stats(
     ik_solver: IKFlowSolver,
     robot: Robot,
     testset: np.ndarray,
@@ -24,7 +30,7 @@ def error_stats(
     samples_per_pose: int,
     refine_solutions: bool,
     clamp_to_joint_limits: bool,
-) -> Tuple[float, float, float, float]:
+) -> ErrorStats:
     """Evaluate the given `ik_solver` on the provided `testset`.
 
     NOTE: Returns L2 error in millimeters and angular error in degrees
@@ -55,7 +61,7 @@ def error_stats(
             jlims_exceeded_count += joint_limits_exceeded.sum().item()
             self_collisions_count += self_collisions.sum().item()
     n_total = testset.shape[0] * samples_per_pose
-    return (
+    return ErrorStats(
         float(1000 * np.mean(l2_errs)),
         float(np.rad2deg(np.mean(ang_errors))),
         100 * (jlims_exceeded_count / n_total),
@@ -63,11 +69,11 @@ def error_stats(
     )
 
 
-def runtime_stats(ik_solver: IKFlowSolver, n_solutions: int, k: int, refine_solutions: bool) -> Tuple[float, float]:
+def calculate_runtime_stats(ik_solver: IKFlowSolver, n_solutions: int, k: int, refine_solutions: bool) -> RuntimeStats:
     """Collect runtime statistics for the given `ik_solver`. NOTE: Returns runtime in milliseconds
 
     Returns:
-        Tuple[float, float]: Mean, std of the runtime
+        RuntimeStats: Mean, std of the runtime, number of solutions the runtime is for
     """
     sample_times = []
     poses = ik_solver.robot.forward_kinematics_klampt(ik_solver.robot.sample_joint_angles(n_solutions * k))
@@ -78,87 +84,40 @@ def runtime_stats(ik_solver: IKFlowSolver, n_solutions: int, k: int, refine_solu
             t0 = time()
             ik_solver.solve_n_poses(target_poses, refine_solutions=refine_solutions)[1]
             sample_times.append(time() - t0)
-    return np.mean(sample_times) * 1000, np.std(sample_times)
+    return RuntimeStats(np.mean(sample_times) * 1000, np.std(sample_times), n_solutions)
 
 
-def pp_results(
-    title,
-    mean_l2_error,
-    mean_angular_error,
-    pct_joint_limits_exceeded,
-    pct_self_colliding,
-    mean_runtime,
-    runtime_std,
-    runtime_n,
-):
+def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats: RuntimeStats):
     print(f"\n----------------------------------------")
-    print(f"> {title}")
-    print(f"\n    Average L2 error:              {round(mean_l2_error, 4)} mm")
-    print(f"    Average angular error:         {round(mean_angular_error, 4)} deg")
-    print(f"    Percent joint limits exceeded: {round(pct_joint_limits_exceeded, 4)} %")
-    print(f"    Percent self-colliding:        {round(pct_self_colliding, 4)} %")
+    print(f"> Results for {args.model_name.upper()}")
+    print(f"\n  solutions clamped to joint limits: {args.clamp_to_joint_limits}")
+    print(f"  non-self-colliding testset:        {args.non_self_colliding_dataset}")
+    print(f"  solutions refined:                 {args.do_refinement}")
+
+    print(f"\n  Average L2 error:              {round(error_stats.mean_l2_error_mm, 4)} mm")
+    print(f"  Average angular error:         {round(error_stats.mean_angular_error_deg, 4)} deg")
+    print(f"  Percent joint limits exceeded: {round(error_stats.pct_joint_limits_exceeded, 4)} %")
+    print(f"  Percent self-colliding:        {round(error_stats.pct_self_colliding, 4)} %")
     print(
-        f"    Average runtime:               {round(mean_runtime, 4)} +/- {round(runtime_std, 4)} ms (for"
-        f" {runtime_n} samples)"
+        f"  Average runtime:               {round(runtime_stats.mean_runtime_ms, 4)} +/-"
+        f" {round(runtime_stats.runtime_std, 4)} ms (for {runtime_stats.nb_solutions} solutions)"
     )
-    print(f"                                   {round(mean_runtime/runtime_n, 4)} ms per solution")
+    print(
+        f"                                 {round(runtime_stats.mean_runtime_ms/runtime_stats.nb_solutions, 4)} ms"
+        " per solution"
+    )
 
 
 """ Usage 
 
-python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm
+python scripts/evaluate.py --testset_size=500 --model_name=panda_full_nsc_tpm
+python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --clamp_to_joint_limits=true
+
+
 python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_full_temp_tpm
 
 
-python scripts/evaluate.py \
-    --samples_per_pose=50 \
-    --testset_size=500 \
-    --n_samples_for_runtime=512 \
-    --do_refinement \
-    --model_name=panda_full_tpm
-
-
-
-Without clamping - 'python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm'
-    Average L2 error:              7.2215 mm
-    Average angular error:         1.2086 deg
-    Percent joint limits exceeded: 16.696 %
-    Percent self-colliding:        12.82 %
-    Average runtime:               6.0951 +/- 0.0 ms (for 100 samples)
-                                   0.061 ms per solution
-
-With clamping - 'python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --clamp_to_joint_limits'
-    Average L2 error:              10.6461 mm
-    Average angular error:         2.2901 deg
-    Percent joint limits exceeded: 0.0 %
-    Percent self-colliding:        12.56 %
-    Average runtime:               6.4351 +/- 0.0 ms (for 100 samples)
-                                   0.0644 ms per solution
-
-
-
-Expected output:
-
-    ...
-    ...
-    ----------------------------------------
-    > IKFlow with solution refinement
-
-        Average L2 error:      0.5837 mm
-        Average angular error: 0.0075 deg
-        Average runtime:       76.1609 +/- 0.0112 ms (for 512 samples)
-                            0.1488 ms per solution
-
-    ----------------------------------------
-    > Vanilla IKFlow
-
-        Average L2 error:      7.5254 mm
-        Average angular error: 1.6287 deg
-        Average runtime:       10.5191 +/- 0.0 ms (for 512 samples)
-                            0.0205 ms per solution
-
-    Done
 """
 
 if __name__ == "__main__":
@@ -170,14 +129,21 @@ if __name__ == "__main__":
         type=int,
         help="Check the average runtime to get this number of solutions",
     )
+    parser.add_argument("--non_self_colliding_dataset", type=str, default="true")
     parser.add_argument("--testset_size", default=500, type=int)
     parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
     parser.add_argument("--do_refinement", action="store_true", help="Run refine solutions")
     parser.add_argument(
-        "--clamp_to_joint_limits", action="store_true", help="Clamp the solutions to the robots joint limits"
+        "--clamp_to_joint_limits",
+        type=str,
+        default="true",
+        help="Clamp the solutions to the robots joint limits (this is a bool, should be 'true' or 'false')",
     )
     parser.add_argument("--all", action="store_true", help="Run for all robots in tpms")
     args = parser.parse_args()
+    args.non_self_colliding_dataset = boolean_string(args.non_self_colliding_dataset)
+    args.do_refinement = boolean_string(args.do_refinement)
+    args.clamp_to_joint_limits = boolean_string(args.clamp_to_joint_limits)
 
     assert args.all is False, f"--all currently unimplemented"
 
@@ -192,55 +158,19 @@ if __name__ == "__main__":
     # Build IKFlowSolver and set weights
     ik_solver, hyper_parameters = get_ik_solver(args.model_name)
     robot = ik_solver.robot
-    testset = robot.forward_kinematics_klampt(robot.sample_joint_angles(args.testset_size))
+    _, testset = robot.sample_joint_angles_and_poses(
+        args.testset_size, only_non_self_colliding=args.non_self_colliding_dataset, tqdm_enabled=False
+    )
 
-    # ------------------------
-    # With solution refinement
-    #
-    if args.do_refinement:
-        mean_l2_error, mean_angular_error, pct_joint_limits_exceeded, pct_self_colliding = error_stats(
-            ik_solver,
-            robot,
-            testset,
-            latent_distribution,
-            latent_scale,
-            args.samples_per_pose,
-            refine_solutions=True,
-            clamp_to_joint_limits=args.clamp_to_joint_limits,
-        )
-        mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=True)
-        pp_results(
-            "IKFlow with solution refinement",
-            mean_l2_error,
-            mean_angular_error,
-            pct_joint_limits_exceeded,
-            pct_self_colliding,
-            mean_runtime,
-            runtime_std,
-            runtime_n,
-        )
-
-    # ---------------------------
-    # Without solution refinement
-    #
-    mean_l2_error, mean_angular_error, pct_joint_limits_exceeded, pct_self_colliding = error_stats(
+    error_stats = calculate_error_stats(
         ik_solver,
         robot,
         testset,
         latent_distribution,
         latent_scale,
         args.samples_per_pose,
-        refine_solutions=False,
+        refine_solutions=args.do_refinement,
         clamp_to_joint_limits=args.clamp_to_joint_limits,
     )
-    mean_runtime, runtime_std = runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=False)
-    pp_results(
-        "Vanilla IKFlow",
-        mean_l2_error,
-        mean_angular_error,
-        pct_joint_limits_exceeded,
-        pct_self_colliding,
-        mean_runtime,
-        runtime_std,
-        runtime_n,
-    )
+    runtime_stats = calculate_runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=False)
+    pp_results(args, error_stats, runtime_stats)

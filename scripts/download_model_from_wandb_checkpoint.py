@@ -30,7 +30,7 @@ def format_state_dict(state_dict: Dict) -> Dict:
 _____________
 Example usage
 
-python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=1vhgo90v
+python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=1e2xdzo6
 """
 
 if __name__ == "__main__":
