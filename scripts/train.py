@@ -59,17 +59,6 @@ DEFAULT_CHECKPOINT_EVERY = 250000
 _____________
 Example usage
 
-# Real
-python scripts/train.py \
-    --robot_name=fetch \
-    --nb_nodes=6 \
-    --learning_rate=0.00025 \
-    --log_every=5000 \
-    --eval_every=10000 \
-    --val_set_size=500 \
-    --dataset_tags non-self-colliding \
-    --run_description="baseline"
-
 # Smoke test - wandb enabled
 python scripts/train.py \
     --robot_name=panda \
@@ -79,11 +68,10 @@ python scripts/train.py \
     --log_every=250 \
     --eval_every=100 \
     --val_set_size=250 \
-    --dataset_tags non-self-colliding \
     --checkpoint_every=500
 
-    --sigmoid_on_output=True \
 
+# Smoke test - wandb enabled, with sigmoid clamping
 python scripts/train.py \
     --robot_name=panda \
     --nb_nodes=6 \
@@ -93,11 +81,10 @@ python scripts/train.py \
     --eval_every=250 \
     --val_set_size=250 \
     --softflow_enabled=False \
-    --dim_latent_space=7 \
-    --dataset_tags non-self-colliding \
+    --sigmoid_on_output=True \
+    --dim_latent_space=10 \
     --checkpoint_every=50000
 
-    --sigmoid_on_output=True \
 
 # Smoke test - wandb disabled
 python scripts/train.py \
@@ -107,7 +94,6 @@ python scripts/train.py \
     --eval_every=100 \
     --val_set_size=100 \
     --checkpoint_every=500 \
-    --dataset_tags non-self-colliding \
     --sigmoid_on_output=True \
     --disable_wandb
 
@@ -117,7 +103,6 @@ python scripts/train.py \
     --learning_rate=1.0 \
     --gamma=0.5 \
     --step_lr_every=10 \
-    --dataset_tags non-self-colliding \
     --disable_wandb
 """
 
@@ -161,14 +146,16 @@ if __name__ == "__main__":
     parser.add_argument("--val_set_size", type=int, default=DEFAULT_VAL_SET_SIZE)
     parser.add_argument("--log_every", type=int, default=DEFAULT_LOG_EVERY)
     parser.add_argument("--checkpoint_every", type=int, default=DEFAULT_CHECKPOINT_EVERY)
-    parser.add_argument("--dataset_tags", nargs="+", type=str)
+    parser.add_argument("--dataset_tags", nargs="+", type=str, default=[DATASET_TAG_NON_SELF_COLLIDING])
     parser.add_argument("--run_description", type=str)
     parser.add_argument("--disable_progress_bar", action="store_true")
     parser.add_argument("--disable_wandb", action="store_true")
 
     args = parser.parse_args()
-    print("Args:")
-    print(", ".join(f"{k}={v}" for k, v in vars(args).items()))
+    print("\nArgparse arguments:")
+    for k, v in vars(args).items():
+        print(f"  {k}={v}")
+    print()
 
     if args.dataset_tags is None:
         args.dataset_tags = []

@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch
 
 from ikflow import config
+from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.utils import assert_joint_angle_tensor_in_joint_limits
 
 _VERBOSE = False
@@ -206,7 +207,6 @@ class IkFlowFixedLinearTransform(InvertibleModule):
                 torch.save(out, "out.pt")
                 torch.save(x[0], "x[0].pt")
                 raise ValueError("[reverse] 'out' is NaN")
-
             return (out,), j
         else:
             assert torch.max(x[0]).item() <= 1.0, (
@@ -230,7 +230,6 @@ class IkFlowFixedLinearTransform(InvertibleModule):
                 torch.save(out, "out.pt")
                 torch.save(x[0], "x[0].pt")
                 raise ValueError("[reverse] 'out' is NaN")
-
             return (out,), -j
 
     def output_dims(self, input_dims):
@@ -240,9 +239,9 @@ class IkFlowFixedLinearTransform(InvertibleModule):
 
 
 def get_pre_sigmoid_scaling_node(ndim_tot: int, robot: Robot, nodes: List[Ff.Node]):
-    assert (
-        ndim_tot == robot.n_dofs
-    ), f"ndim_tot ({ndim_tot}) != robot.n_dofs ({robot.n_dofs}) (this is enforced for now)"
+    """This node scales the joint angles to be in the range [0, 1] on the forward pass. These scaled values are then
+    passed to the sigmoid function.
+    """
 
     M_scaling = torch.eye(ndim_tot, device=config.device)
     M_offset = torch.zeros(ndim_tot, device=config.device)
@@ -250,14 +249,31 @@ def get_pre_sigmoid_scaling_node(ndim_tot: int, robot: Robot, nodes: List[Ff.Nod
     output_up = 1.0
     output_low = 0.0
 
-    # TODO: What to set for the columns of non actuated joints? For now, can enforce dim_total = ndofs
-    for i, (input_low, input_up) in enumerate(robot.actuated_joints_limits):
+    def get_offset_and_scale(input_low, input_up):
         # From https://stackoverflow.com/a/5732390/5191069
-        slope = (output_up - output_low) / (input_up - input_low)
         # output = output_low + slope * (input_ - input_low)
         #       == output_low - (slope * input_low) +  slope * input_
-        M_offset[i] = output_low - (slope * input_low)
-        M_scaling[i, i] = slope
+        slope = (output_up - output_low) / (input_up - input_low)
+        offset = output_low - (slope * input_low)
+        return offset, slope
+
+    # TODO: What to set for the columns of non actuated joints? For now, can enforce dim_total = ndofs
+    for i, (input_low, input_up) in enumerate(robot.actuated_joints_limits):
+        offset, scale = get_offset_and_scale(input_low, input_up)
+        M_offset[i] = offset
+        M_scaling[i, i] = scale
+
+    # The non joint columns need to be scaled to (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX)
+    if robot.n_dofs < ndim_tot:
+        input_up = SIGMOID_SCALING_ABS_MAX
+        input_low = -SIGMOID_SCALING_ABS_MAX
+
+        for i in range(ndim_tot - robot.n_dofs):
+            idx = robot.n_dofs + i
+            slope = (output_up - output_low) / (input_up - input_low)
+            M_offset[idx] = output_low - (slope * input_low)
+            M_scaling[idx, idx] = slope
+
     # Return an direct implementation for unit testing
     node_impl = IkFlowFixedLinearTransform(
         [ndim_tot], M=M_scaling, b=M_offset, joint_limits=robot.actuated_joints_limits
@@ -286,10 +302,6 @@ def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, n
     cond = Ff.ConditionNode(dim_cond)
 
     if params.sigmoid_on_output:
-        assert (
-            ndim_tot == robot.n_dofs
-        ), f"ndim_tot ({ndim_tot}) != robot.n_dofs ({robot.n_dofs}) (this is enforced for now)"
-
         # First map x from joint space to [0, 1]
         nodes.append(get_pre_sigmoid_scaling_node(ndim_tot, robot, nodes)[0])
         nodes.append(Ff.Node([nodes[-1].out0], InvertibleSigmoidFlipped, {}))

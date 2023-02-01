@@ -19,3 +19,11 @@ MODELS_DIR = os.path.join(DEFAULT_DATA_DIR, "models/")
 DATASET_TAG_NON_SELF_COLLIDING = "non-self-colliding"
 
 ALL_DATASET_TAGS = [DATASET_TAG_NON_SELF_COLLIDING]
+
+
+# Training
+# This is the absolute maximum value that a value on the joint angle side of the network can take on when it is passed
+# through the network, when sigmoid activation is enabled. Note this only applies for values that are in columns past
+# the columns reserved for the joints. On other terms, this only applies for the columns with indexes greater than
+# n_dofs.
+SIGMOID_SCALING_ABS_MAX = 1.0

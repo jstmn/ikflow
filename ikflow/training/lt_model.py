@@ -10,6 +10,7 @@ from pytorch_lightning.core.module import LightningModule
 
 from ikflow.training.training_utils import get_softflow_noise
 from ikflow import config
+from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters
 from ikflow.utils import grad_stats
@@ -91,18 +92,17 @@ class IkfLitModel(LightningModule):
 
         Quick rant: updating the lr scheduler based on epochs is a pain and dumb and bad engineering practice.
             Complaint #1: It makes the learning rate decay dependent on your dataset size. If you change your dataset 
-                all the sudden your learning processes is fundamentally altered. Dataset size will always be a 
-                hyperparameter of sorts, but if also is a key factor in your learning rate decay now you've added extra 
-                complexity into hyperparameter tuning. For example, if you change your dataset size and your training 
-                improves, is that because you have more data to learn from? Or because your learning rate is decreasing 
-                more slowly?! 
+                all the sudden your learning processes is altered. Therefor dataset size becomes another hyperparameter,
+                which adds extra complexity into hyperparameter tuning. For example, if you change your dataset size and
+                your training improves, is that because you have more data to learn from? Or because your learning rate 
+                is decreasing at a slower rate?! 
 
             Complaint #2: Why do we define an epoch at all when our data is continuously being drawn uniformly at 
                 random from some distribution (D)? To be fair there is one dataset file in this project. But if I have 
                 10 million poses that are being sampled randomly then that is approximately equal to random sampling 
                 from the distribution. Its a meaningless distinction to choose a fixed number and call a set with size 
                 of that fixed number of randomly drawn samples from D an epoch. The bottom line is that what we care 
-                about in training is our generalization error. Epoch is an unneccessary construct.   
+                about in training is our generalization error. Epoch is an unneccessary construct.
         """
         lr_scheduler = torch.optim.lr_scheduler.StepLR(
             optimizer, step_size=self.hparams.step_lr_every, gamma=self.hparams.gamma, verbose=False
@@ -133,6 +133,14 @@ class IkfLitModel(LightningModule):
         batch_size = y.shape[0]
         if self.dim_tot > self.n_dofs:
             pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.n_dofs)).to(device)
+
+            # padding must be in (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX). This value will be scaled to these
+            # bounds and then passed through inverse sigmoid. If they are outside of these bounds, inverse-sigmoid will
+            # return NaNs and everything will explode. And then I will cry tears of sadness.
+            if self.base_hparams.sigmoid_on_output:
+                eps = 1e-5
+                pad_x = torch.clamp(pad_x, -SIGMOID_SCALING_ABS_MAX + eps, SIGMOID_SCALING_ABS_MAX - eps)
+
             x = torch.cat([x, pad_x], dim=1)
 
         # Add softflow noise
