@@ -134,9 +134,9 @@ def evaluate_solutions(
     assert isinstance(solutions, torch.Tensor), f"solutions must be a torch.Tensor (got {type(solutions)})"
     target_poses = _get_target_pose_batch(target_poses_in, solutions.shape[0])
     l2_errors, angular_errors = solution_pose_errors(robot, solutions, target_poses)
-    joint_limits_respected = calculate_joint_limits_exceeded(solutions, robot.actuated_joints_limits)
+    joint_limits_exceeded = calculate_joint_limits_exceeded(solutions, robot.actuated_joints_limits)
     self_collisions_respected = calculate_self_collisions(robot, solutions)
-    return l2_errors, angular_errors, joint_limits_respected, self_collisions_respected
+    return l2_errors, angular_errors, joint_limits_exceeded, self_collisions_respected
 
 
 """ Benchmarking solution_pose_errors():

@@ -15,7 +15,7 @@ VIS_FN_ARGUMENTS = {"oscillate_target": {"nb_sols": 10, "fixed_latent": True}, "
 
 # Panda
 python scripts/visualize.py --model_name=panda_full_tpm --demo_name=oscillate_latent
-python scripts/visualize.py --model_name=panda_lite_tpm --demo_name=oscillate_target
+python scripts/visualize.py --model_name=fetch_full_temp_nsc_tpm --demo_name=oscillate_target
 
 # Fetch
 python scripts/visualize.py --model_name=fetch_full_temp_tpm --demo_name=oscillate_latent

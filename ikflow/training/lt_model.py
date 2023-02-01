@@ -1,7 +1,5 @@
 from typing import Tuple, Dict, List
-from datetime import datetime
 from time import time
-import os
 
 from jkinpylib.robots import Fetch
 from jkinpylib.conversions import quaternion_product, quaternion_inverse
@@ -26,25 +24,6 @@ ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING = {Fetch.name: [np.array([0, 1.5707, 0, 0,
 
 _IK_SOLUTION_TABLE_COLUMNS = ["global_step", "target_pose", "solution", "realized_pose", "error", "joint_types"]
 ik_solution_table = wandb.Table(data=[], columns=_IK_SOLUTION_TABLE_COLUMNS)
-
-
-def _np_to_str(x: np.ndarray) -> str:
-    assert x.ndim == 1
-    return str([round(x_i, 4) for x_i in x.tolist()])
-
-
-def _datetime_str() -> str:
-    now = datetime.now()
-    return now.strftime("%b.%d.%Y_%I:%-M:%p")
-
-
-def get_checkpoint_dir(robot_name: str) -> str:
-    if wandb.run is not None:
-        ckpt_dir_name = f"{robot_name}--{_datetime_str()}--wandb-run-name:{wandb.run.name}/"
-    else:
-        ckpt_dir_name = f"{robot_name}--{_datetime_str()}/"
-    dir_filepath = os.path.join(config.TRAINING_LOGS_DIR, ckpt_dir_name)
-    return dir_filepath
 
 
 class IkfLitModel(LightningModule):
@@ -243,23 +222,37 @@ class IkfLitModel(LightningModule):
 
     def validation_step(self, batch, batch_idx) -> Dict[str, torch.Tensor]:
         del batch_idx
-        x, y = batch
+        _, y = batch
         ee_pose_target = y.cpu().detach().numpy()[0]
-        samples, model_runtime = self.solve(ee_pose_target, self.hparams.samples_per_pose, return_runtime=True)
-
+        solutions, model_runtime = self.solve(ee_pose_target, self.hparams.samples_per_pose, return_runtime=True)
         l2_errors, ang_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
-            self.ik_solver.robot, ee_pose_target, samples
+            self.ik_solver.robot, ee_pose_target, solutions
         )
-        # TODO: Fix this hackiness. evaluate_solutions() should return all of one type
-        l2_errors = torch.tensor(l2_errors, dtype=torch.float32)
-        ang_errors = torch.tensor(ang_errors, dtype=torch.float32)
-        return {
-            "l2_errs": l2_errors,
-            "angular_errs": ang_errors,
-            "joint_limits_exceeded": joint_limits_exceeded,
-            "self_collisions": self_collisions,
+        solutions_clamped = self.ik_solver.robot.clamp_to_joint_limits(solutions)
+        (
+            l2_errors_clamped,
+            ang_errors_clamped,
+            joint_limits_exceeded_clamped,
+            self_collisions_clamped,
+        ) = evaluate_solutions(self.ik_solver.robot, ee_pose_target, solutions_clamped)
+        result = {
             "model_runtime": model_runtime,
         }
+        result["non_clamped"] = {
+            # TODO: Fix this hackiness. evaluate_solutions() should return all of one type
+            "l2_errs": torch.tensor(l2_errors, dtype=torch.float32),
+            "angular_errs": torch.tensor(ang_errors, dtype=torch.float32),
+            "joint_limits_exceeded": joint_limits_exceeded,
+            "self_collisions": self_collisions,
+        }
+        result["clamped"] = {
+            # TODO: Fix this hackiness. evaluate_solutions() should return all of one type
+            "l2_errs": torch.tensor(l2_errors_clamped, dtype=torch.float32),
+            "angular_errs": torch.tensor(ang_errors_clamped, dtype=torch.float32),
+            "joint_limits_exceeded": joint_limits_exceeded_clamped,
+            "self_collisions": self_collisions_clamped,
+        }
+        return result
 
     def validation_epoch_end(self, validation_step_outputs: List[Dict[str, torch.Tensor]]):
         """_summary_
@@ -267,30 +260,57 @@ class IkfLitModel(LightningModule):
         Args:
             validation_step_outputs (_type_): _description_
         """
-        n_total = len(validation_step_outputs) * len(validation_step_outputs[0]["l2_errs"])
-        l2_errs = torch.cat([pred["l2_errs"] for pred in validation_step_outputs])
-        max_l2_errs = [pred["l2_errs"].max() for pred in validation_step_outputs]
-        angular_errs = torch.cat([pred["angular_errs"] for pred in validation_step_outputs])
-        max_angular_errs = [pred["angular_errs"].max() for pred in validation_step_outputs]
-        joint_limits_exceeded = torch.cat([pred["joint_limits_exceeded"] for pred in validation_step_outputs])
-        self_collisions = torch.cat([pred["self_collisions"] for pred in validation_step_outputs])
+        results_clamped = [result["clamped"] for result in validation_step_outputs]
+        results_non_clamped = [result["non_clamped"] for result in validation_step_outputs]
         model_runtimes = [pred["model_runtime"] for pred in validation_step_outputs]
+        metrics = {"val/ave_model_runtime": np.mean(model_runtimes)}
 
-        self.safe_log_metrics(
-            {
-                "val/l2_error": l2_errs.mean().item(),
-                "val/l2_error_std": l2_errs.std().item(),
-                "val/l2_ave_max_error": np.mean(max_l2_errs),
-                "val/l2_ave_max_error_std": np.std(max_l2_errs),
-                "val/angular_error": angular_errs.mean().item(),
-                "val/angular_error_std": angular_errs.mean().item(),
-                "val/angular_ave_max_error": np.mean(max_angular_errs),
-                "val/angular_ave_max_error_std": np.std(max_angular_errs),
-                "val/joint_limits_exceeded": 100 * (joint_limits_exceeded.sum().item() / n_total),
-                "val/self_collisions": 100 * (self_collisions.sum().item() / n_total),
-                "val/ave_model_runtime": np.mean(model_runtimes),
-            }
-        )
+        def get_stats(_results):
+            n_total = len(_results) * len(_results[0]["l2_errs"])
+            l2_errs = torch.cat([pred["l2_errs"] for pred in _results])
+            max_l2_errs = [pred["l2_errs"].max() for pred in _results]
+            angular_errs = torch.cat([pred["angular_errs"] for pred in _results])
+            max_angular_errs = [pred["angular_errs"].max() for pred in _results]
+            joint_limits_exceeded = torch.cat([pred["joint_limits_exceeded"] for pred in _results])
+            self_collisions = torch.cat([pred["self_collisions"] for pred in _results])
+            return (
+                l2_errs.mean().item(),
+                l2_errs.std().item(),
+                np.mean(max_l2_errs),
+                np.std(max_l2_errs),
+                angular_errs.mean().item(),
+                angular_errs.mean().item(),
+                np.mean(max_angular_errs),
+                np.std(max_angular_errs),
+                100 * (joint_limits_exceeded.sum().item() / n_total),
+                100 * (self_collisions.sum().item() / n_total),
+            )
+
+        for prefix, results in zip(["val", "val_clamped"], [results_non_clamped, results_clamped]):
+            (
+                l2_error,
+                l2_error_std,
+                l2_ave_max_error,
+                l2_ave_max_error_std,
+                angular_error,
+                angular_error_std,
+                angular_ave_max_error,
+                angular_ave_max_error_std,
+                joint_limits_exceeded,
+                self_collisions,
+            ) = get_stats(results)
+            metrics[f"{prefix}/l2_error"] = l2_error
+            metrics[f"{prefix}/l2_error_std"] = l2_error_std
+            metrics[f"{prefix}/l2_ave_max_error"] = l2_ave_max_error
+            metrics[f"{prefix}/l2_ave_max_error_std"] = l2_ave_max_error_std
+            metrics[f"{prefix}/angular_error"] = angular_error
+            metrics[f"{prefix}/angular_error_std"] = angular_error_std
+            metrics[f"{prefix}/angular_ave_max_error"] = angular_ave_max_error
+            metrics[f"{prefix}/angular_ave_max_error_std"] = angular_ave_max_error_std
+            metrics[f"{prefix}/joint_limits_exceeded"] = joint_limits_exceeded
+            metrics[f"{prefix}/self_collisions"] = self_collisions
+
+        self.safe_log_metrics(metrics)
 
         # B/c pytorch lightning is dumb (https://github.com/Lightning-AI/lightning/issues/12724)
         # self.global_step converted to float because of the following warning:
@@ -299,45 +319,6 @@ class IkfLitModel(LightningModule):
 
         # Ignoring table logging for now
         # self.log_ik_solutions_to_wandb_table()
-
-    def log_ik_solutions_to_wandb_table(self, k: int = 3):
-        """Log `k` solutions for each of the target poses in ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING to wandb"""
-        if wandb.run is None:
-            print("wandb not initialized, skipping logging solution table")
-            return
-
-        # TODO:
-        # see https://github.com/wandb/wandb/issues/1826
-        #
-        robot = self.ik_solver.robot
-        if robot.name not in ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING:
-            return
-
-        target_poses = ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING[robot.name]
-        joint_types = robot.actuated_joint_types
-
-        for i, target_pose in enumerate(target_poses):
-            solutions = self.solve(target_pose, k)  # (k, n_dofs)
-            realized_poses = robot.forward_kinematics(solutions.cpu().detach().numpy())
-            errors_xyz = realized_poses[:, 0:3] - target_pose[0:3]
-            q_target = np.tile(target_pose[3:7], (k, 1))
-            q_realized = realized_poses[:, 3:7]
-            # see https://gamedev.stackexchange.com/a/68184
-            q_error = quaternion_product(q_target, quaternion_inverse(q_realized))
-            errors = np.hstack([errors_xyz, q_error])
-            assert errors.shape == (k, 7)
-            for j in range(k):
-                ik_solution_table.add_data(
-                    int(self.global_step),
-                    _np_to_str(target_pose),
-                    _np_to_str(solutions[j]),
-                    _np_to_str(realized_poses[j]),
-                    _np_to_str(errors[j]),
-                    str(joint_types),
-                )
-
-        new_table = wandb.Table(data=ik_solution_table.data, columns=_IK_SOLUTION_TABLE_COLUMNS)
-        wandb.log({f"{self.ik_solver.robot.name}_solution_table": new_table, "global_step": float(self.global_step)})
 
     def solve(self, y: Tuple[float], m: int, return_runtime: bool = False) -> Tuple[torch.Tensor, float]:
         """
@@ -349,11 +330,8 @@ class IkfLitModel(LightningModule):
 
         # Note: No code change required here to handle using/not using softflow.
         conditional = torch.zeros(m, self.ik_solver.dim_cond)
-        # (:, 0:3) is x, y, z
         conditional[:, 0:3] = torch.FloatTensor(y[:3])
-        # (:, 3:7) is quat
         conditional[:, 3 : 3 + 4] = torch.FloatTensor(np.array([y[3:]]))
-        # (:, 7: 7 + ndim_tot) is the sigma of the normal distribution that noise is drawn from and added to x. 0 in this case
         conditional = conditional.to(config.device)
 
         shape = (m, self.dim_tot)

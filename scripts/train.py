@@ -15,8 +15,9 @@ from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
 from ikflow import config
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
-from ikflow.training.lt_model import IkfLitModel, get_checkpoint_dir
+from ikflow.training.lt_model import IkfLitModel
 from ikflow.training.lt_data import IkfLitDataset
+from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.utils import boolean_string, non_private_dict
 
 
@@ -78,10 +79,10 @@ python scripts/train.py \
     --log_every=250 \
     --eval_every=100 \
     --val_set_size=250 \
-    --sigmoid_on_output=True \
     --dataset_tags non-self-colliding \
     --checkpoint_every=500
 
+    --sigmoid_on_output=True \
 
 python scripts/train.py \
     --robot_name=panda \
