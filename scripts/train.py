@@ -15,7 +15,7 @@ from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
 from ikflow import config
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
-from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
+from ikflow.training.lt_model import IkfLitModel, get_checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
 from ikflow.utils import boolean_string, non_private_dict
 
@@ -248,8 +248,12 @@ if __name__ == "__main__":
     )
 
     # Checkpoint callback
+    checkpoint_directory = get_checkpoint_dir(args.robot_name)
+    if not args.disable_wandb:
+        wandb.config.update({"checkpoint_directory": checkpoint_directory})
+
     checkpoint_callback = ModelCheckpoint(
-        dirpath=checkpoint_dir(args.robot_name),
+        dirpath=checkpoint_directory,
         every_n_train_steps=args.checkpoint_every,
         save_on_train_epoch_end=False,
         # Save the last 3 checkpoints. Checkpoint files are logged as wandb artifacts so it doesn't really matter anyway

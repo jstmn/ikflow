@@ -7,7 +7,7 @@ from time import time
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot
-from ikflow.training.lt_model import IkfLitModel, checkpoint_dir
+from ikflow.training.lt_model import IkfLitModel, get_checkpoint_dir
 from ikflow.training.lt_data import IkfLitDataset
 
 from pytorch_lightning.loggers import WandbLogger
@@ -86,8 +86,12 @@ if __name__ == "__main__":
     ik_solver = IKFlowSolver(ikflow_hparams, robot)
 
     # Checkpoint callback
+    if "checkpoint_directory" in run_cfg and os.path.isdir(run_cfg["checkpoint_directory"]):
+        checkpoint_directory = run_cfg["checkpoint_directory"]
+    else:
+        checkpoint_directory = get_checkpoint_dir(robot_name)
     checkpoint_callback = ModelCheckpoint(
-        dirpath=checkpoint_dir(robot_name),
+        dirpath=checkpoint_directory,
         every_n_train_steps=run_cfg["checkpoint_every"],
         save_on_train_epoch_end=False,
         # Save the last 3 checkpoints. Checkpoint files are logged as wandb artifacts so it doesn't really matter anyway

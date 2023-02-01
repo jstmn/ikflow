@@ -160,6 +160,7 @@ def _get_tags(args):
 
 python scripts/build_dataset.py --robot_name=fetch --training_set_size=25000000 --only_non_self_colliding
 python scripts/build_dataset.py --robot_name=panda --training_set_size=25000000 --only_non_self_colliding
+python scripts/build_dataset.py --robot_name=fetch_arm --training_set_size=25000000 --only_non_self_colliding
 """
 
 

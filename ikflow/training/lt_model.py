@@ -38,7 +38,7 @@ def _datetime_str() -> str:
     return now.strftime("%b.%d.%Y_%I:%-M:%p")
 
 
-def checkpoint_dir(robot_name: str) -> str:
+def get_checkpoint_dir(robot_name: str) -> str:
     if wandb.run is not None:
         ckpt_dir_name = f"{robot_name}--{_datetime_str()}--wandb-run-name:{wandb.run.name}/"
     else:

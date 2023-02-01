@@ -32,6 +32,12 @@ class IKFlowSolver:
         """Initialize an IKFlowSolver."""
         assert isinstance(hyper_parameters, IkflowModelParameters)
         assert isinstance(robot, Robot)
+
+        # Add 'sigmoid_on_output' if IkflowModelParameters instance doesn't have it. This will be the case when loading
+        # from training runs from before this parameter was added
+        if not hasattr(hyper_parameters, "sigmoid_on_output"):
+            hyper_parameters.sigmoid_on_output = False
+
         if hyper_parameters.softflow_enabled:
             assert (
                 not hyper_parameters.sigmoid_on_output
