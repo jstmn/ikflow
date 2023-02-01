@@ -137,7 +137,7 @@ class IkfLitModel(LightningModule):
             # padding must be in (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX). This value will be scaled to these
             # bounds and then passed through inverse sigmoid. If they are outside of these bounds, inverse-sigmoid will
             # return NaNs and everything will explode. And then I will cry tears of sadness.
-            if self.base_hparams.sigmoid_on_output:
+            if hasattr(self.base_hparams, "sigmoid_on_output") and self.base_hparams.sigmoid_on_output:
                 eps = 1e-5
                 pad_x = torch.clamp(pad_x, -SIGMOID_SCALING_ABS_MAX + eps, SIGMOID_SCALING_ABS_MAX - eps)
 

@@ -7,7 +7,8 @@ from time import time
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot
-from ikflow.training.lt_model import IkfLitModel, get_checkpoint_dir
+from ikflow.training.training_utils import get_checkpoint_dir
+from ikflow.training.lt_model import IkfLitModel
 from ikflow.training.lt_data import IkfLitDataset
 
 from pytorch_lightning.loggers import WandbLogger
