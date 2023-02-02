@@ -14,7 +14,7 @@ import torch.optim
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow import config
-from ikflow.evaluation import solution_pose_errors
+from jkinpylib.evaluation import solution_pose_errors
 
 
 _OSCILLATE_LATENT_TARGET_POSES = {

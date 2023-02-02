@@ -1,4 +1,4 @@
-from typing import List, Tuple, TypedDict
+from typing import List
 import argparse
 from time import time
 from collections import namedtuple
@@ -10,7 +10,7 @@ from jkinpylib.robots import Robot
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow.utils import set_seed, boolean_string
 from ikflow.model_loading import get_ik_solver
-from ikflow.evaluation import evaluate_solutions
+from jkinpylib.evaluation import evaluate_solutions
 
 
 set_seed()
@@ -100,7 +100,7 @@ def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats:
     print(f"  Percent self-colliding:        {round(error_stats.pct_self_colliding, 4)} %")
     print(
         f"  Average runtime:               {round(runtime_stats.mean_runtime_ms, 4)} +/-"
-        f" {round(runtime_stats.runtime_std, 4)} ms (for {runtime_stats.nb_solutions} solutions)"
+        f" {round(runtime_stats.runtime_std, 4)} ms for {runtime_stats.nb_solutions} solutions"
     )
     print(
         f"                                 {round(runtime_stats.mean_runtime_ms/runtime_stats.nb_solutions, 4)} ms"
@@ -111,7 +111,7 @@ def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats:
 """ Usage 
 
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_nsc_tpm
-python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --clamp_to_joint_limits=true
+python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --do_refinement
 
 
 python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm

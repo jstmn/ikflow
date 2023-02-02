@@ -9,7 +9,7 @@ import torch
 from ikflow import config
 from ikflow.config import DEFAULT_TORCH_DTYPE
 from ikflow.model import IkflowModelParameters, glow_cNF_model
-from ikflow.evaluation import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
+from jkinpylib.evaluation import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
 
 
 def draw_latent(
@@ -167,7 +167,7 @@ class IKFlowSolver:
         latent: Optional[torch.Tensor] = None,
         latent_distribution: str = "gaussian",
         latent_scale: float = 1.0,
-        clamp_to_joint_limits: bool = False,
+        clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
@@ -190,7 +190,7 @@ class IKFlowSolver:
             latent_distribution (str): One of ["gaussian", "uniform"]
             latent_scale (float, optional): The scaling factor for the latent. Latent vectors are multiplied by this
                                             value.
-            clamp_to_joint_limits (bool): Clamp the generated IK solutions to within the joint limits of the robot. Will
+            clamp_to_joint_limits (bool): Clamp the generated IK solutions to within the joint limits of the robot. May
                                             increase the error of the solutions.
             refine_solutions (bool): Optimize the solutions using a traditional gradient descent based IK solver.
             return_detailed (bool): Flag to return stats about the solutions. See returns below for more details.
@@ -242,10 +242,10 @@ class IKFlowSolver:
         latent: Optional[torch.Tensor] = None,
         latent_distribution: str = "gaussian",
         latent_scale: float = 1.0,
-        clamp_to_joint_limits: bool = False,
+        clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float]]:
+    ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Same as solve(), but with a batch of target poses.
         ys: [batch x 7]
         """

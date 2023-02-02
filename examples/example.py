@@ -1,6 +1,6 @@
 import argparse
 
-from ikflow.evaluation import solution_pose_errors
+from jkinpylib.evaluation import solution_pose_errors
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 
