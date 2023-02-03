@@ -25,7 +25,7 @@ assert len(urdf_files) > 0, "No URDF files found"
 
 setup(
     name="ikflow",
-    version="0.0.6",
+    version="0.0.8",
     author="Jeremy Morgan",
     author_email="jsmorgan6@gmail.com",
     scripts=[],
@@ -34,16 +34,12 @@ setup(
     description="Open source implementation of the 'IKFlow' inverse kinematics solver",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    extras_require={"dev": ["PyQt5", "black", "pylint", "pytorch-lightning"]},
+    extras_require={"dev": ["PyQt5", "black", "pylint", "pytorch-lightning", "tensorboard", "wandb"]},
     install_requires=[
-        "kinpy",
         "klampt",
         "torch",
         "FrEIA",
-        "tensorboard",
-        "wandb",
-        "jkinpylib==0.0.7",
-        "more_itertools",
+        "jkinpylib==0.0.8"
     ],
     packages=["ikflow"],
     package_data={"ikflow": ["model_descriptions.yaml"] + urdf_files},  # TODO: Add ikflow/visualization_resources/
