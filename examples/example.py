@@ -1,6 +1,5 @@
 import argparse
 
-from jkinpylib.evaluation import solution_pose_errors
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 
@@ -43,7 +42,7 @@ if __name__ == "__main__":
         target_pose, number_of_solutions, refine_solutions=False, return_detailed=True
     )
     print(
-        "\nGot {} ikflow solutions in {} ms. The mean L2 error of the solutions = {} (cm)".format(
+        "\nGot {} ikflow solutions in {} ms. Solution L2 errors = {} (cm)".format(
             number_of_solutions, round(runtime * 1000, 3), l2_errors * 100
         )
     )
@@ -53,7 +52,7 @@ if __name__ == "__main__":
         target_pose, number_of_solutions, refine_solutions=True, return_detailed=True
     )
     print(
-        "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (cm)".format(
+        "Got {} refined ikflow solutions in {} ms. Solution L2 errors = {} (cm)".format(
             number_of_solutions, round(runtime * 1000, 3), l2_errors * 100
         )
     )

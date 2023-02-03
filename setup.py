@@ -25,7 +25,7 @@ assert len(urdf_files) > 0, "No URDF files found"
 
 setup(
     name="ikflow",
-    version="0.0.0",
+    version="0.0.6",
     author="Jeremy Morgan",
     author_email="jsmorgan6@gmail.com",
     scripts=[],
@@ -33,20 +33,21 @@ setup(
     license="LICENSE.txt",
     description="Open source implementation of the 'IKFlow' inverse kinematics solver",
     long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    extras_require={"dev": ["PyQt5", "black", "pylint", "pytorch-lightning"]},
     install_requires=[
         "kinpy",
         "klampt",
         "torch",
-        "pytorch-lightning",
         "FrEIA",
         "tensorboard",
         "wandb",
-        "black",
-        "jkinpylib==0.0.4",
+        "jkinpylib==0.0.7",
         "more_itertools",
-        "PyQt5",
     ],
-    include_package_data=True,
     packages=["ikflow"],
     package_data={"ikflow": ["model_descriptions.yaml"] + urdf_files},  # TODO: Add ikflow/visualization_resources/
+    # 'setup.py dist` ommits non-.py files when include_package_data=True is included. See
+    # https://stackoverflow.com/a/33167220/5191069. ( ... which is not what the name would suggest it does)
+    # include_package_data=True,
 )

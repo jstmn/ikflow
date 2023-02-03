@@ -14,9 +14,7 @@ from ikflow.utils import (
 )
 from jkinpylib.robots import get_robot, Robot
 
-import numpy as np
 import torch
-import tqdm
 
 TRAINING_SET_SIZE_SMALL = int(1e5)
 TEST_SET_SIZE = 15000
