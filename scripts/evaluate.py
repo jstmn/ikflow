@@ -1,20 +1,37 @@
-from typing import List
+from typing import List, Optional
 import argparse
 from time import time
+import sys
 from collections import namedtuple
 
 import torch
 import numpy as np
 from jkinpylib.robots import Robot
+import pandas as pd
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow.utils import set_seed, boolean_string
-from ikflow.model_loading import get_ik_solver
+from ikflow.model_loading import get_ik_solver, get_all_model_names
 from jkinpylib.evaluation import evaluate_solutions
 
 
 set_seed()
 
+
+PD_DATAFRAME_COLUMNS = [
+    "Robot",
+    "Model name",
+    "Mean l2 error (cm)",
+    "Mean angular error (deg)",
+    "Joint limits exceeded %",
+    "Self-colliding %",
+    "Mean runtime - UPDATE_THIS_VALUE",
+    "Runtime std - UPDATE_THIS_VALUE",
+    "Number of coupling layers",
+]
+_K_FOR_RUNTIME_STATS = 5
+_DEFAULT_LATENT_DISTRIBUTION = "gaussian"
+_DEFAULT_LATENT_SCALE = 0.75
 ErrorStats = namedtuple(
     "ErrorStats", "mean_l2_error_mm mean_angular_error_deg pct_joint_limits_exceeded pct_self_colliding"
 )
@@ -108,16 +125,52 @@ def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats:
     )
 
 
-""" Usage 
+def evaluate_model(
+    model_name: str, args: argparse.Namespace, print_results: bool = True, pd_table: Optional[pd.DataFrame] = None
+):
+    ik_solver, hparams = get_ik_solver(model_name)
+    robot = ik_solver.robot
+    _, testset = robot.sample_joint_angles_and_poses(
+        args.testset_size, only_non_self_colliding=args.non_self_colliding_dataset, tqdm_enabled=False
+    )
+
+    error_stats = calculate_error_stats(
+        ik_solver,
+        robot,
+        testset,
+        _DEFAULT_LATENT_DISTRIBUTION,
+        _DEFAULT_LATENT_SCALE,
+        args.samples_per_pose,
+        refine_solutions=args.do_refinement,
+        clamp_to_joint_limits=args.clamp_to_joint_limits,
+    )
+    runtime_stats = calculate_runtime_stats(
+        ik_solver, n_solutions=runtime_n, k=_K_FOR_RUNTIME_STATS, refine_solutions=False
+    )
+    if print_results:
+        pp_results(args, error_stats, runtime_stats)
+
+    if pd_table is not None:
+        new_row = [
+            robot.name,
+            model_name,
+            error_stats.mean_l2_error_mm / 10.0,
+            error_stats.mean_angular_error_deg,
+            error_stats.pct_joint_limits_exceeded,
+            error_stats.pct_self_colliding,
+            runtime_stats.mean_runtime_ms,
+            runtime_stats.runtime_std,
+            hparams.nb_nodes,
+        ]
+        pd_table.loc[len(pd_table)] = new_row
+
+
+""" Example usage
+python scripts/evaluate.py --testset_size=50 --n_samples_for_runtime=10 --all
 
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_nsc_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --do_refinement
-
-
-python scripts/evaluate.py --testset_size=500 --model_name=panda_lite_tpm
-python scripts/evaluate.py --testset_size=500 --model_name=fetch_full_temp_tpm
-
-
+python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
 """
 
 if __name__ == "__main__":
@@ -145,32 +198,35 @@ if __name__ == "__main__":
     args.do_refinement = boolean_string(args.do_refinement)
     args.clamp_to_joint_limits = boolean_string(args.clamp_to_joint_limits)
 
-    assert args.all is False, f"--all currently unimplemented"
+    assert not (args.all and args.model_name), "Cannot specify both --all and --model_name"
 
     # Get latent distribution parameters
-    latent_distribution = "gaussian"
-    latent_scale = 0.75
+
     runtime_n = args.n_samples_for_runtime
 
-    print("\n-------------")
-    print(f"Evaluating model '{args.model_name}'")
-
     # Build IKFlowSolver and set weights
-    ik_solver, hyper_parameters = get_ik_solver(args.model_name)
-    robot = ik_solver.robot
-    _, testset = robot.sample_joint_angles_and_poses(
-        args.testset_size, only_non_self_colliding=args.non_self_colliding_dataset, tqdm_enabled=False
-    )
+    if args.all:
+        df = pd.DataFrame(columns=PD_DATAFRAME_COLUMNS)
+        df = df.rename(
+            columns={
+                "Mean runtime - UPDATE_THIS_VALUE": f"Mean runtime for {args.n_samples_for_runtime} solutions (ms)",
+                "Runtime std - UPDATE_THIS_VALUE": f"Runtime std (k={_K_FOR_RUNTIME_STATS})",
+            }
+        )
 
-    error_stats = calculate_error_stats(
-        ik_solver,
-        robot,
-        testset,
-        latent_distribution,
-        latent_scale,
-        args.samples_per_pose,
-        refine_solutions=args.do_refinement,
-        clamp_to_joint_limits=args.clamp_to_joint_limits,
-    )
-    runtime_stats = calculate_runtime_stats(ik_solver, n_solutions=runtime_n, k=5, refine_solutions=False)
-    pp_results(args, error_stats, runtime_stats)
+        for model_name in get_all_model_names():
+            evaluate_model(model_name, args, print_results=False, pd_table=df)
+        df.sort_values(by=["Robot"])
+
+        with open("model_performances.md", "w") as f:
+            f.write("## Model Performances\n")
+            cli_input = " ".join(sys.argv)
+            f.write(f"Generated with `{cli_input}`\n\n")
+            f.write(df.to_markdown())
+
+        print(df)
+    else:
+        print("\n-------------")
+        print(f"Evaluating model '{args.model_name}'")
+
+        evaluate_model(args.model_name, args)

@@ -34,13 +34,12 @@ setup(
     description="Open source implementation of the 'IKFlow' inverse kinematics solver",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    extras_require={"dev": ["PyQt5", "black", "pylint", "pytorch-lightning", "tensorboard", "wandb"]},
-    install_requires=[
-        "klampt",
-        "torch",
-        "FrEIA",
-        "jkinpylib==0.0.8"
-    ],
+    # pip install -e ".[dev]"
+    # pandas requires tabulate for DataFrame.to_markdown()
+    extras_require={
+        "dev": ["PyQt5", "black", "pylint", "pytorch-lightning", "tensorboard", "wandb", "pandas", "tabulate"]
+    },
+    install_requires=["klampt", "torch", "FrEIA", "jkinpylib==0.0.8"],
     packages=["ikflow"],
     package_data={"ikflow": ["model_descriptions.yaml"] + urdf_files},  # TODO: Add ikflow/visualization_resources/
     # 'setup.py dist` ommits non-.py files when include_package_data=True is included. See

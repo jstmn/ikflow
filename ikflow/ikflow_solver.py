@@ -276,4 +276,8 @@ class IKFlowSolver:
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""
         with open(state_dict_filename, "rb") as f:
-            self.nn_model.load_state_dict(pickle.load(f))
+            try:
+                self.nn_model.load_state_dict(pickle.load(f))
+            except pickle.UnpicklingError as e:
+                print(f"Error loading state dict from {state_dict_filename}: {e}")
+                raise e

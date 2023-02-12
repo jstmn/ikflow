@@ -20,6 +20,9 @@ python scripts/visualize.py --model_name=fetch_full_temp_nsc_tpm --demo_name=osc
 # Fetch
 python scripts/visualize.py --model_name=fetch_full_temp_tpm --demo_name=oscillate_latent
 python scripts/visualize.py --model_name=fetch_full_temp_tpm --demo_name=oscillate_target
+
+python scripts/visualize.py --model_name=fetch_full_temp_tpm --demo_name=oscillate_latent
+python scripts/visualize.py --model_name=fetch_full_temp_tpm --demo_name=oscillate_target
 """
 
 

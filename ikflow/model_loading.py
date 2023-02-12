@@ -22,6 +22,11 @@ def _assert_model_downloaded_correctly(filepath: str):
     )
 
 
+def get_all_model_names() -> Tuple[str]:
+    """Return a tuple of the model names"""
+    return tuple(MODEL_DESCRIPTIONS.keys())
+
+
 def download_model(url: str, download_dir: Optional[str] = None) -> str:
     """Download the model at the url `url` to the given directory. download_dir defaults to MODELS_DIR
 

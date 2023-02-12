@@ -1,0 +1,12 @@
+## Model Performances
+Generated with `scripts/evaluate.py --testset_size=500 --n_samples_for_runtime=100 --all`
+
+|    | Robot     | Model name              |   Mean l2 error (cm) |   Mean angular error (deg) |   Joint limits exceeded % |   Self-colliding % |   Mean runtime for 100 solutions (ms) |   Runtime std (k=5) |   Number of coupling layers |
+|---:|:----------|:------------------------|---------------------:|---------------------------:|--------------------------:|-------------------:|--------------------------------------:|--------------------:|----------------------------:|
+|  0 | panda     | panda_full_tpm          |             1.06033  |                   4.60678  |                         0 |              5.424 |                               6.26059 |         6.39035e-05 |                          12 |
+|  1 | panda     | panda_full_nsc_tpm      |             0.988406 |                   4.05426  |                         0 |              4.632 |                               6.45494 |         6.32416e-06 |                          12 |
+|  2 | panda     | panda_lite_tpm          |             1.4245   |                  10.5319   |                         0 |              6.056 |                               4.33164 |         2.54076e-05 |                           6 |
+|  3 | fetch     | fetch_full_temp_tpm     |             1.37692  |                   0.876734 |                         0 |              3.856 |                               8.68316 |         8.2196e-06  |                          12 |
+|  4 | fetch     | fetch_full_temp_nsc_tpm |             1.4652   |                   0.709084 |                         0 |              2.98  |                               7.14011 |         4.72342e-05 |                          12 |
+|  5 | fetch_arm | fetch_arm_full_temp     |             2.16996  |                   2.30734  |                         0 |              3.712 |                               8.95529 |         0.000162966 |                          12 |
+|  6 | iiwa7     | iiwa7_full_temp_nsc_tpm |             1.60649  |                   3.05667  |                         0 |              0.008 |                               8.43377 |         0.000376504 |                          12 |

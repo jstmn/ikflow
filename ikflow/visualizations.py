@@ -3,7 +3,7 @@ from time import sleep
 from dataclasses import dataclass
 
 from jkinpylib.robot import Robot
-from jkinpylib.robots import Panda, Fetch
+from jkinpylib.robots import Panda, Fetch, FetchArm
 from klampt.math import so3
 from klampt.model import coordinates, trajectory
 from klampt import vis
@@ -25,9 +25,11 @@ _OSCILLATE_LATENT_TARGET_POSES = {
 _TARGET_POSE_FUNCTIONS = {
     Panda.name: lambda counter: np.array([0.25 * np.sin(counter / 50), 0.5, 0.25, 1.0, 0.0, 0.0, 0.0]),
     Fetch.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
+    FetchArm.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
 }
 
 PI = np.pi
+_CLAMP_TO_JOINT_LIMITS = True
 
 
 def _plot_pose(name: str, pose: np.ndarray, hide_label: bool = False):
@@ -174,7 +176,7 @@ def oscillate_latent(ik_solver: IKFlowSolver):
         _demo_state.last_latent = rev_input.detach().cpu().numpy()[0]
 
         # Get solutions to pose of random sample
-        solutions = ik_solver.solve(target_pose, 1, latent=rev_input)
+        solutions = ik_solver.solve(target_pose, 1, latent=rev_input, clamp_to_joint_limits=_CLAMP_TO_JOINT_LIMITS)
         solutions = solutions.detach().cpu().numpy()
         qs = robot._x_to_qs(solutions)
         worlds[1].robot(0).setConfig(qs[0])
@@ -244,7 +246,9 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         _demo_state.target_pose = target_pose_fn(_demo_state.counter)
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)
+        ik_solutions = ik_solver.solve(
+            _demo_state.target_pose, nb_sols, latent=latent, clamp_to_joint_limits=_CLAMP_TO_JOINT_LIMITS
+        )
         l2_errors, ang_errors = solution_pose_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
 
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
