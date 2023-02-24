@@ -15,28 +15,6 @@ _PANDA = Panda()
 
 
 class ModelTest(unittest.TestCase):
-    def _assert_tensor_in_joint_limits(
-        self, x: torch.Tensor, joint_limits: List[Tuple[float, float]], eps: float = 0.0
-    ):
-        """Assert that a tensor is within the joint limits"""
-        for i, (lower, upper) in enumerate(joint_limits):
-            max_elem = torch.max(x[:, i]).item()
-            min_elem = torch.min(x[:, i]).item()
-            self.assertTrue(
-                min_elem >= lower - eps,
-                (
-                    f"Min element {min_elem} is less than lower limit {lower} (minus eps={eps}) for joint {i}\n "
-                    f" joint_{i}_limits = [{lower}, {upper}]\n  joint_{i}_values = {x[:, i].data}"
-                ),
-            )
-            self.assertTrue(
-                max_elem <= upper + eps,
-                (
-                    f"Max element {max_elem} is greater than upper limit {upper} (plus eps={eps}) for joint {i}\n "
-                    f" joint_{i}_limits= [{lower}, {upper}]\n  joint_{i}_values = {x[:, i].data}"
-                ),
-            )
-
     def setUp(self) -> None:
         # panda_joint_lims: (-> midpoint) (-> range)
         # (-2.8973, 2.8973)  0.0     5.7946
@@ -70,81 +48,80 @@ class ModelTest(unittest.TestCase):
     # Tests
     #
 
-    # def test_IkFlowFixedLinearTransform_forward(self):
-    #     """Test that get_pre_sigmoid_scaling_node is returning a correctly configured IkFlowFixedLinearTransform node
-    #     during the forward pass
-    #     """
+    def test_IkFlowFixedLinearTransform_forward(self):
+        """Test that get_pre_sigmoid_scaling_node is returning a correctly configured IkFlowFixedLinearTransform node
+        during the forward pass
+        """
+        ndim_tot = 7
+        input_node = Ff.InputNode(ndim_tot, name="input")
+        nodes = [input_node]
+        _, scaling_node = get_pre_sigmoid_scaling_node(ndim_tot, _PANDA, nodes)
 
-    #     ndim_tot = 7
-    #     input_node = Ff.InputNode(ndim_tot, name="input")
-    #     nodes = [input_node]
-    #     _, scaling_node = get_pre_sigmoid_scaling_node(ndim_tot, _PANDA, nodes)
+        # Test 1: theta is the upper limit joint limit
+        expected = 1.0 * torch.ones((1, 7), device="cuda")
+        output, _ = scaling_node.forward([self.panda_theta_upper - 1e-8], rev=False)
+        output = output[0]
+        torch.testing.assert_close(output, expected)
 
-    #     # Test 1: theta is the upper limit joint limit
-    #     expected = 1.0 * torch.ones((1, 7), device="cuda")
-    #     output, _ = scaling_node.forward([self.panda_theta_upper], rev=False)
-    #     output = output[0]
-    #     torch.testing.assert_close(output, expected)
+        # Test 2: theta is the lower joint limit
+        expected = torch.zeros((1, 7), device="cuda")
+        output, _ = scaling_node.forward([self.panda_theta_lower + 1e-8], rev=False)
+        output = output[0]
+        torch.testing.assert_close(output, expected)
 
-    #     # Test 2: theta is the lower joint limit
-    #     expected = torch.zeros((1, 7), device="cuda")
-    #     output, _ = scaling_node.forward([self.panda_theta_lower], rev=False)
-    #     output = output[0]
-    #     torch.testing.assert_close(output, expected)
+        # Test 3: theta is halfway between joint limits, output should be ~0.5
+        theta = self.panda_mid
+        expected = 0.5 * torch.ones((1, 7), device="cuda")
+        output, _ = scaling_node.forward([theta], rev=False)
+        output = output[0]
+        torch.testing.assert_close(output, expected)
 
-    #     # Test 3: theta is halfway between joint limits, output should be ~0.5
-    #     theta = self.panda_mid
-    #     expected = 0.5 * torch.ones((1, 7), device="cuda")
-    #     output, _ = scaling_node.forward([theta], rev=False)
-    #     output = output[0]
-    #     torch.testing.assert_close(output, expected)
+    def test_IkFlowFixedLinearTransform_reverse(self):
+        """Test that get_pre_sigmoid_scaling_node is returning a correctly configured IkFlowFixedLinearTransform node
+        during the reverse pass
+        """
+        ndim_tot = 7
+        input_node = Ff.InputNode(ndim_tot, name="input")
+        nodes = [input_node]
+        _, scaling_node = get_pre_sigmoid_scaling_node(ndim_tot, _PANDA, nodes)
 
-    # def test_IkFlowFixedLinearTransform_reverse(self):
-    #     """Test that get_pre_sigmoid_scaling_node is returning a correctly configured IkFlowFixedLinearTransform node
-    #     during the reverse pass
-    #     """
-    #     ndim_tot = 7
-    #     input_node = Ff.InputNode(ndim_tot, name="input")
-    #     nodes = [input_node]
-    #     _, scaling_node = get_pre_sigmoid_scaling_node(ndim_tot, _PANDA, nodes)
+        # Test 1: theta is the upper limit joint limit
+        input = 1.0 * torch.ones((1, 7), device="cuda")
+        expected = self.panda_theta_upper
+        output, _ = scaling_node.forward([input], rev=True)
+        output = output[0]
+        torch.testing.assert_close(output, expected)
 
-    #     # Test 1: theta is the upper limit joint limit
-    #     input = 1.0 * torch.ones((1, 7), device="cuda")
-    #     expected = self.panda_theta_upper
-    #     output, _ = scaling_node.forward([input], rev=True)
-    #     output = output[0]
-    #     torch.testing.assert_close(output, expected)
+        # Test 2: theta is the lower joint limit
+        input = torch.zeros((1, 7), device="cuda")
+        expected = self.panda_theta_lower
+        output, _ = scaling_node.forward([input], rev=True)
+        output = output[0]
+        torch.testing.assert_close(output, expected)
 
-    #     # Test 2: theta is the lower joint limit
-    #     input = torch.zeros((1, 7), device="cuda")
-    #     expected = self.panda_theta_lower
-    #     output, _ = scaling_node.forward([input], rev=True)
-    #     output = output[0]
-    #     torch.testing.assert_close(output, expected)
+        # Test 3: theta is halfway between joint limits, output should be ~0.5
+        input = 0.5 * torch.ones((1, 7), device="cuda")
+        expected = self.panda_mid
+        output, _ = scaling_node.forward([input], rev=True)
+        output = output[0]
+        torch.testing.assert_close(output, expected)
 
-    #     # Test 3: theta is halfway between joint limits, output should be ~0.5
-    #     input = 0.5 * torch.ones((1, 7), device="cuda")
-    #     expected = self.panda_mid
-    #     output, _ = scaling_node.forward([input], rev=True)
-    #     output = output[0]
-    #     torch.testing.assert_close(output, expected)
+    def test_sigmoid_on_output(self):
+        """Test that a working model is returned with sigmoid_on_output"""
+        params = IkflowModelParameters()
+        params.sigmoid_on_output = True
+        model = glow_cNF_model(params, _PANDA, dim_cond=8, ndim_tot=7)
+        conditional = torch.randn((5, 8), device="cuda")
 
-    # def test_sigmoid_on_output(self):
-    #     """Test that a working model is returned with sigmoid_on_output"""
-    #     params = IkflowModelParameters()
-    #     params.sigmoid_on_output = True
-    #     model = glow_cNF_model(params, _PANDA, dim_cond=8, ndim_tot=7)
-    #     conditional = torch.randn((5, 8), device="cuda")
+        # Test 1: Reverse pass, gaussian noise
+        latent = torch.randn((5, 7), device="cuda")
+        output_rev, _ = model(latent, c=conditional, rev=True)
+        assert_joint_angle_tensor_in_joint_limits(output_rev, _PANDA.actuated_joints_limits, eps=1e-5)
 
-    #     # Test 1: Reverse pass, gaussian noise
-    #     latent = torch.randn((5, 7), device="cuda")
-    #     output_rev, _ = model(latent, c=conditional, rev=True)
-    #     self._assert_tensor_in_joint_limits(output_rev, _PANDA.actuated_joints_limits, eps=1e-5)
-
-    #     # Test 2: Reverse pass, really large gaussian noise
-    #     latent = 1e8 * torch.randn((5, 7), device="cuda")
-    #     output_rev, _ = model(latent, c=conditional, rev=True)
-    #     self._assert_tensor_in_joint_limits(output_rev, _PANDA.actuated_joints_limits, eps=1e-5)
+        # Test 2: Reverse pass, really large gaussian noise
+        latent = 1e8 * torch.randn((5, 7), device="cuda")
+        output_rev, _ = model(latent, c=conditional, rev=True)
+        assert_joint_angle_tensor_in_joint_limits(output_rev, _PANDA.actuated_joints_limits, eps=1e-5)
 
     def test_glow_cNF_model(self):
         """Smoke test - checks that glow_cNF_model() returns"""

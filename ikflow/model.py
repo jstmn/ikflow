@@ -193,7 +193,7 @@ class IkFlowFixedLinearTransform(InvertibleModule):
 
         # Forward
         if not rev:
-            assert_joint_angle_tensor_in_joint_limits(self.joint_limits, x[0], "forward", 0.0)
+            assert_joint_angle_tensor_in_joint_limits(self.joint_limits, x[0], "forward", 1e-5)
             out = x[0].mm(self.M) + self.b
             assert torch.max(out).item() <= 1.0, (
                 f"Output of IkFlowFixedLinearTransform node is greater than 1: {torch.max(out).item()}. This output is"

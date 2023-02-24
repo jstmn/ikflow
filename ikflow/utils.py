@@ -40,7 +40,9 @@ def get_filepath(local_filepath: str):
 # Pytorch utils
 
 
-def assert_joint_angle_tensor_in_joint_limits(joints_limits, x: torch.Tensor, description: str, eps: float):
+def assert_joint_angle_tensor_in_joint_limits(
+    joints_limits: List[Tuple[float, float]], x: torch.Tensor, description: str, eps: float
+):
     """Validate that a tensor of joint angles is within the joint limits of the robot."""
     for i, (lower, upper) in enumerate(joints_limits):
         max_elem = torch.max(x[:, i]).item()
