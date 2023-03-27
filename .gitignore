@@ -33,6 +33,7 @@ datasets/*/
 SBATCH_train.sh
 SBATCH_resume_train.sh
 SBATCH_script.sh
+sourcewandbenvvars
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/

@@ -352,5 +352,7 @@ def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, n
         nodes.append(glow_node)
 
     model = Ff.GraphINN(nodes + [cond, Ff.OutputNode([nodes[-1].out0], name="output")], verbose=_VERBOSE)
+    print("\nconfig.device:", config.device)
+    print("config.device:", type(config.device))
     model.to(config.device)
     return model

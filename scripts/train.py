@@ -94,7 +94,6 @@ python scripts/train.py \
     --eval_every=100 \
     --val_set_size=100 \
     --checkpoint_every=500 \
-    --sigmoid_on_output=True \
     --disable_wandb
 
 # Test the learning rate scheduler

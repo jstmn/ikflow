@@ -1,9 +1,34 @@
 """Global configuration"""
 import torch
 import os
+from time import sleep
+
+
+def get_device() -> torch.device:
+    if not torch.cuda.is_available():
+        return torch.device("cpu")
+
+    def _mem_and_utilitization_ave_usage_pct(device_idx: int):
+        device = torch.cuda.device(device_idx)
+        mems = []
+        utils = []
+        for i in range(2):
+            mems.append(torch.cuda.memory_usage(device=device))
+            utils.append(torch.cuda.utilization(device=device))
+            sleep(0.5)
+        return sum(mems) / len(mems), sum(utils) / len(utils)
+
+    n_devices = torch.cuda.device_count()
+    for i in range(n_devices):
+        mem_pct, util_pct = _mem_and_utilitization_ave_usage_pct(i)
+        if mem_pct < 5.0 and util_pct < 5.0:
+            return torch.cuda.device(i)
+    raise EnvironmentError("No unused GPU's available")
+
 
 # /
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+device = get_device()
+print("Using device:", device, "\tindex:", device.idx)
 DEFAULT_TORCH_DTYPE = torch.float32
 
 # ~/.cache/ikflow/
