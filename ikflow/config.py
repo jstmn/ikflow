@@ -4,9 +4,9 @@ import os
 from time import sleep
 
 
-def get_device() -> torch.device:
+def _get_device() -> str:
     if not torch.cuda.is_available():
-        return torch.device("cpu")
+        return "cpu"
 
     def _mem_and_utilitization_ave_usage_pct(device_idx: int):
         device = torch.cuda.device(device_idx)
@@ -19,16 +19,19 @@ def get_device() -> torch.device:
         return sum(mems) / len(mems), sum(utils) / len(utils)
 
     n_devices = torch.cuda.device_count()
+    min_mem = 100
+    min_util = 100
     for i in range(n_devices):
         mem_pct, util_pct = _mem_and_utilitization_ave_usage_pct(i)
-        if mem_pct < 5.0 and util_pct < 5.0:
-            return torch.cuda.device(i)
-    raise EnvironmentError("No unused GPU's available")
+        min_mem = min(min_mem, mem_pct)
+        min_util = min(min_util, util_pct)
+        if mem_pct < 5.0 and util_pct < 7.5:
+            return f"cuda:{i}"
+    raise EnvironmentError(f"No unused GPU's available. Minimum memory, utilization: {min_mem, min_util}%")
 
 
 # /
-device = get_device()
-print("Using device:", device, "\tindex:", device.idx)
+device = _get_device()
 DEFAULT_TORCH_DTYPE = torch.float32
 
 # ~/.cache/ikflow/
