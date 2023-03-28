@@ -3,6 +3,7 @@ import argparse
 from time import time
 import sys
 from collections import namedtuple
+from datetime import datetime
 
 import torch
 import numpy as np
@@ -218,9 +219,15 @@ if __name__ == "__main__":
             evaluate_model(model_name, args, print_results=False, pd_table=df)
         df.sort_values(by=["Robot"])
 
+        with open("model_performances.md", "r") as f:
+            current_lines = f.readlines()
+
         with open("model_performances.md", "w") as f:
-            f.write("## Model Performances\n")
+            for line in current_lines:
+                f.write(line)
             cli_input = " ".join(sys.argv)
+            dt = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+            f.write(f"\n\n**{dt}**\n")
             f.write(f"Generated with `{cli_input}`\n\n")
             f.write(df.to_markdown())
 

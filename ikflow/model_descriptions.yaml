@@ -8,7 +8,6 @@
 # 
 
 panda_full_tpm:
-  coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       9
   coeff_fn_config:        3
@@ -19,7 +18,6 @@ panda_full_tpm:
   # Note: trained on panda_arm_stanford
 
 panda_full_nsc_tpm:
-  coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       7
   coeff_fn_config:        3
@@ -29,7 +27,6 @@ panda_full_nsc_tpm:
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda__lively-firebrand-77__global_step%3D3.75M.pkl'
 
 panda_lite_tpm:
-  coupling_layer:         'glow'
   nb_nodes:               6
   dim_latent_space:       7
   coeff_fn_config:        3
@@ -44,7 +41,6 @@ panda_lite_tpm:
 # 
 
 fetch_full_temp_tpm:
-  coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       8
   coeff_fn_config:        3
@@ -54,7 +50,6 @@ fetch_full_temp_tpm:
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__wobbly-blaze-54__global_step%3D9.0M.pkl'
 
 fetch_full_temp_nsc_tpm:
-  coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       8
   coeff_fn_config:        3
@@ -63,13 +58,21 @@ fetch_full_temp_nsc_tpm:
   robot_name:             'fetch'
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__sleek-microwave-65__global_step%3D9.25M.pkl'
 
+fetch_large_temp:
+  nb_nodes:               16
+  dim_latent_space:       8
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'fetch'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch/fetch__sage-armadillo-180__global_step%3D3.0M.pkl'
+
 
 # ===========================================================
 # === FetchArm
 # 
 
 fetch_arm_full_temp:
-  coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       7
   coeff_fn_config:        3
@@ -77,6 +80,16 @@ fetch_arm_full_temp:
   rnvp_clamp:             2.5
   robot_name:             'fetch_arm'
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm__glistening-kumquat-97__global_step%3D7.25M.pkl'
+
+fetch_arm_large_temp:
+  nb_nodes:               16
+  dim_latent_space:       10
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'fetch_arm'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D0.75M.pkl'
+
 
 
 
@@ -86,7 +99,6 @@ fetch_arm_full_temp:
 # 
 
 iiwa7_full_temp_nsc_tpm:
-  coupling_layer:         'glow'
   nb_nodes:               12
   dim_latent_space:       10
   coeff_fn_config:        3
@@ -107,7 +119,6 @@ iiwa7_full_temp_nsc_tpm:
 # # Average angular error: 7.5261 deg
 # # Average runtime:       8.7148 +/- 0.0011 ms (for 100 samples)
 # robonaut2_16layers:
-#   coupling_layer:         'glow'
 #   nb_nodes:               16
 #   dim_latent_space:       15
 #   coeff_fn_config:        3
@@ -126,7 +137,6 @@ iiwa7_full_temp_nsc_tpm:
 # # Average angular error: 0.6621 deg
 # # Average runtime:       6.5306 +/- 0.0004 ms (for 100 samples)
 # valkyrie_full_tpm:
-#   coupling_layer:         'glow'
 #   nb_nodes:               12
 #   dim_latent_space:       9
 #   coeff_fn_config:        3
@@ -148,7 +158,6 @@ iiwa7_full_temp_nsc_tpm:
 # Average angular error: 0.6555 deg
 # Average runtime:       6.5912 +/- 0.0003 ms (for 100 samples)
 # atlas_tpm:
-#   coupling_layer:         'glow'
 #   nb_nodes:               12
 #   dim_latent_space:       15
 #   coeff_fn_config:        3

@@ -12,6 +12,7 @@ import wandb
 import torch
 
 from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING, GPU_IDX
+
 assert GPU_IDX >= 0
 from ikflow import config
 from ikflow.model import IkflowModelParameters

@@ -8,6 +8,10 @@ def _get_device() -> str:
     if not torch.cuda.is_available():
         return "cpu", -1
 
+    n_devices = torch.cuda.device_count()
+    if n_devices == 1:
+        return "cuda:0", 0
+
     def _mem_and_utilitization_ave_usage_pct(device_idx: int):
         device = torch.cuda.device(device_idx)
         mems = []
@@ -18,14 +22,13 @@ def _get_device() -> str:
             sleep(0.5)
         return sum(mems) / len(mems), sum(utils) / len(utils)
 
-    n_devices = torch.cuda.device_count()
     min_mem = 100
     min_util = 100
     for i in range(n_devices):
         mem_pct, util_pct = _mem_and_utilitization_ave_usage_pct(i)
         min_mem = min(min_mem, mem_pct)
         min_util = min(min_util, util_pct)
-        if mem_pct < 5.0 and util_pct < 7.5:
+        if mem_pct < 5.0 and util_pct < 9:
             return f"cuda:{i}", i
     raise EnvironmentError(f"No unused GPU's available. Minimum memory, utilization: {min_mem, min_util}%")
 
