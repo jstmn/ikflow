@@ -18,7 +18,6 @@ from jkinpylib.evaluation import evaluate_solutions
 from ikflow.thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001
-device = "cuda"
 
 # TODO: the pose for Fetch doesn't look right
 ROBOT_TARGET_POSE_POINTS_FOR_PLOTTING = {Fetch.name: [np.array([0, 1.5707, 0, 0, 0, 3.141592, 0])]}
@@ -50,6 +49,7 @@ class IkfLitModel(LightningModule):
 
         self.ik_solver = ik_solver
         self.nn_model = ik_solver.nn_model
+        self.nn_model.to(config.device)
         self.base_hparams = base_hparams
         self.n_dofs = self.ik_solver.robot.n_dofs
         self.dim_tot = self.base_hparams.dim_latent_space
@@ -127,12 +127,12 @@ class IkfLitModel(LightningModule):
     def ml_loss_fn(self, batch):
         """Maximum likelihood loss"""
         x, y = batch
-        y = y.to(device)
-        x = x.to(device)
+        y = y.to(config.device)
+        x = x.to(config.device)
 
         batch_size = y.shape[0]
         if self.dim_tot > self.n_dofs:
-            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.n_dofs)).to(device)
+            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.n_dofs)).to(config.device)
 
             # padding must be in (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX). This value will be scaled to these
             # bounds and then passed through inverse sigmoid. If they are outside of these bounds, inverse-sigmoid will

@@ -11,7 +11,8 @@ from pytorch_lightning import Trainer, seed_everything
 import wandb
 import torch
 
-from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
+from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING, GPU_IDX
+assert GPU_IDX >= 0
 from ikflow import config
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
@@ -256,8 +257,8 @@ if __name__ == "__main__":
         callbacks=[checkpoint_callback],
         val_check_interval=args.eval_every,
         # gpus=1, # deprecated
+        devices=[GPU_IDX],
         accelerator="gpu",
-        devices=1,
         log_every_n_steps=args.log_every,
         max_epochs=DEFAULT_MAX_EPOCHS,
         enable_progress_bar=False if (os.getenv("IS_SLURM") is not None) or args.disable_progress_bar else True,

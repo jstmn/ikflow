@@ -6,7 +6,7 @@ from pytorch_lightning.core.datamodule import LightningDataModule
 import wandb
 import torch
 
-from ikflow.config import ALL_DATASET_TAGS
+from ikflow.config import ALL_DATASET_TAGS, device
 from ikflow.utils import get_sum_joint_limit_range, get_dataset_directory, get_dataset_filepaths
 
 
@@ -33,10 +33,10 @@ class IkfLitDataset(LightningDataModule):
         samples_tr_file_path, poses_tr_file_path, samples_te_file_path, poses_te_file_path, _ = get_dataset_filepaths(
             dataset_directory, dataset_tags
         )
-        self._samples_tr = torch.load(samples_tr_file_path).to("cuda:0")
-        self._endpoints_tr = torch.load(poses_tr_file_path).to("cuda:0")
-        self._samples_te = torch.load(samples_te_file_path).to("cuda:0")
-        self._endpoints_te = torch.load(poses_te_file_path).to("cuda:0")
+        self._samples_tr = torch.load(samples_tr_file_path).to(device)
+        self._endpoints_tr = torch.load(poses_tr_file_path).to(device)
+        self._samples_te = torch.load(samples_te_file_path).to(device)
+        self._endpoints_te = torch.load(poses_te_file_path).to(device)
 
         self._sum_joint_limit_range = get_sum_joint_limit_range(self._samples_tr)
 
