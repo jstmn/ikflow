@@ -1,9 +1,11 @@
 import argparse
 import os
-from ikflow import config
 from time import time
 
 
+from ikflow import config
+from ikflow.config import GPU_IDX
+assert GPU_IDX >= 0
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
 from jkinpylib.robots import get_robot
@@ -111,9 +113,8 @@ if __name__ == "__main__":
         logger=wandb_logger,
         callbacks=[checkpoint_callback],
         val_check_interval=run_cfg["eval_every"],
-        # # gpus=1, # deprecated
+        devices=[GPU_IDX],
         accelerator="gpu",
-        devices=1,
         log_every_n_steps=run_cfg["log_every"],
         max_epochs=DEFAULT_MAX_EPOCHS,
         enable_progress_bar=False if (os.getenv("IS_SLURM") is not None) or args.disable_progress_bar else True,
