@@ -7,11 +7,24 @@ import pkg_resources
 import numpy as np
 import torch
 
-from ikflow.config import DATASET_DIR, ALL_DATASET_TAGS, DATASET_TAG_NON_SELF_COLLIDING
 from ikflow import config
 
 
-def get_dataset_directory(robot: str):
+def get_wandb_project() -> Tuple[str, str]:
+    """Get the wandb entity and project. Reads from environment variables"""
+
+    wandb_project = os.getenv("WANDB_PROJECT")
+    wandb_entity = os.getenv("WANDB_ENTITY")
+    assert (
+        wandb_project is not None
+    ), "The 'WANDB_PROJECT' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
+    assert (
+        wandb_entity is not None
+    ), "The 'WANDB_ENTITY' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
+    return wandb_entity, wandb_project
+
+
+def get_dataset_directory(robot: str) -> str:
     """Return the path of the directory"""
     return os.path.join(config.DATASET_DIR, robot)
 

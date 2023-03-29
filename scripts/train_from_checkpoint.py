@@ -13,6 +13,7 @@ from jkinpylib.robots import get_robot
 from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.training.lt_data import IkfLitDataset
+from ikflow.utils import get_wandb_project
 
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -45,17 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--disable_progress_bar", action="store_true")
     args = parser.parse_args()
 
-    wandb_project = os.getenv("WANDB_PROJECT")
-    wandb_entity = os.getenv("WANDB_ENTITY")
-    assert wandb_project is not None, (
-        "The 'WANDB_PROJECT' environment variable is not set. Either set it with the appropriate wandb project name"
-        " (`export WANDB_PROJECT=<your wandb project name>`), or add '--disable_wandb'"
-    )
-    assert wandb_entity is not None, (
-        "The 'WANDB_ENTITY' environment variable is not set. Either set it with the appropriate wandb entity"
-        " (`export WANDB_ENTITY=<your wandb username>`), or add '--disable_wandb'"
-    )
-
+    wandb_entity, wandb_project = get_wandb_project()
     wandb_run = wandb.init(entity=wandb_entity, project=wandb_project, id=args.wandb_run_id, resume="must")
 
     # Note: The checkpointing call back we use (`ModelCheckpoint`) saves the k most recent checkpoints and chooses

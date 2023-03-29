@@ -7,6 +7,8 @@ import pickle
 import wandb
 import torch
 
+from ikflow.utils import get_wandb_project
+
 
 def format_state_dict(state_dict: Dict) -> Dict:
     """The `state_dict` saved in checkpoints will have keys with the form:
@@ -30,11 +32,11 @@ def format_state_dict(state_dict: Dict) -> Dict:
 _____________
 Example usage
 
-python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=1e2xdzo6
+python scripts/download_model_from_wandb_checkpoint.py --wandb_run_id=2uidt835
 """
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="Resume training from a checkpoint")
+    parser = argparse.ArgumentParser(prog="Download ikflow model from Weights and Biases")
 
     # Note: WandB saves artifacts by the run ID (i.e. '34c2gimi') not the run name ('dashing-forest-33'). This is
     # slightly annoying because you need to click on a run to get its ID.
@@ -42,15 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--disable_progress_bar", action="store_true")
     args = parser.parse_args()
 
-    wandb_project = os.getenv("WANDB_PROJECT")
-    wandb_entity = os.getenv("WANDB_ENTITY")
-    assert (
-        wandb_project is not None
-    ), "The 'WANDB_PROJECT' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
-    assert (
-        wandb_entity is not None
-    ), "The 'WANDB_ENTITY' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
-
+    wandb_entity, wandb_project = get_wandb_project()
     t0 = time()
     api = wandb.Api()
     artifact = api.artifact(f"{wandb_entity}/{wandb_project}/model-{args.wandb_run_id}:best_k")

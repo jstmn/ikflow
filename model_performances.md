@@ -25,3 +25,18 @@ Generated with `scripts/evaluate.py --testset_size=500 --n_samples_for_runtime=1
 |  6 | fetch_arm | fetch_arm_full_temp     |             2.19165  |                   6.23809  |                         0 |              3.768 |                               8.51307 |         1.04182e-05 |                          12 |
 |  7 | fetch_arm | fetch_arm_large_temp    |             1.9145   |                   1.82625  |                         0 |              2.092 |                               9.63984 |         0.000216909 |                          16 |
 |  8 | iiwa7     | iiwa7_full_temp_nsc_tpm |             1.59026  |                   1.96689  |                         0 |              0.016 |                               6.12326 |         3.15216e-05 |                          12 |
+
+**03/29/2023, 08:22:49**
+Generated with `scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all`
+
+|    | Robot     | Model name              |   Mean l2 error (cm) |   Mean angular error (deg) |   Joint limits exceeded % |   Self-colliding % |   Mean runtime for 100 solutions (ms) |   Runtime std (k=5) |   Number of coupling layers |
+|---:|:----------|:------------------------|---------------------:|---------------------------:|--------------------------:|-------------------:|--------------------------------------:|--------------------:|----------------------------:|
+|  0 | panda     | panda_full_tpm          |             1.06033  |                   4.60678  |                         0 |              5.424 |                               6.76646 |         5.49513e-05 |                          12 |
+|  1 | panda     | panda_full_nsc_tpm      |             0.988406 |                   4.05426  |                         0 |              4.632 |                               6.35095 |         7.96247e-05 |                          12 |
+|  2 | panda     | panda_lite_tpm          |             1.4245   |                  10.5319   |                         0 |              6.056 |                               3.45173 |         0.000180327 |                           6 |
+|  3 | fetch     | fetch_full_temp_tpm     |             1.37692  |                   0.876734 |                         0 |              3.856 |                               7.54085 |         3.28529e-05 |                          12 |
+|  4 | fetch     | fetch_full_temp_nsc_tpm |             1.4652   |                   0.709084 |                         0 |              2.98  |                               8.29468 |         8.56386e-05 |                          12 |
+|  5 | fetch     | fetch_large_temp        |             1.21257  |                   3.91324  |                         0 |              2.148 |                               9.99708 |         0.000382957 |                          16 |
+|  6 | fetch_arm | fetch_arm_full_temp     |             2.19165  |                   6.23809  |                         0 |              3.768 |                               6.78906 |         0.000222861 |                          12 |
+|  7 | fetch_arm | fetch_arm_large_temp    |             1.30515  |                   0.696194 |                         0 |              2.068 |                               9.77407 |         1.93214e-05 |                          16 |
+|  8 | iiwa7     | iiwa7_full_temp_nsc_tpm |             1.59026  |                   1.96689  |                         0 |              0.016 |                               6.38609 |         5.22252e-05 |                          12 |

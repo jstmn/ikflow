@@ -88,7 +88,7 @@ fetch_arm_large_temp:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch_arm'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D0.75M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D1.75M.pkl'
 
 
 

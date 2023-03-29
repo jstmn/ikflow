@@ -167,7 +167,8 @@ def evaluate_model(
 
 
 """ Example usage
-python scripts/evaluate.py --testset_size=50 --n_samples_for_runtime=10 --all
+python scripts/evaluate.py --testset_size=50 --n_solutions_for_runtime=10 --all
+python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
 
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_nsc_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --do_refinement
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument("--samples_per_pose", default=50, type=int)
     parser.add_argument(
-        "--n_samples_for_runtime",
+        "--n_solutions_for_runtime",
         default=100,
         type=int,
         help="Check the average runtime to get this number of solutions",
@@ -203,14 +204,14 @@ if __name__ == "__main__":
 
     # Get latent distribution parameters
 
-    runtime_n = args.n_samples_for_runtime
+    runtime_n = args.n_solutions_for_runtime
 
     # Build IKFlowSolver and set weights
     if args.all:
         df = pd.DataFrame(columns=PD_DATAFRAME_COLUMNS)
         df = df.rename(
             columns={
-                "Mean runtime - UPDATE_THIS_VALUE": f"Mean runtime for {args.n_samples_for_runtime} solutions (ms)",
+                "Mean runtime - UPDATE_THIS_VALUE": f"Mean runtime for {args.n_solutions_for_runtime} solutions (ms)",
                 "Runtime std - UPDATE_THIS_VALUE": f"Runtime std (k={_K_FOR_RUNTIME_STATS})",
             }
         )
