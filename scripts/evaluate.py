@@ -27,7 +27,7 @@ PD_DATAFRAME_COLUMNS = [
     "Joint limits exceeded %",
     "Self-colliding %",
     "Mean runtime - UPDATE_THIS_VALUE",
-    "Runtime std - UPDATE_THIS_VALUE",
+    # "Runtime std - UPDATE_THIS_VALUE",
     "Number of coupling layers",
 ]
 _K_FOR_RUNTIME_STATS = 5
@@ -160,7 +160,7 @@ def evaluate_model(
             error_stats.pct_joint_limits_exceeded,
             error_stats.pct_self_colliding,
             runtime_stats.mean_runtime_ms,
-            runtime_stats.runtime_std,
+            # runtime_stats.runtime_std,
             hparams.nb_nodes,
         ]
         pd_table.loc[len(pd_table)] = new_row
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         df = df.rename(
             columns={
                 "Mean runtime - UPDATE_THIS_VALUE": f"Mean runtime for {args.n_solutions_for_runtime} solutions (ms)",
-                "Runtime std - UPDATE_THIS_VALUE": f"Runtime std (k={_K_FOR_RUNTIME_STATS})",
+                # "Runtime std - UPDATE_THIS_VALUE": f"Runtime std (k={_K_FOR_RUNTIME_STATS})",
             }
         )
 
@@ -226,10 +226,9 @@ if __name__ == "__main__":
         with open("model_performances.md", "w") as f:
             for line in current_lines:
                 f.write(line)
-            cli_input = " ".join(sys.argv)
+            cli_input = "python " + " ".join(sys.argv)
             dt = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-            f.write(f"\n\n**{dt}**\n")
-            f.write(f"Generated with `{cli_input}`\n\n")
+            f.write(f"\n\n**{dt}** | Generated with `{cli_input}`\n\n")
             f.write(df.to_markdown())
 
         print(df)

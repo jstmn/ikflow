@@ -7,24 +7,14 @@
 # === Panda
 # 
 
-panda_full_tpm:
-  nb_nodes:               12
-  dim_latent_space:       9
-  coeff_fn_config:        3
-  coeff_fn_internal_size: 1024
-  rnvp_clamp:             2.5
-  robot_name:             'panda'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda_lucky-pond-7642.pkl'
-  # Note: trained on panda_arm_stanford
-
-panda_full_nsc_tpm:
+panda_full:
   nb_nodes:               12
   dim_latent_space:       7
   coeff_fn_config:        3
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'panda'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda__lively-firebrand-77__global_step%3D3.75M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda/panda__lyric-puddle-191__global_step%3D5.25M.pkl'
 
 panda_lite_tpm:
   nb_nodes:               6
@@ -72,23 +62,14 @@ fetch_large_temp:
 # === FetchArm
 # 
 
-fetch_arm_full_temp:
-  nb_nodes:               12
-  dim_latent_space:       7
-  coeff_fn_config:        3
-  coeff_fn_internal_size: 1024
-  rnvp_clamp:             2.5
-  robot_name:             'fetch_arm'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm__glistening-kumquat-97__global_step%3D7.25M.pkl'
-
-fetch_arm_large_temp:
+fetch_arm_large:
   nb_nodes:               16
   dim_latent_space:       10
   coeff_fn_config:        3
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch_arm'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D1.75M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D6.5M.pkl'
 
 
 

@@ -40,3 +40,15 @@ Generated with `scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime
 |  6 | fetch_arm | fetch_arm_full_temp     |             2.19165  |                   6.23809  |                         0 |              3.768 |                               6.78906 |         0.000222861 |                          12 |
 |  7 | fetch_arm | fetch_arm_large_temp    |             1.30515  |                   0.696194 |                         0 |              2.068 |                               9.77407 |         1.93214e-05 |                          16 |
 |  8 | iiwa7     | iiwa7_full_temp_nsc_tpm |             1.59026  |                   1.96689  |                         0 |              0.016 |                               6.38609 |         5.22252e-05 |                          12 |
+
+**04/03/2023, 17:16:15** | Generated with `python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all`
+
+|    | Robot     | Model name              |   Mean l2 error (cm) |   Mean angular error (deg) |   Joint limits exceeded % |   Self-colliding % |   Mean runtime for 100 solutions (ms) |   Number of coupling layers |
+|---:|:----------|:------------------------|---------------------:|---------------------------:|--------------------------:|-------------------:|--------------------------------------:|----------------------------:|
+|  0 | panda     | panda_full              |             0.680774 |                   2.15541  |                         0 |              4.564 |                               6.19206 |                          12 |
+|  1 | panda     | panda_lite_tpm          |             1.44054  |                   8.47811  |                         0 |              6.052 |                               3.3802  |                           6 |
+|  2 | fetch     | fetch_full_temp_tpm     |             1.39091  |                   1.32819  |                         0 |              3.688 |                               6.09798 |                          12 |
+|  3 | fetch     | fetch_full_temp_nsc_tpm |             1.47613  |                   1.15856  |                         0 |              3.044 |                               6.44064 |                          12 |
+|  4 | fetch     | fetch_large_temp        |             1.22823  |                   2.481    |                         0 |              2.08  |                               8.07285 |                          16 |
+|  5 | fetch_arm | fetch_arm_large         |             0.859171 |                   0.406847 |                         0 |              1.828 |                               8.43835 |                          16 |
+|  6 | iiwa7     | iiwa7_full_temp_nsc_tpm |             1.56682  |                   4.33375  |                         0 |              0.028 |                               6.45642 |                          12 |
