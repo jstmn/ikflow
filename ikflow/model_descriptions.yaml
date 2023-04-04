@@ -7,7 +7,7 @@
 # === Panda
 # 
 
-panda_full:
+panda__full__lp191_5.25m:
   nb_nodes:               12
   dim_latent_space:       7
   coeff_fn_config:        3
@@ -62,7 +62,7 @@ fetch_large_temp:
 # === FetchArm
 # 
 
-fetch_arm_large:
+fetch_arm__large__mh186_6.5m:
   nb_nodes:               16
   dim_latent_space:       10
   coeff_fn_config:        3

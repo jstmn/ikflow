@@ -167,12 +167,11 @@ def evaluate_model(
 
 
 """ Example usage
-python scripts/evaluate.py --testset_size=50 --n_solutions_for_runtime=10 --all
+
 python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
 
-python scripts/evaluate.py --testset_size=500 --model_name=panda_full_nsc_tpm
-python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm --do_refinement
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
+python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
 """
 
 if __name__ == "__main__":
@@ -199,11 +198,7 @@ if __name__ == "__main__":
     args.non_self_colliding_dataset = boolean_string(args.non_self_colliding_dataset)
     args.do_refinement = boolean_string(args.do_refinement)
     args.clamp_to_joint_limits = boolean_string(args.clamp_to_joint_limits)
-
     assert not (args.all and args.model_name), "Cannot specify both --all and --model_name"
-
-    # Get latent distribution parameters
-
     runtime_n = args.n_solutions_for_runtime
 
     # Build IKFlowSolver and set weights
