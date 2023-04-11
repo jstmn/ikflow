@@ -33,6 +33,8 @@ datasets/*/
 SBATCH_train.sh
 SBATCH_resume_train.sh
 SBATCH_script.sh
+SBATCH_wandb_sweep.sh
+
 sourcewandbenvvars
 
 # Jupyter notebook checkpoints

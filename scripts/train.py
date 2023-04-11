@@ -43,7 +43,7 @@ DEFAULT_SIGMOID_ON_OUTPUT = False
 # Training parameters
 DEFAULT_OPTIMIZER = "adamw"
 DEFAULT_LR = 1e-4
-DEFAULT_BATCH_SIZE = 128
+DEFAULT_BATCH_SIZE = 512
 DEFAULT_N_EPOCHS = 100
 DEFAULT_GAMMA = 0.9794578299341784
 DEFAULT_STEP_LR_EVERY = int(int(2.5 * 1e6) / 64)
@@ -167,11 +167,6 @@ if __name__ == "__main__":
     assert args.optimizer in ["ranger", "adadelta", "adamw"]
     assert 0 <= args.lambd and args.lambd <= 1
 
-    wandb_project = None
-    wandb_entity = None
-    if not args.disable_wandb:
-        wandb_entity, wandb_project = get_wandb_project()
-
     # Load model
     robot = get_robot(args.robot_name)
     base_hparams = IkflowModelParameters()
@@ -191,15 +186,18 @@ if __name__ == "__main__":
     print(base_hparams)
 
     torch.autograd.set_detect_anomaly(False)
+    data_module = IkfLitDataset(robot.name, args.batch_size, args.val_set_size, args.dataset_tags)
 
     # Setup wandb logging
     wandb_logger = None
     if not args.disable_wandb:
+        wandb_entity, wandb_project = get_wandb_project()
         # Call `wandb.init` before creating a `WandbLogger` object so that runs have randomized names. Without this
         # call, the run names are all set to the project name. See this article for further information: https://lightrun.com/answers/lightning-ai-lightning-wandblogger--use-random-name-instead-of-project-as-default-name
         cfg = {"robot": args.robot_name}
         cfg.update(non_private_dict(args.__dict__))
-        cfg.update(non_private_dict(base_hparams.__dict__))
+        data_module.add_dataset_hashes_to_cfg(cfg)
+
         wandb.init(
             entity=wandb_entity,
             project=wandb_project,
@@ -210,7 +208,6 @@ if __name__ == "__main__":
         run = wandb.run
         run.tags = run.tags + tuple(args.dataset_tags)
 
-    data_module = IkfLitDataset(robot.name, args.batch_size, args.val_set_size, args.dataset_tags)
     ik_solver = IKFlowSolver(base_hparams, robot)
     model = IkfLitModel(
         ik_solver=ik_solver,

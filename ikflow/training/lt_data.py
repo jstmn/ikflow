@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Dict
 
 from torch.utils.data import DataLoader
 from pytorch_lightning.core.datamodule import LightningDataModule
@@ -39,6 +39,20 @@ class IkfLitDataset(LightningDataModule):
         self._endpoints_te = torch.load(poses_te_file_path).to(device)
 
         self._sum_joint_limit_range = get_sum_joint_limit_range(self._samples_tr)
+
+    def add_dataset_hashes_to_cfg(self, cfg: Dict):
+        cfg.update(
+            {
+                "dataset_hashes": str(
+                    [
+                        self._samples_tr.sum().item(),
+                        self._endpoints_tr.sum().item(),
+                        self._samples_te.sum().item(),
+                        self._endpoints_te.sum().item(),
+                    ]
+                )
+            }
+        )
 
     def log_dataset_sizes(self, epoch=0, batch_nb=0):
         """Log the training and testset size to wandb"""

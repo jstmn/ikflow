@@ -62,14 +62,14 @@ fetch_large_temp:
 # === FetchArm
 # 
 
-fetch_arm__large__mh186_6.5m:
+fetch_arm__large__mh186_9.25m:
   nb_nodes:               16
   dim_latent_space:       10
   coeff_fn_config:        3
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch_arm'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D6.5M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch_arm/fetch_arm__major-hill-186__global_step%3D9.25M.pkl'
 
 
 
