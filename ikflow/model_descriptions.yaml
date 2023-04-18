@@ -30,15 +30,6 @@ panda_lite_tpm:
 # === Fetch
 # 
 
-fetch_full_temp_tpm:
-  nb_nodes:               12
-  dim_latent_space:       8
-  coeff_fn_config:        3
-  coeff_fn_internal_size: 1024
-  rnvp_clamp:             2.5
-  robot_name:             'fetch'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__wobbly-blaze-54__global_step%3D9.0M.pkl'
-
 fetch_full_temp_nsc_tpm:
   nb_nodes:               12
   dim_latent_space:       8
@@ -48,14 +39,14 @@ fetch_full_temp_nsc_tpm:
   robot_name:             'fetch'
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__sleek-microwave-65__global_step%3D9.25M.pkl'
 
-fetch_large_temp:
+fetch__large__ns183_9.75m:
   nb_nodes:               16
   dim_latent_space:       8
   coeff_fn_config:        3
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch/fetch__sage-armadillo-180__global_step%3D3.0M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch/fetch__northern-sea-183__global_step%3D9.75M.pkl'
 
 
 # ===========================================================
