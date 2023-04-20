@@ -37,7 +37,7 @@ fetch_full_temp_nsc_tpm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'fetch'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch__sleek-microwave-65__global_step%3D9.25M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/fetch/fetch__sleek-microwave-65__global_step%3D9.25M.pkl'
 
 fetch__large__ns183_9.75m:
   nb_nodes:               16
@@ -77,7 +77,7 @@ iiwa7_full_temp_nsc_tpm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'iiwa7'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/iiwa7__serene-snowball-78__global_step%3D10.75M.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/iiwa7/iiwa7__serene-snowball-78__global_step%3D10.75M.pkl'
 
 
 
