@@ -170,6 +170,7 @@ class IKFlowSolver:
         clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
+        device: str = config.device,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Run the network in reverse to generate samples conditioned on a pose y
 
@@ -222,11 +223,9 @@ class IKFlowSolver:
         with torch.inference_mode():
             # Get latent
             # (:, 0:3) is x, y, z, (:, 3:7) is quat
-            conditional = torch.zeros(n, self.dim_cond, device=config.device, dtype=DEFAULT_TORCH_DTYPE)
-            # conditional = torch.zeros(n, self.dim_cond)
+            conditional = torch.zeros(n, self.dim_cond, device=device, dtype=DEFAULT_TORCH_DTYPE)
             conditional[:, 0:3] = torch.tensor(y[:3])
             conditional[:, 3 : 3 + 4] = torch.tensor(np.array([y[3:]]))
-            # conditional = conditional.to(config.device)
 
             # Get latent
             latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
@@ -245,6 +244,7 @@ class IKFlowSolver:
         clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
+        device: str = config.device,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Same as solve(), but with a batch of target poses.
         ys: [batch x 7]
@@ -259,7 +259,7 @@ class IKFlowSolver:
         with torch.inference_mode():
             # Get conditional
             # Note: No code change required here to handle using/not using softflow.
-            conditional = torch.zeros(n, self.dim_cond, dtype=torch.float32, device=config.device)
+            conditional = torch.zeros(n, self.dim_cond, dtype=torch.float32, device=device)
             if isinstance(ys, torch.Tensor):
                 conditional[:, 0:7] = ys
             else:
