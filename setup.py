@@ -39,7 +39,7 @@ setup(
     extras_require={
         "dev": ["PyQt5", "black", "pylint", "pytorch-lightning", "tensorboard", "wandb", "pandas", "tabulate"]
     },
-    install_requires=["klampt", "torch==1.13.1", "FrEIA==0.2", "more_itertools", "jkinpylib==0.0.8", "pynvml==11.5.0"],
+    install_requires=["klampt", "torch==1.13.1", "FrEIA==0.2", "more_itertools", "jkinpylib==0.0.9", "pynvml==11.5.0"],
     packages=["ikflow"],
     package_data={"ikflow": ["model_descriptions.yaml"] + urdf_files},  # TODO: Add ikflow/visualization_resources/
     # 'setup.py dist` ommits non-.py files when include_package_data=True is included. See

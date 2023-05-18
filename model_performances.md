@@ -64,3 +64,14 @@ Generated with `scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime
 |  3 | fetch     | fetch__large__ns183_9.75m     |             0.979202 |                   3.64909  |                         0 |              2.192 |                               7.29508 |                          16 |
 |  4 | fetch_arm | fetch_arm__large__mh186_9.25m |             0.829996 |                   0.551073 |                         0 |              1.668 |                               7.85046 |                          16 |
 |  5 | iiwa7     | iiwa7_full_temp_nsc_tpm       |             1.6165   |                   4.92476  |                         0 |              0.028 |                               6.04854 |                          12 |
+
+**05/02/2023, 23:50:49** | Generated with `python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=15000 --all`
+
+|    | Robot     | Model name                    |   Mean l2 error (cm) |   Mean angular error (deg) |   Joint limits exceeded % |   Self-colliding % |   Mean runtime for 15000 solutions (ms) |   Number of coupling layers |
+|---:|:----------|:------------------------------|---------------------:|---------------------------:|--------------------------:|-------------------:|----------------------------------------:|----------------------------:|
+|  0 | panda     | panda__full__lp191_5.25m      |             0.680773 |                    2.15531 |                         0 |              4.564 |                                 52.8669 |                          12 |
+|  1 | panda     | panda_lite_tpm                |             1.44735  |                   10.7018  |                         0 |              5.884 |                                 26.8883 |                           6 |
+|  2 | fetch     | fetch_full_temp_nsc_tpm       |             1.41584  |                    1.02989 |                         0 |              2.916 |                                 53.0806 |                          12 |
+|  3 | fetch     | fetch__large__ns183_9.75m     |             0.970093 |                    3.03681 |                         0 |              2.124 |                                 71.7826 |                          16 |
+|  4 | fetch_arm | fetch_arm__large__mh186_9.25m |             0.813048 |                    0.47009 |                         0 |              1.86  |                                 70.9249 |                          16 |
+|  5 | iiwa7     | iiwa7_full_temp_nsc_tpm       |             1.66783  |                    2.5039  |                         0 |              0.012 |                                 53.2426 |                          12 |
