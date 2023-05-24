@@ -36,7 +36,7 @@ def _get_device() -> str:
 # /
 device, GPU_IDX = _get_device()
 DEFAULT_TORCH_DTYPE = torch.float32
-print(f"config.py: Using device '{device}'")
+print(f"ikflow/config.py | Using device: '{device}'")
 
 # ~/.cache/ikflow/
 DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".cache/ikflow/")

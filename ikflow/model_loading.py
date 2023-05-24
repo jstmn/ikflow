@@ -3,6 +3,7 @@ import yaml
 import os
 from urllib.request import urlretrieve
 
+from jkinpylib.robot import Robot
 from jkinpylib.robots import get_robot
 from ikflow.utils import safe_mkdir, get_filepath
 from ikflow.ikflow_solver import IKFlowSolver
@@ -56,7 +57,7 @@ def model_filename(url: str) -> str:
     return url.split("/")[-1]
 
 
-def get_ik_solver(model_name: str) -> Tuple[IKFlowSolver, IkflowModelParameters]:
+def get_ik_solver(model_name: str, robot: Optional[Robot] = None) -> Tuple[IKFlowSolver, IkflowModelParameters]:
     """Build and return the `IKFlowSolver` for the given model. The input `model_name` should match and index in `model_descriptions.yaml`
 
     Returns:
@@ -75,7 +76,9 @@ def get_ik_solver(model_name: str) -> Tuple[IKFlowSolver, IkflowModelParameters]
         model_weights_filepath
     ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
 
-    robot = get_robot(robot_name)
+    if robot is None:
+        robot = get_robot(robot_name)
+    assert robot.name == robot_name
 
     # Build IKFlowSolver and set weights
     hyper_parameters = IkflowModelParameters()
