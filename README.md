@@ -42,14 +42,14 @@ pip install -e ".[dev]"
 
 Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper. Note that the value for `model_name` - in this case `panda_tpm` should match an entry in `model_descriptions.yaml` 
 ```
-python scripts/evaluate.py --testset_size=500 --model_name=panda_full_tpm
+python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m
 ```
 
 **> Example 2: Visualize the solutions returned by the `panda_tpm` model**
 
 Run the following:
 ```
-python scripts/visualize.py --model_name=panda_full_tpm --demo_name=oscillate_target
+python scripts/visualize.py --model_name=panda__full__lp191_5.25m --demo_name=oscillate_target
 ```
 ![ikflow solutions for oscillating target pose](../media/panda_tpm_oscillate_x-2022-08-26.gif?raw=true)
 
