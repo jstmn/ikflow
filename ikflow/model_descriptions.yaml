@@ -23,7 +23,7 @@ panda_lite_tpm:
   coeff_fn_internal_size: 1024
   rnvp_clamp:             2.5
   robot_name:             'panda'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda_arm-young-night-84.pkl'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/panda/panda_arm-young-night-84.pkl'
 
 
 # ===========================================================
