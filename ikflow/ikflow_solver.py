@@ -30,8 +30,10 @@ def draw_latent(
 class IKFlowSolver:
     def __init__(self, hyper_parameters: IkflowModelParameters, robot: Robot):
         """Initialize an IKFlowSolver."""
-        assert isinstance(hyper_parameters, IkflowModelParameters)
-        assert isinstance(robot, Robot)
+        assert isinstance(
+            hyper_parameters, IkflowModelParameters
+        ), f"Error - hyper_parameters should be IkflowModelParameters type, is {type(hyper_parameters)}"
+        assert isinstance(robot, Robot), f"Error - robot should be Robot type, is {type(robot)}"
 
         # Add 'sigmoid_on_output' if IkflowModelParameters instance doesn't have it. This will be the case when loading
         # from training runs from before this parameter was added
@@ -225,7 +227,7 @@ class IKFlowSolver:
             # (:, 0:3) is x, y, z, (:, 3:7) is quat
             conditional = torch.zeros(n, self.dim_cond, device=device, dtype=DEFAULT_TORCH_DTYPE)
             conditional[:, 0:3] = torch.tensor(y[:3])
-            conditional[:, 3 : 3 + 4] = torch.tensor(np.array([y[3:]]))
+            conditional[:, 3 : 3 + 4] = torch.tensor(y[3:])
 
             # Get latent
             latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
