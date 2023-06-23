@@ -1,6 +1,6 @@
 from typing import Iterable, Tuple, List, Union
 
-from jkinpylib.robots import Robot
+from jrl.robots import Robot
 from FrEIA.modules.base import InvertibleModule
 import FrEIA.framework as Ff
 import FrEIA.modules as Fm

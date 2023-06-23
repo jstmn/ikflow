@@ -12,7 +12,7 @@ from ikflow.utils import (
     get_dataset_filepaths,
     assert_joint_angle_tensor_in_joint_limits,
 )
-from jkinpylib.robots import get_robot, Robot
+from jrl.robots import get_robot, Robot
 
 import torch
 

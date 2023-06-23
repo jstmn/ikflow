@@ -3,8 +3,8 @@ import yaml
 import os
 from urllib.request import urlretrieve
 
-from jkinpylib.robot import Robot
-from jkinpylib.robots import get_robot
+from jrl.robot import Robot
+from jrl.robots import get_robot
 from ikflow.utils import safe_mkdir, get_filepath
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow.model import IkflowModelParameters

@@ -3,7 +3,7 @@ import unittest
 
 from ikflow import config
 from ikflow.ikflow_solver import IKFlowSolver
-from jkinpylib.robots import get_robot
+from jrl.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.model import IkflowModelParameters
 

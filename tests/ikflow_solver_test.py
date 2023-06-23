@@ -1,7 +1,7 @@
 import unittest
 
 import torch
-from jkinpylib.robots import Panda
+from jrl.robots import Panda
 
 from ikflow import config
 from ikflow.utils import set_seed

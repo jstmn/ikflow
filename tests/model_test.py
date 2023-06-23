@@ -2,7 +2,7 @@ import unittest
 from typing import List, Tuple
 
 import torch
-from jkinpylib.robots import Panda
+from jrl.robots import Panda
 import FrEIA.framework as Ff
 
 from ikflow.utils import set_seed

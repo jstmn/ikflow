@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from jkinpylib.robots import get_robot, Robot
+from jrl.robots import get_robot, Robot
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer

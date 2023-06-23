@@ -1,7 +1,7 @@
 import argparse
 
 from ikflow.visualizations import oscillate_joints
-from jkinpylib.robots import get_robot
+from jrl.robots import get_robot
 
 """ Example usage
 

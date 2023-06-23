@@ -9,7 +9,7 @@ from ikflow.config import GPU_IDX
 assert GPU_IDX >= 0
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
-from jkinpylib.robots import get_robot
+from jrl.robots import get_robot
 from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.training.lt_data import IkfLitDataset

@@ -7,13 +7,13 @@ from datetime import datetime
 
 import torch
 import numpy as np
-from jkinpylib.robots import Robot
+from jrl.robots import Robot
 import pandas as pd
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow.utils import set_seed, boolean_string
 from ikflow.model_loading import get_ik_solver, get_all_model_names
-from jkinpylib.evaluation import evaluate_solutions
+from jrl.evaluation import evaluate_solutions
 
 
 set_seed()
@@ -171,6 +171,9 @@ def evaluate_model(
 python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
 
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
+python scripts/evaluate.py --testset_size=5 --model_name=panda__full__lp191_5.25m
+python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
+python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
 """
 

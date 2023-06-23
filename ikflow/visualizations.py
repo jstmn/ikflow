@@ -2,8 +2,8 @@ from typing import List, Callable, Any
 from time import sleep
 from dataclasses import dataclass
 
-from jkinpylib.robot import Robot
-from jkinpylib.robots import Panda, Fetch, FetchArm
+from jrl.robot import Robot
+from jrl.robots import Panda, Fetch, FetchArm
 from klampt.math import so3
 from klampt.model import coordinates, trajectory
 from klampt import vis
@@ -14,7 +14,7 @@ import torch.optim
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow import config
-from jkinpylib.evaluation import solution_pose_errors
+from jrl.evaluation import solution_pose_errors
 
 
 _OSCILLATE_LATENT_TARGET_POSES = {

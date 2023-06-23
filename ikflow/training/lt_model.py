@@ -1,8 +1,8 @@
 from typing import Tuple, Dict, List
 from time import time
 
-from jkinpylib.robots import Fetch
-from jkinpylib.conversions import quaternion_product, quaternion_inverse
+from jrl.robots import Fetch
+from jrl.conversions import quaternion_product, quaternion_inverse
 import wandb
 import numpy as np
 import torch
@@ -14,7 +14,7 @@ from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters
 from ikflow.utils import grad_stats
-from jkinpylib.evaluation import evaluate_solutions
+from jrl.evaluation import evaluate_solutions
 from ikflow.thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001

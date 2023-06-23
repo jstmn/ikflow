@@ -3,7 +3,7 @@ from time import time
 
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
-from jkinpylib.robots import get_robot
+from jrl.robots import get_robot
 
 import torch
 import numpy as np

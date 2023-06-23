@@ -85,7 +85,7 @@ iiwa7_full_temp_nsc_tpm:
 # === Robonaut2
 #
 
-# TODO: Add robonaut2 to jkinpylib and then add back this model
+# TODO: Add robonaut2 to jrl and then add back this model
 # # Note: from joint limit test. TODO: Update with smaller model
 # # Average L2 error:      6.8762 mm
 # # Average angular error: 7.5261 deg
@@ -104,7 +104,7 @@ iiwa7_full_temp_nsc_tpm:
 # === Valkyrie
 #
 
-# TODO: Add valkyrie to jkinpylib and then add back this model
+# TODO: Add valkyrie to jrl and then add back this model
 # # Average L2 error:      3.6971 mm
 # # Average angular error: 0.6621 deg
 # # Average runtime:       6.5306 +/- 0.0004 ms (for 100 samples)
@@ -125,7 +125,7 @@ iiwa7_full_temp_nsc_tpm:
 # === Atlas
 #
 
-# TODO: Add atlas to jkinpylib and then add back this model
+# TODO: Add atlas to jrl and then add back this model
 # Average L2 error:      3.738 mm
 # Average angular error: 0.6555 deg
 # Average runtime:       6.5912 +/- 0.0003 ms (for 100 samples)

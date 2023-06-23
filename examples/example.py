@@ -19,7 +19,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         type=str,
-        help="Name of the saved model ('panda__full__lp191_5.25m' should work). Defined in ikflow/model_descriptions.yaml",
+        help=(
+            "Name of the saved model ('panda__full__lp191_5.25m' should work). Defined in"
+            " ikflow/model_descriptions.yaml"
+        ),
     )
     args = parser.parse_args()
 

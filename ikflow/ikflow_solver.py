@@ -2,14 +2,14 @@ from typing import List, Tuple, Optional, Union
 import pickle
 from time import time
 
-from jkinpylib.robots import Robot
+from jrl.robots import Robot
 import numpy as np
 import torch
 
 from ikflow import config
 from ikflow.config import DEFAULT_TORCH_DTYPE
 from ikflow.model import IkflowModelParameters, glow_cNF_model
-from jkinpylib.evaluation import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
+from jrl.evaluation import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
 
 
 def draw_latent(
