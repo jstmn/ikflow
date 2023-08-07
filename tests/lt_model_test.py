@@ -25,7 +25,7 @@ class LitModelTest(unittest.TestCase):
     def test_gradient_calculated(self):
         batch_size = 10
         batch = (
-            torch.randn((batch_size, self.ik_solver.robot.n_dofs)).to(config.device),
+            torch.randn((batch_size, self.ik_solver.robot.ndof)).to(config.device),
             torch.randn((batch_size, 7)).to(config.device),
         )
         fixed_latent = torch.randn((5, self.ik_solver.network_width)).to(config.device)

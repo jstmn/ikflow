@@ -51,7 +51,7 @@ class IkfLitModel(LightningModule):
         self.nn_model = ik_solver.nn_model
         self.nn_model.to(config.device)
         self.base_hparams = base_hparams
-        self.n_dofs = self.ik_solver.robot.n_dofs
+        self.ndof = self.ik_solver.robot.ndof
         self.dim_tot = self.base_hparams.dim_latent_space
         self.checkpoint_every = checkpoint_every
         self.log_every = log_every
@@ -131,8 +131,8 @@ class IkfLitModel(LightningModule):
         x = x.to(config.device)
 
         batch_size = y.shape[0]
-        if self.dim_tot > self.n_dofs:
-            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.n_dofs)).to(config.device)
+        if self.dim_tot > self.ndof:
+            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.ndof)).to(config.device)
 
             # padding must be in (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX). This value will be scaled to these
             # bounds and then passed through inverse sigmoid. If they are outside of these bounds, inverse-sigmoid will
@@ -350,5 +350,5 @@ class IkfLitModel(LightningModule):
         t0 = time()
         output_rev, _ = self.nn_model(latent, c=conditional, rev=True)
         if return_runtime:
-            return output_rev[:, 0 : self.n_dofs], time() - t0
-        return output_rev[:, 0 : self.n_dofs]
+            return output_rev[:, 0 : self.ndof], time() - t0
+        return output_rev[:, 0 : self.ndof]

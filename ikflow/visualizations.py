@@ -97,7 +97,7 @@ def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
 
     def setup_fn(worlds):
         vis.add(f"robot", worlds[0].robot(0))
-        vis.setColor((f"robot", robot.end_effector_link_name), 0, 1, 0, 0.7)
+        vis.setColor((f"robot", robot.end_effector), 0, 1, 0, 0.7)
 
         # Axis
         vis.add("coordinates", coordinates.manager())
@@ -140,7 +140,7 @@ def oscillate_latent(ik_solver: IKFlowSolver):
     def setup_fn(worlds):
         vis.add(f"robot_1", worlds[1].robot(0))
         vis.setColor(f"robot_1", 1, 1, 1, 1)
-        vis.setColor((f"robot_1", robot.end_effector_link_name), 1, 1, 1, 0.71)
+        vis.setColor((f"robot_1", robot.end_effector), 1, 1, 1, 0.71)
 
         # Axis
         vis.add("coordinates", coordinates.manager())
@@ -192,7 +192,7 @@ def oscillate_latent(ik_solver: IKFlowSolver):
             vis.logPlot(f"latent_vector", f"latent_{i}", _demo_state.last_latent[i])
 
     demo_state = DemoState(
-        counter=0, last_joint_vector=np.zeros(robot.n_dofs), last_latent=np.zeros(ik_solver.network_width)
+        counter=0, last_joint_vector=np.zeros(robot.ndof), last_latent=np.zeros(ik_solver.network_width)
     )
     _run_demo(
         robot, n_worlds, setup_fn, loop_fn, viz_update_fn, demo_state=demo_state, time_p_loop=time_p_loop, title=title
@@ -217,7 +217,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         for i in range(len(worlds)):
             vis.add(f"robot_{i}", worlds[i].robot(0))
             vis.setColor(f"robot_{i}", 1, 1, 1, 1)
-            vis.setColor((f"robot_{i}", robot.end_effector_link_name), 1, 1, 1, 0.71)
+            vis.setColor((f"robot_{i}", robot.end_effector), 1, 1, 1, 0.71)
 
         # Axis
         vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
@@ -280,12 +280,12 @@ def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
     def setup_fn(worlds):
         vis.add(f"robot_goal", worlds[0].robot(0))
         vis.setColor(f"robot_goal", 0.5, 1, 1, 0)
-        vis.setColor((f"robot_goal", ik_solver.end_effector_link_name), 0, 1, 0, 0.7)
+        vis.setColor((f"robot_goal", ik_solver.end_effector), 0, 1, 0, 0.7)
 
         for i in range(1, nb_sols + 1):
             vis.add(f"robot_{i}", worlds[i].robot(0))
             vis.setColor(f"robot_{i}", 1, 1, 1, 1)
-            vis.setColor((f"robot_{i}", ik_solver.end_effector_link_name), 1, 1, 1, 0.71)
+            vis.setColor((f"robot_{i}", ik_solver.end_effector), 1, 1, 1, 0.71)
 
     def loop_fn(worlds, _demo_state):
         # Get random sample
@@ -326,7 +326,7 @@ def oscillate_joints(robot: Robot):
 
     def loop_fn(worlds, _demo_state):
         no_change = True
-        for i in range(robot.n_dofs):
+        for i in range(robot.ndof):
             joint_limits = robot.actuated_joints_limits[i]
             if _demo_state.increasing:
                 if _demo_state.q[i] < joint_limits[1]:

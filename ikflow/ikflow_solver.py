@@ -52,7 +52,7 @@ class IKFlowSolver:
 
         # Note: Changing `nn_model` to `_nn_model` may break the logic in 'download_model_from_wandb_checkpoint.py'
         self.nn_model = glow_cNF_model(hyper_parameters, self._robot, self.dim_cond, self._network_width)
-        self.n_dofs = self.robot.n_dofs
+        self.ndof = self.robot.ndof
 
     @property
     def robot(self) -> Robot:
@@ -90,7 +90,7 @@ class IKFlowSolver:
         if isinstance(target_pose, list):
             target_pose = np.array(target_pose)
         if isinstance(target_pose, np.ndarray) and len(target_pose.shape) == 2:
-            assert target_pose.shape[0] == b, f"target_pose.shape ({target_pose.shape[0]}) != [{b} x {self.n_dofs}]"
+            assert target_pose.shape[0] == b, f"target_pose.shape ({target_pose.shape[0]}) != [{b} x {self.ndof}]"
 
         ikflow_solutions_np = ikflow_solutions.detach().cpu().numpy()
         refined = ikflow_solutions_np.copy()
@@ -124,7 +124,7 @@ class IKFlowSolver:
 
         # Run model
         output_rev, _ = self.nn_model(latent, c=conditional, rev=True)
-        solutions = output_rev[:, 0 : self.n_dofs]
+        solutions = output_rev[:, 0 : self.ndof]
 
         if clamp_to_joint_limits:
             solutions = self.robot.clamp_to_joint_limits(solutions)

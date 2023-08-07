@@ -264,12 +264,12 @@ def get_pre_sigmoid_scaling_node(ndim_tot: int, robot: Robot, nodes: List[Ff.Nod
         M_scaling[i, i] = scale
 
     # The non joint columns need to be scaled to (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX)
-    if robot.n_dofs < ndim_tot:
+    if robot.ndof < ndim_tot:
         input_up = SIGMOID_SCALING_ABS_MAX
         input_low = -SIGMOID_SCALING_ABS_MAX
 
-        for i in range(ndim_tot - robot.n_dofs):
-            idx = robot.n_dofs + i
+        for i in range(ndim_tot - robot.ndof):
+            idx = robot.ndof + i
             slope = (output_up - output_low) / (input_up - input_low)
             M_offset[idx] = output_low - (slope * input_low)
             M_scaling[idx, idx] = slope
@@ -310,7 +310,7 @@ def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, n
         # Transform Node to map x_i from joint space to [-1, 1]
         x_invSig = torch.eye(ndim_tot)
         x_Mu = torch.zeros(ndim_tot)
-        for i in range(robot.n_dofs):
+        for i in range(robot.ndof):
             x_invSig[i, i] = 1.0 / max(abs(robot.actuated_joints_limits[i][0]), abs(robot.actuated_joints_limits[i][1]))
 
         nodes.append(Ff.Node([nodes[-1].out0], Fm.FixedLinearTransform, {"M": x_invSig, "b": x_Mu}))
