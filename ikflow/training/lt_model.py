@@ -14,7 +14,7 @@ from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters
 from ikflow.utils import grad_stats
-from jrl.evaluation import evaluate_solutions
+from ikflow.evaluation_utils import evaluate_solutions
 from ikflow.thirdparty.ranger import RangerVA  # from ranger913A.py
 
 zeros_noise_scale = 0.0001

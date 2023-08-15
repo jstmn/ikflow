@@ -13,7 +13,7 @@ import pandas as pd
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow.utils import set_seed, boolean_string
 from ikflow.model_loading import get_ik_solver, get_all_model_names
-from jrl.evaluation import evaluate_solutions
+from ikflow.evaluation_utils import evaluate_solutions
 
 
 set_seed()
