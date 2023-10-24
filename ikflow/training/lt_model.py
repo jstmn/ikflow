@@ -276,9 +276,9 @@ class IkfLitModel(LightningModule):
         def get_stats(_results):
             n_total = len(_results) * len(_results[0]["l2_errs"])
             l2_errs = torch.cat([pred["l2_errs"] for pred in _results])
-            max_l2_errs = [pred["l2_errs"].max() for pred in _results]
+            max_l2_errs = [pred["l2_errs"].max().item() for pred in _results]
             angular_errs = torch.cat([pred["angular_errs"] for pred in _results])
-            max_angular_errs = [pred["angular_errs"].max() for pred in _results]
+            max_angular_errs = [pred["angular_errs"].max().item() for pred in _results]
             joint_limits_exceeded = torch.cat([pred["joint_limits_exceeded"] for pred in _results])
             self_collisions = torch.cat([pred["self_collisions"] for pred in _results])
             return (

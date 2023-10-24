@@ -9,6 +9,7 @@ from ikflow.evaluation_utils import solution_pose_errors, calculate_joint_limits
 
 set_seed()
 
+
 class EvaluationUtilsTest(unittest.TestCase):
     def test_solution_pose_errors(self):
         """Check that solution_pose_errors() matches the expected value"""
@@ -51,7 +52,6 @@ class EvaluationUtilsTest(unittest.TestCase):
         self.assertEqual(returned.dtype, torch.bool)
         self.assertEqual(returned.shape, (5,))
         torch.testing.assert_close(returned, expected)
-
 
 
 if __name__ == "__main__":

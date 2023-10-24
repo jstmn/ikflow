@@ -11,6 +11,7 @@ from ikflow.config import DEFAULT_TORCH_DTYPE
 from ikflow.model import IkflowModelParameters, glow_cNF_model
 from ikflow.evaluation_utils import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
 
+
 def draw_latent(
     user_specified_latent: torch.Tensor, latent_distribution: str, latent_scale: float, shape: Tuple[int, int]
 ):

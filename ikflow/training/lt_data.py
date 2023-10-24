@@ -75,6 +75,8 @@ class IkfLitDataset(LightningDataModule):
             batch_size=self._batch_size,
             shuffle=True,
             drop_last=True,
+            # see https://github.com/dbolya/yolact/issues/664#issuecomment-975051339
+            generator=torch.Generator(device=device),
         )
 
     def val_dataloader(self):
