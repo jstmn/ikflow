@@ -175,6 +175,7 @@ python scripts/evaluate.py --testset_size=5 --model_name=panda__full__lp191_5.25
 python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
+python scripts/evaluate.py --testset_size=500 --model_name=rizon4__snowy-brook-208__global_step=2.75M
 """
 
 if __name__ == "__main__":

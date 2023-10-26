@@ -80,6 +80,21 @@ iiwa7_full_temp_nsc_tpm:
   model_weights_url:      'https://storage.googleapis.com/ikflow_models/iiwa7/iiwa7__serene-snowball-78__global_step%3D10.75M.pkl'
 
 
+# ===========================================================
+# === Rizon4
+# 
+
+# TODO: Upload a better model when one becomes available
+rizon4__snowy-brook-208__global_step=2.75M:
+  nb_nodes:               12
+  dim_latent_space:       7
+  coeff_fn_config:        3
+  coeff_fn_internal_size: 1024
+  rnvp_clamp:             2.5
+  robot_name:             'rizon4'
+  model_weights_url:      'https://storage.googleapis.com/ikflow_models/rizon4/rizon4__snowy-brook-208__global_step%3D2.75M.pkl'
+
+
 
 # ===========================================================
 # === Robonaut2
