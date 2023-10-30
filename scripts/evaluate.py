@@ -22,8 +22,8 @@ set_seed()
 PD_DATAFRAME_COLUMNS = [
     "Robot",
     "Model name",
-    "Mean l2 error (cm)",
-    "Mean angular error (deg)",
+    "Mean positional error (cm)",
+    "Mean rotational error (deg)",
     "Joint limits exceeded %",
     "Self-colliding %",
     "Mean runtime - UPDATE_THIS_VALUE",
@@ -51,7 +51,7 @@ def calculate_error_stats(
 ) -> ErrorStats:
     """Evaluate the given `ik_solver` on the provided `testset`.
 
-    NOTE: Returns L2 error in millimeters and angular error in degrees
+    NOTE: Returns positional error in millimeters and rotational error in degrees
     """
     ik_solver.nn_model.eval()
 
@@ -112,8 +112,8 @@ def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats:
     print(f"  non-self-colliding testset:        {args.non_self_colliding_dataset}")
     print(f"  solutions refined:                 {args.do_refinement}")
 
-    print(f"\n  Average L2 error:              {round(error_stats.mean_l2_error_mm, 4)} mm")
-    print(f"  Average angular error:         {round(error_stats.mean_angular_error_deg, 4)} deg")
+    print(f"\n  Average positional error:              {round(error_stats.mean_l2_error_mm, 4)} mm")
+    print(f"  Average rotational error:         {round(error_stats.mean_angular_error_deg, 4)} deg")
     print(f"  Percent joint limits exceeded: {round(error_stats.pct_joint_limits_exceeded, 4)} %")
     print(f"  Percent self-colliding:        {round(error_stats.pct_self_colliding, 4)} %")
     print(

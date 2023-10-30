@@ -1,5 +1,4 @@
 import argparse
-import yaml
 
 
 from ikflow import visualizations
@@ -15,7 +14,11 @@ VIS_FN_ARGUMENTS = {"oscillate_target": {"nb_sols": 10, "fixed_latent": True}, "
 
 # Panda
 python scripts/visualize.py --model_name=panda__full__lp191_5.25m --demo_name=oscillate_latent
-python scripts/visualize.py --model_name=fetch__large__ns183_9.75m --demo_name=oscillate_target
+python scripts/visualize.py --model_name=panda__full__lp191_5.25m --demo_name=oscillate_target
+
+# Rizon4
+python scripts/visualize.py --model_name rizon4__snowy-brook-208__global_step=2.75M --demo_name=oscillate_latent
+python scripts/visualize.py --model_name rizon4__snowy-brook-208__global_step=2.75M --demo_name=oscillate_target
 
 # Fetch
 python scripts/visualize.py --model_name=fetch__large__ns183_9.75m --demo_name=oscillate_latent

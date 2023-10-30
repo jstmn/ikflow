@@ -1,3 +1,4 @@
+#!/bin/bash
 python -m black *.py --line-length=120 --preview
 python -m black **/*.py --line-length=120 --preview
 python -m black ikflow/**/*.py --line-length=120 --preview

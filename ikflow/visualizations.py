@@ -3,7 +3,7 @@ from time import sleep
 from dataclasses import dataclass
 
 from jrl.robot import Robot
-from jrl.robots import Panda, Fetch, FetchArm
+from jrl.robots import Panda, Fetch, FetchArm, Rizon4
 from klampt.math import so3
 from klampt.model import coordinates, trajectory
 from klampt import vis
@@ -14,22 +14,23 @@ import torch.optim
 
 from ikflow.ikflow_solver import IKFlowSolver
 from ikflow import config
-from jrl.evaluation import solution_pose_errors
+from ikflow.evaluation_utils import solution_pose_errors
 
 
 _OSCILLATE_LATENT_TARGET_POSES = {
     Panda.name: np.array([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0]),
     Fetch.name: np.array([0.45, 0.65, 0.55, 1.0, 0.0, 0.0, 0.0]),
+    Rizon4.name: np.array([0.4, 0.4, 0.45, 1.0, 0.0, 0.0, 0.0]),
 }
 
 _TARGET_POSE_FUNCTIONS = {
     Panda.name: lambda counter: np.array([0.25 * np.sin(counter / 50), 0.5, 0.25, 1.0, 0.0, 0.0, 0.0]),
     Fetch.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
     FetchArm.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
+    Rizon4.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
 }
 
 PI = np.pi
-_CLAMP_TO_JOINT_LIMITS = True
 
 
 def _plot_pose(name: str, pose: np.ndarray, hide_label: bool = False):
@@ -49,19 +50,36 @@ def _run_demo(
     demo_state: Any = None,
     time_p_loop: float = 2.5,
     title: str = "Anonymous demo",
-    load_terrain: bool = True,
 ):
     """Internal function for running a demo."""
+    worlds = [robot.klampt_world_model]
+    if n_worlds > 1:
+        for _ in range(n_worlds - 1):
+            worlds.append(worlds[0].copy())
 
-    worlds = [robot.klampt_world_model.copy() for _ in range(n_worlds)]
-
-    # TODO: Adjust terrain height for each robot
-    if load_terrain:
-        terrain_filepath = "ikflow/visualization_resources/klampt_resources/terrains/plane.off"
-        res = worlds[0].loadTerrain(terrain_filepath)
-        assert res, f"Failed to load terrain '{terrain_filepath}'"
-        vis.add("terrain", worlds[0].terrain(0))
-
+    vis.init()
+    vis.add("coordinates", coordinates.manager())
+    background_color = (1, 1, 1, 0.7)
+    vis.setBackgroundColor(background_color[0], background_color[1], background_color[2], background_color[3])
+    size = 5
+    for x0 in range(-size, size + 1):
+        for y0 in range(-size, size + 1):
+            vis.add(
+                f"floor_{x0}_{y0}",
+                trajectory.Trajectory([1, 0], [(-size, y0, 0), (size, y0, 0)]),
+                color=(0.75, 0.75, 0.75, 1.0),
+                width=2.0,
+                hide_label=True,
+                pointSize=0,
+            )
+            vis.add(
+                f"floor_{x0}_{y0}2",
+                trajectory.Trajectory([1, 0], [(x0, -size, 0), (x0, size, 0)]),
+                color=(0.75, 0.75, 0.75, 1.0),
+                width=2.0,
+                hide_label=True,
+                pointSize=0,
+            )
     setup_fn(worlds)
 
     vis.setWindowTitle(title)
@@ -79,30 +97,17 @@ def _run_demo(
     vis.kill()
 
 
-""" Class contains functions that show generated solutions to example problems
-
-"""
-
-
 def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
     """Set the robot to a random config. Visualize the poses returned by fk"""
-
     assert solver in ["klampt", "batch_fk"]
 
     n_worlds = 1
     time_p_loop = 30
     title = "Visualize poses returned by FK"
-
     robot = ik_solver.robot
 
     def setup_fn(worlds):
         vis.add(f"robot", worlds[0].robot(0))
-        vis.setColor((f"robot", robot.end_effector), 0, 1, 0, 0.7)
-
-        # Axis
-        vis.add("coordinates", coordinates.manager())
-        vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
-        vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
 
     def loop_fn(worlds, _demo_state):
         x_random = robot.sample_joint_angles(1)
@@ -138,15 +143,12 @@ def oscillate_latent(ik_solver: IKFlowSolver):
     rev_input = torch.zeros(1, ik_solver.network_width).to(config.device)
 
     def setup_fn(worlds):
-        vis.add(f"robot_1", worlds[1].robot(0))
-        vis.setColor(f"robot_1", 1, 1, 1, 1)
-        vis.setColor((f"robot_1", robot.end_effector), 1, 1, 1, 0.71)
+        del worlds
+        vis.add(f"robot", robot._klampt_robot)
 
         # Axis
         vis.add("coordinates", coordinates.manager())
         _plot_pose("target_pose.", target_pose, hide_label=True)
-        vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
-        vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
 
         # Configure joint angle plot
         vis.addPlot("joint_vector")
@@ -176,16 +178,17 @@ def oscillate_latent(ik_solver: IKFlowSolver):
         _demo_state.last_latent = rev_input.detach().cpu().numpy()[0]
 
         # Get solutions to pose of random sample
-        solutions = ik_solver.solve(target_pose, 1, latent=rev_input, clamp_to_joint_limits=_CLAMP_TO_JOINT_LIMITS)
+        solutions = ik_solver.solve(target_pose, 1, latent=rev_input)
         solutions = solutions.detach().cpu().numpy()
-        qs = robot._x_to_qs(solutions)
-        worlds[1].robot(0).setConfig(qs[0])
+        # qs = robot._x_to_qs(solutions)
+        robot.set_klampt_robot_config(solutions[0])
 
         # Update _demo_state
         _demo_state.counter += 1
         _demo_state.last_joint_vector = solutions[0]
 
     def viz_update_fn(worlds, _demo_state):
+        del worlds
         for i in range(3):
             vis.logPlot(f"joint_vector", f"joint_{i}", _demo_state.last_joint_vector[i])
         for i in range(3):
@@ -216,12 +219,6 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         vis.add("coordinates", coordinates.manager())
         for i in range(len(worlds)):
             vis.add(f"robot_{i}", worlds[i].robot(0))
-            vis.setColor(f"robot_{i}", 1, 1, 1, 1)
-            vis.setColor((f"robot_{i}", robot.end_effector), 1, 1, 1, 0.71)
-
-        # Axis
-        vis.add("x_axis", trajectory.Trajectory([1, 0], [[1, 0, 0], [0, 0, 0]]))
-        vis.add("y_axis", trajectory.Trajectory([1, 0], [[0, 1, 0], [0, 0, 0]]))
 
         # Add target pose plot
         vis.addPlot("target_pose")
@@ -246,9 +243,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         _demo_state.target_pose = target_pose_fn(_demo_state.counter)
 
         # Get solutions to pose of random sample
-        ik_solutions = ik_solver.solve(
-            _demo_state.target_pose, nb_sols, latent=latent, clamp_to_joint_limits=_CLAMP_TO_JOINT_LIMITS
-        )
+        ik_solutions = ik_solver.solve(_demo_state.target_pose, nb_sols, latent=latent)
         l2_errors, ang_errors = solution_pose_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
 
         _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
@@ -263,6 +258,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         _demo_state.counter += 1
 
     def viz_update_fn(worlds, _demo_state):
+        del worlds
         _plot_pose("target_pose.", _demo_state.target_pose)
         vis.logPlot("target_pose", "target_pose x", _demo_state.target_pose[0])
         vis.logPlot("solution_error", "l2 (mm)", _demo_state.ave_l2_error)
@@ -280,12 +276,10 @@ def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
     def setup_fn(worlds):
         vis.add(f"robot_goal", worlds[0].robot(0))
         vis.setColor(f"robot_goal", 0.5, 1, 1, 0)
-        vis.setColor((f"robot_goal", ik_solver.end_effector), 0, 1, 0, 0.7)
 
         for i in range(1, nb_sols + 1):
             vis.add(f"robot_{i}", worlds[i].robot(0))
             vis.setColor(f"robot_{i}", 1, 1, 1, 1)
-            vis.setColor((f"robot_{i}", ik_solver.end_effector), 1, 1, 1, 0.71)
 
     def loop_fn(worlds, _demo_state):
         # Get random sample
