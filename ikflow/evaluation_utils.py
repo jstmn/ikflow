@@ -4,8 +4,8 @@ import numpy as np
 import torch
 
 from jrl.robot import Robot
-from jrl.conversions import geodesic_distance_between_quaternions, enforce_pt_np_input, PT_NP_TYPE
-from jrl.config import DEVICE
+from jrl.math_utils import geodesic_distance_between_quaternions
+from jrl.config import DEVICE, PT_NP_TYPE
 
 """ Description of 'SOLUTION_EVALUATION_RESULT_TYPE':
 - torch.Tensor: [n] tensor of positional errors of the IK solutions. The error is the L2 norm of the realized poses of
@@ -34,7 +34,6 @@ def _get_target_pose_batch(target_pose: PT_NP_TYPE, n_solutions: int) -> torch.T
     return target_pose
 
 
-@enforce_pt_np_input
 def pose_errors(
     poses_1: PT_NP_TYPE, poses_2: PT_NP_TYPE, acos_epsilon: Optional[float] = None
 ) -> Tuple[PT_NP_TYPE, PT_NP_TYPE]:
@@ -52,7 +51,6 @@ def pose_errors(
     return l2_errors, angular_errors
 
 
-@enforce_pt_np_input
 def pose_errors_cm_deg(
     poses_1: PT_NP_TYPE, poses_2: PT_NP_TYPE, acos_epsilon: Optional[float] = None
 ) -> Tuple[PT_NP_TYPE, PT_NP_TYPE]:

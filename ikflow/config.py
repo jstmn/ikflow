@@ -1,4 +1,5 @@
 """Global configuration"""
+
 import os
 
 import torch

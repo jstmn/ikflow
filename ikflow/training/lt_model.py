@@ -2,7 +2,6 @@ from typing import Tuple, Dict, List
 from time import time
 
 from jrl.robots import Fetch
-from jrl.conversions import quaternion_product, quaternion_inverse
 import wandb
 import numpy as np
 import torch
@@ -220,13 +219,11 @@ class IkfLitModel(LightningModule):
 
         if self.trainer.global_step % self.log_every == 0:
             ave_grad, ave_abs_grad, max_grad = grad_stats(self.parameters())
-            self.safe_log_metrics(
-                {
-                    "tr/grad_ave": ave_grad,
-                    "tr/grad_abs_ave": ave_abs_grad,
-                    "tr/grad_max": max_grad,
-                }
-            )
+            self.safe_log_metrics({
+                "tr/grad_ave": ave_grad,
+                "tr/grad_abs_ave": ave_abs_grad,
+                "tr/grad_max": max_grad,
+            })
 
     def validation_step(self, batch, batch_idx) -> Dict[str, torch.Tensor]:
         del batch_idx

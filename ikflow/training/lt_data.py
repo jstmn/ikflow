@@ -41,33 +41,27 @@ class IkfLitDataset(LightningDataModule):
         self._sum_joint_limit_range = get_sum_joint_limit_range(self._samples_tr)
 
     def add_dataset_hashes_to_cfg(self, cfg: Dict):
-        cfg.update(
-            {
-                "dataset_hashes": str(
-                    [
-                        self._samples_tr.sum().item(),
-                        self._endpoints_tr.sum().item(),
-                        self._samples_te.sum().item(),
-                        self._endpoints_te.sum().item(),
-                    ]
-                )
-            }
-        )
+        cfg.update({
+            "dataset_hashes": str([
+                self._samples_tr.sum().item(),
+                self._endpoints_tr.sum().item(),
+                self._samples_te.sum().item(),
+                self._endpoints_te.sum().item(),
+            ])
+        })
 
     def log_dataset_sizes(self, epoch=0, batch_nb=0):
         """Log the training and testset size to wandb"""
         assert self._samples_tr.shape[0] == self._endpoints_tr.shape[0]
         assert self._samples_te.shape[0] == self._endpoints_te.shape[0]
-        wandb.log(
-            {
-                "epoch": epoch,
-                "batch_nb": batch_nb,
-                "small_dataset": self._use_small_dataset,
-                "sum_joint_limit_range": self._sum_joint_limit_range,
-                "dataset_size_tr": self._samples_tr.shape[0],
-                "dataset_size_te": self._samples_te.shape[0],
-            }
-        )
+        wandb.log({
+            "epoch": epoch,
+            "batch_nb": batch_nb,
+            "small_dataset": self._use_small_dataset,
+            "sum_joint_limit_range": self._sum_joint_limit_range,
+            "dataset_size_tr": self._samples_tr.shape[0],
+            "dataset_size_te": self._samples_te.shape[0],
+        })
 
     def train_dataloader(self):
         return DataLoader(

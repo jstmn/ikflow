@@ -15,10 +15,11 @@ python examples/example.py --model_name=panda__full__lp191_5.25m
 """
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="example.py - brief example of using IKFlow")
+    parser = argparse.ArgumentParser(prog="minimial example of running IKFlow")
     parser.add_argument(
         "--model_name",
         type=str,
+        required=True,
         help=(
             "Name of the saved model ('panda__full__lp191_5.25m' should work). Defined in"
             " ikflow/model_descriptions.yaml"
@@ -65,15 +66,13 @@ if __name__ == "__main__":
     The following code is for when you want to run IKFlow on multiple target poses at once. The only difference is that 
     you need to call `solve_n_poses` instead of `solve`.
     """
-    target_poses = np.array(
-        [
-            [0.25, 0, 0.5, 1, 0, 0, 0],
-            [0.35, 0, 0.5, 1, 0, 0, 0],
-            [0.45, 0, 0.5, 1, 0, 0, 0],
-            [0.55, 0, 0.5, 1, 0, 0, 0],
-            [0.65, 0, 0.5, 1, 0, 0, 0],
-        ]
-    )
+    target_poses = np.array([
+        [0.25, 0, 0.5, 1, 0, 0, 0],
+        [0.35, 0, 0.5, 1, 0, 0, 0],
+        [0.45, 0, 0.5, 1, 0, 0, 0],
+        [0.55, 0, 0.5, 1, 0, 0, 0],
+        [0.65, 0, 0.5, 1, 0, 0, 0],
+    ])
 
     # -> unrefined solutions
     solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve_n_poses(

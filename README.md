@@ -7,9 +7,8 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 ## Setup, inference only
 
 ``` bash
-pip install git+https://github.com/jstmn/ikflow
-# or
-git clone https://github.com/jstmn/ikflow.git && pip install ikflow/
+git clone https://github.com/jstmn/ikflow.git
+poetry install --without dev
 ```
 
 
@@ -30,9 +29,9 @@ sudo apt-get install -y qt5-default build-essential qtcreator
 ```
 
 Lastly, install with pip:
-```
+``` bash
 git clone https://github.com/jstmn/ikflow.git && cd ikflow
-pip install -e ".[dev]"
+poetry install --with dev
 ```
 
 
@@ -129,11 +128,6 @@ NotImplementedError: Platform does not define a GLUT font retrieval function
 import matplotlib
 matplotlib.use("Agg")
 ```
-
-## TODO
-1. [ ] ~~Add CPU versions of pretrained model~~
-2. [ ] Add 'light' pretrained models. These are smaller networks for faster inference
-3. [ ] ~~Include a batched jacobian optimizer to enable parallelized solution refinement.~~ Note: This is in the works in a seperate repository
 
 
 ## Citation
