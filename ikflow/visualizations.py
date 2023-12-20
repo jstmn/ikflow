@@ -26,7 +26,7 @@ _OSCILLATE_LATENT_TARGET_POSES = {
 _TARGET_POSE_FUNCTIONS = {
     Panda.name: lambda counter: np.array([0.25 * np.sin(counter / 50), 0.5, 0.25, 1.0, 0.0, 0.0, 0.0]),
     Fetch.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
-    FetchArm.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
+    FetchArm.name: lambda counter: np.array([0.6, 0.15*np.sin(counter / 50) + 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
     Rizon4.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
 }
 

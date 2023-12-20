@@ -4,7 +4,7 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
-## Setup, inference only
+## Setup - inference only
 
 ``` bash
 git clone https://github.com/jstmn/ikflow.git && cd ikflow
@@ -13,7 +13,7 @@ poetry shell
 ```
 
 
-## Setup - training, inference, and visualization
+## Setup - inference, training, and visualization
 
 The following section outlines the setup procedures required to run the visualizer that this project uses. The only supported OS is Ubuntu. Visualization may work on Mac and Windows, I haven't tried it though. For Ubuntu, there are different system wide dependencies for `Ubuntu > 21` and `Ubuntu < 21`. For example, `qt5-default` is not in the apt repository for Ubuntu 21.0+ so can't be installed. See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04.
 
@@ -46,13 +46,13 @@ Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this wa
 python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m
 ```
 
-**> Example 2: Visualize the solutions returned by the `panda_tpm` model**
+**> Example 2: Visualize the solutions returned by the `fetch_arm__large__mh186_9.25m` model**
 
 Run the following:
 ```
-python scripts/visualize.py --model_name=panda__full__lp191_5.25m --demo_name=oscillate_target
+python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_name=oscillate_target
 ```
-![ikflow solutions for oscillating target pose](../media/panda_tpm_oscillate_x-2022-08-26.gif?raw=true)
+![ikflow solutions for oscillating target pose](../media/ikflow__fetcharm__oscillating-target.gif.gif?raw=true)
 
 Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ipynb`
 
@@ -61,7 +61,7 @@ Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ip
 Example code for how to run IKFlow is provided in `examples/example.py`. A sample excerpt:
 ``` python
 ik_solver, _ = get_ik_solver(args.model_name)
-target_pose = np.array([0.5, 0.5, 0.5, 1, 0, 0, 0])
+target_pose = np.array([0.5, 0.5, 0.5, 1, 0, 0, 0]) # x, y, z, qw, qx, qy, qz
 number_of_solutions = 5
 solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve(
   target_pose, number_of_solutions, refine_solutions=False, return_detailed=True

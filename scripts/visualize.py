@@ -24,8 +24,9 @@ python scripts/visualize.py --model_name rizon4__snowy-brook-208__global_step=2.
 python scripts/visualize.py --model_name=fetch__large__ns183_9.75m --demo_name=oscillate_latent
 python scripts/visualize.py --model_name=fetch__large__ns183_9.75m --demo_name=oscillate_target
 
-python scripts/visualize.py --model_name=fetch__large__ns183_9.75m --demo_name=oscillate_latent
-python scripts/visualize.py --model_name=fetch__large__ns183_9.75m --demo_name=oscillate_target
+# FetchArm
+python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_name=oscillate_latent
+python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_name=oscillate_target
 """
 
 
