@@ -7,8 +7,9 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 ## Setup, inference only
 
 ``` bash
-git clone https://github.com/jstmn/ikflow.git
+git clone https://github.com/jstmn/ikflow.git && cd ikflow
 poetry install --without dev
+poetry shell
 ```
 
 
@@ -32,6 +33,7 @@ Lastly, install with pip:
 ``` bash
 git clone https://github.com/jstmn/ikflow.git && cd ikflow
 poetry install --with dev
+poetry shell
 ```
 
 

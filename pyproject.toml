@@ -12,9 +12,9 @@ torch = "^2.0.1"
 FrEIA = "^0.2"
 more-itertools = "^9.0.0"
 jrl = { git = "https://github.com/jstmn/Jrl.git", branch = "v0.0.10" }
-
 pynvml = "11.5.0"
 numpy = "^1.24.2"
+pyyaml = "^6.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
