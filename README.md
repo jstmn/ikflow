@@ -52,7 +52,7 @@ Run the following:
 ```
 python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_name=oscillate_target
 ```
-![ikflow solutions for oscillating target pose](../media/ikflow__fetcharm__oscillating-target.gif.gif?raw=true)
+![ikflow solutions for oscillating target pose](../media/ikflow__fetcharm__oscillating-target.gif?raw=true)
 
 Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ipynb`
 
