@@ -55,8 +55,8 @@ def calculate_error_stats(
     """
     ik_solver.nn_model.eval()
 
-    l2_errs: List[List[float]] = []
-    ang_errs: List[List[float]] = []
+    pos_errs = []
+    rot_errs = []
     jlims_exceeded_count = 0
     self_collisions_count = 0
 
@@ -71,17 +71,17 @@ def calculate_error_stats(
                 clamp_to_joint_limits=clamp_to_joint_limits,
                 refine_solutions=refine_solutions,
             )
-            l2_errors, ang_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
+            pos_errors_i, rot_errors_i, joint_limits_exceeded, self_collisions = evaluate_solutions(
                 robot, ee_pose_target, samples
             )
-            l2_errs.append(l2_errors)
-            ang_errs.append(ang_errors)
+            pos_errs.extend(pos_errors_i)
+            rot_errs.extend(rot_errors_i)
             jlims_exceeded_count += joint_limits_exceeded.sum().item()
             self_collisions_count += self_collisions.sum().item()
     n_total = testset.shape[0] * samples_per_pose
     return ErrorStats(
-        float(1000 * np.mean(l2_errs)),
-        float(np.rad2deg(np.mean(ang_errors))),
+        float(1000 * np.mean(pos_errs)),
+        float(np.rad2deg(np.mean(rot_errs))),
         100 * (jlims_exceeded_count / n_total),
         100 * (self_collisions_count / n_total),
     )
@@ -171,7 +171,7 @@ def evaluate_model(
 python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
 
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
-python scripts/evaluate.py --testset_size=5 --model_name=panda__full__lp191_5.25m
+python scripts/evaluate.py --testset_size=5 --model_name=panda__full__lp191_5.25m --samples_per_pose=3
 python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--non_self_colliding_dataset", type=str, default="true")
     parser.add_argument("--testset_size", default=500, type=int)
-    parser.add_argument("--model_name", type=str, help="Name of the saved model to look for in trained_models/")
+    parser.add_argument("--model_name", type=str, help="Name of the saved model (see ikflow/model_descriptions.yaml)")
     parser.add_argument("--do_refinement", action="store_true", help="Run refine solutions")
     parser.add_argument(
         "--clamp_to_joint_limits",

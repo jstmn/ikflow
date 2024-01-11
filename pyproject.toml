@@ -11,7 +11,7 @@ klampt = "0.9.0"
 torch = "^2.0.1"
 FrEIA = "^0.2"
 more-itertools = "^9.0.0"
-jrl = { git = "https://github.com/jstmn/Jrl.git", branch = "v0.0.10" }
+jrl = { git = "https://github.com/jstmn/Jrl.git", branch = "master" }
 pynvml = "11.5.0"
 numpy = "^1.24.2"
 pyyaml = "^6.0.1"
@@ -27,7 +27,8 @@ tensorboard = "2.11.0"
 wandb = "0.13.8"
 pandas = "1.5.3"
 tabulate = "0.9.0"
-
+ipykernel = "^6.28.0"
+nbconvert = "^7.14.1"
 
 [build-system]
 requires = ["poetry-core"]
