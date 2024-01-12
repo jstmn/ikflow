@@ -70,7 +70,6 @@ def check_converged(robot, qs, target_poses, i):
 
 
 def plot_errors(pos_errors, rot_errors, i):
-    import matplotlib.pyplot as plt
 
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(16, 8))
     fig.suptitle(f"Errors at iteration {i}")
@@ -133,7 +132,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name", type=str, required=True, help="Name of the saved model (see ikflow/model_descriptions.yaml)"
     )
-    parser.add_argument("--k", type=int, default=3, help="Number of repeates per batch size")
+    parser.add_argument("--k", type=int, default=3, help="Number of repeats per batch size")
     args = parser.parse_args()
 
     df = pd.DataFrame(

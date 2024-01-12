@@ -1334,7 +1334,7 @@ warp-lang = "^0.10.1"
 type = "git"
 url = "https://github.com/jstmn/Jrl.git"
 reference = "master"
-resolved_reference = "d1c3d2a97b72d4bf1ef0472398c7e30b92e6b6e8"
+resolved_reference = "a78cee7e0ba30154af110ee19112e0bdfd80e95e"
 
 [[package]]
 name = "jsonschema"
