@@ -33,11 +33,11 @@ ROT_ERROR_THRESHOLD = 0.01
 
 
 def solve_ikflow(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
-    ikflow_solver.solve_n_poses(ys=target_poses)
+    ikflow_solver.generate_ik_solutions(target_poses, None)
 
 
 def solve_klampt(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
-    ikflow_solver.solve_n_poses(ys=target_poses)
+    ikflow_solver.generate_ik_solutions(target_poses, None)
     for i in range(len(target_poses)):
         q_i = ikflow_solver.robot.inverse_kinematics_klampt(target_poses[i])
         assert q_i is not None
@@ -87,7 +87,7 @@ def plot_errors(pos_errors, rot_errors, i):
 
 def solve_lma(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
 
-    qs = ikflow_solver.solve_n_poses(ys=target_poses)
+    qs = ikflow_solver.generate_ik_solutions(target_poses, None)
     robot = ikflow_solver.robot
     converged = False
     i = 0
@@ -107,7 +107,7 @@ def solve_lma(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
 
 def solve_j_pinv(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
 
-    qs = ikflow_solver.solve_n_poses(ys=target_poses)
+    qs = ikflow_solver.generate_ik_solutions(target_poses, None)
 
     converged = False
     i = 0

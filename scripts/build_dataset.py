@@ -21,7 +21,7 @@ TEST_SET_SIZE = 15000
 
 
 def print_saved_datasets_stats(tags: List[str], robots: Optional[Robot] = []):
-    """Printout summary statistics for each dataset. Optionaly print out the default joint limits of all robots in
+    """Printout summary statistics for each dataset. Optionally print out the default joint limits of all robots in
     `robots`
     """
 

@@ -63,7 +63,7 @@ Example code for how to run IKFlow is provided in `examples/example.py`. A sampl
 ik_solver, _ = get_ik_solver(args.model_name)
 target_pose = np.array([0.5, 0.5, 0.5, 1, 0, 0, 0]) # x, y, z, qw, qx, qy, qz
 number_of_solutions = 5
-solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve(
+solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.generate_ik_solutions(
   target_pose, number_of_solutions, refine_solutions=False, return_detailed=True
 )
 ```
