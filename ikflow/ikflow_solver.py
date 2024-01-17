@@ -14,7 +14,6 @@ from ikflow.evaluation_utils import evaluate_solutions, SOLUTION_EVALUATION_RESU
 
 
 def draw_latent(
-    user_specified_latent: torch.Tensor,
     latent_distribution: str,
     latent_scale: float,
     shape: Tuple[int, int],
@@ -24,8 +23,6 @@ def draw_latent(
     assert latent_distribution in ["gaussian", "uniform"]
     assert latent_scale > 0
     assert len(shape) == 2
-    if user_specified_latent is not None:
-        return user_specified_latent
     if latent_distribution == "gaussian":
         return latent_scale * torch.randn(shape, device=device)
     if latent_distribution == "uniform":
@@ -92,6 +89,7 @@ class IKFlowSolver:
         return_detailed: bool,
     ):
         """Run the network."""
+        assert latent.shape[0] == conditional.shape[0], f"{len(latent)} != {len(conditional)}"
 
         # Run model, format and return output
         output_rev, _ = self.nn_model(latent, c=conditional, rev=True)
@@ -200,7 +198,8 @@ class IKFlowSolver:
                 conditional = torch.cat([y, torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1)
 
             # Get latent
-            latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width), device)
+            if latent is None:
+                latent = draw_latent(latent_distribution, latent_scale, (n, self._network_width), device)
             return self._run_inference(latent, conditional, t0, clamp_to_joint_limits, return_detailed)
 
     def generate_exact_ik_solutions(
@@ -220,13 +219,21 @@ class IKFlowSolver:
         assert not return_detailed, f"return_detailed is not supported for generate_exact_ik_solutions()"
         t0 = time()
 
-        repeat_count = 5  # converged in  iterations
-        n_opt_steps_max = 20
+        raise NotImplementedError(
+            "todo: try a 2 stage approach: repeate_count=1 with 2/3 opt steps, then repeat with repeat_count=5+ for"
+            " remaining target poses that don't have a solution"
+        )
+
+        repeat_count = 10  # converged in  iterations
+        n_opt_steps_max = 3  # repeat_count = 3 -> 0.1855297088623047 s, repeat_count = 2 -> 0.14786219596862793 s
+
         pos_error_threshold = mm_to_m(1)
         rot_error_threshold = 0.1
         n = target_poses.shape[0]
         n_tiled = n * repeat_count
         device = target_poses.device
+        print("pos_error_threshold:", pos_error_threshold)
+        print("rot_error_threshold:", rot_error_threshold)
 
         def check_converged(qs, target_poses):
             # check error
@@ -236,13 +243,7 @@ class IKFlowSolver:
             converged = pos_errors.max().item() < pos_error_threshold and rot_errors.max().item() < rot_error_threshold
             return converged, pos_errors, rot_errors
 
-        def one_q_is_valid(qs_j: torch.Tensor, target_pose: torch.Tensor):
-            assert qs_j.shape[0] == target_pose.shape[0], f"{qs_j.shape} != {target_pose.shape}"
-            assert target_pose.shape[1] == 7
-            _, pos_errors, rot_errors = check_converged(qs_j, target_pose)
-            valids = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
-            print(" ", valids, pos_errors, rot_errors)
-            return valids.any()
+        torch.set_printoptions(linewidth=300, precision=7, sci_mode=False)
 
         with torch.inference_mode():
 
@@ -254,57 +255,70 @@ class IKFlowSolver:
             target_poses_tiled = conditional_tiled[:, 0:7]
 
             # Get latent
-            latent = draw_latent(latent, latent_distribution, latent_scale, (n_tiled, self._network_width), device)
+            if latent is None:
+                latent = draw_latent(latent_distribution, latent_scale, (n_tiled, self._network_width), device)
 
+            # Get seeds
             solutions_0 = self._run_inference(latent, conditional_tiled, t0, clamp_to_joint_limits, return_detailed)
             q = solutions_0.clone()
+            print("solutions_0:", solutions_0)
+
+            # idxs = [j + torch.arange(0, q.shape[0], n, device=device) for j in range(n)]
 
             converged = False
 
             for i in range(n_opt_steps_max):
+                print("\ni:", i)
 
                 # qprev = q.clone()
                 q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
                 # print("diff:", q - qprev)
 
+                _, pos_errors, rot_errors = check_converged(q, target_poses_tiled)
+                valids = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
+                # print(" ", valids)
+                # print(" ", pos_errors)
+                # print(" ", rot_errors)
+                # print()
+
                 converged_notes = torch.zeros(n, dtype=torch.bool, device=device)
-                # print("\ni:", i)
-
                 for j in range(n):
-                    # print("\n  j:", j)
-                    qs_sol_j = q[j + torch.arange(0, q.shape[0], n, device=device), :]
-                    target_poses_j = target_poses[j].repeat((repeat_count, 1))  # todo: use .expand(), which is 0 copy
-                    converged_notes[j] = one_q_is_valid(qs_sol_j, target_poses_j)
-                    # print("  qs_sol_j: ", qs_sol_j)
+                    idxs = j + torch.arange(0, n_tiled, n, device=device)
+                    # print(j, idxs)
+                    assert idxs.numel() == repeat_count
+                    valids_j = valids[idxs]
+                    converged_notes[j] = valids_j.any().item()
 
-                # print("\nconverged_notes:", converged_notes)
+                print("converged_notes:", converged_notes.sum(), "/", converged_notes.numel())
                 converged = converged_notes.all().item()
                 if converged:
                     break
 
-                # converged, pos_errors, rot_errors = check_converged(robot, qs, target_poses, i)
-                # print(pos_errors.data, rot_errors.data)
-                # all_pos_errors.append(pos_errors)
-                # all_rot_errors.append(rot_errors)
-                # if converged:
-                #     break
-
-            print(f"\nperformed {i+1} optimization steps in {time() - t0} seconds")
-            print()
+            # Didn't converge
             if not converged:
-                # n_invalid = torch.logical_or(pos_errors > POS_ERROR_THRESHOLD, rot_errors > ROT_ERROR_THRESHOLD).sum().item()
-                # print(make_text_green_or_red(f"Failed to converge after {i} iterations ({n_invalid}/{len(qs)} invalid)", False))
                 print(
                     make_text_green_or_red(
-                        f"Failed to converge after {i+1} iterations"
-                        f" ({converged_notes.sum().item()}/{converged_notes.numel()} valid)",
+                        f"\nFailed to converge after {i+1} iterations"
+                        f" ({converged_notes.sum().item()}/{converged_notes.numel()} valid) ({time() - t0} seconds)",
                         False,
                     )
                 )
-            else:
-                print(make_text_green_or_red(f"Converged after {i+1} iterations", True))
+                return q[0:n, :]
 
-            return (q_un_tiled,)
+            # converged
+            print(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
+            valid_idxs = torch.nonzero(valids)  # torch.Size([6, 1])
+            # print("valid_idxs:", valid_idxs)
+            # print("valid_idxs.shape:", valid_idxs.shape)
+
+            sols = torch.zeros(n, self.ndof, dtype=torch.float32, device=device)
+
+            for i in range(valid_idxs.shape[0]):
+                idx = valid_idxs[i, 0]
+                sol_idx = idx % n
+                # print(i, idx, sol_idx)
+                sols[sol_idx, :] = q[idx, :]
+            return sols
 
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""

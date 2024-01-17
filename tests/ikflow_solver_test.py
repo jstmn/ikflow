@@ -25,7 +25,8 @@ def _assert_different(t1: torch.Tensor, t2: torch.Tensor):
 
 class IkflowSolverTest(unittest.TestCase):
 
-    # TODO
+    # pytest tests/ikflow_solver_test.py -k 'test_generate_exact_ik_solutions'
+    # python tests/ikflow_solver_test.py IkflowSolverTest.test_generate_exact_ik_solutions
     def test_generate_exact_ik_solutions(self):
         model_name = "panda__full__lp191_5.25m"
         POS_ERROR_THRESHOLD = 0.001
@@ -35,13 +36,14 @@ class IkflowSolverTest(unittest.TestCase):
         ikflow_solver, _ = get_ik_solver(model_name)
         robot = ikflow_solver.robot
 
-        n_solutions = 5
+        set_seed()
+        n_solutions = 500
         _, target_poses = ikflow_solver.robot.sample_joint_angles_and_poses(
             n_solutions, only_non_self_colliding=True, tqdm_enabled=False
         )
         target_poses = torch.tensor(target_poses, device=device, dtype=torch.float32)
 
-        solutions = ikflow_solver.generate_exact_ik_solutions(target_poses, n_solutions, device=device)
+        solutions = ikflow_solver.generate_exact_ik_solutions(target_poses).clone()
 
         # evaluate solutions
         pose_realized = robot.forward_kinematics_batch(solutions)
@@ -78,7 +80,7 @@ class IkflowSolverTest(unittest.TestCase):
             device=config.device,
             dtype=torch.float32,
         )
-        ikf_sols = self.ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
+        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
         _assert_different(ikf_sols[0][None, :], ikf_sols[1][None, :])
 
 

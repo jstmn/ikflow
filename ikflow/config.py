@@ -3,8 +3,9 @@
 import os
 
 import torch
-from jrl.config import GPU_IDX
-from jrl.config import DEVICE as device
+
+# from jrl.config import DEVICE as device
+device = "cpu"
 
 
 DEFAULT_TORCH_DTYPE = torch.float32
