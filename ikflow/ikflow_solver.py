@@ -14,7 +14,11 @@ from ikflow.evaluation_utils import evaluate_solutions, SOLUTION_EVALUATION_RESU
 
 
 def draw_latent(
-    user_specified_latent: torch.Tensor, latent_distribution: str, latent_scale: float, shape: Tuple[int, int]
+    user_specified_latent: torch.Tensor,
+    latent_distribution: str,
+    latent_scale: float,
+    shape: Tuple[int, int],
+    device: str,
 ):
     """Draw a sample from the latent noise distribution for running inference"""
     assert latent_distribution in ["gaussian", "uniform"]
@@ -23,9 +27,9 @@ def draw_latent(
     if user_specified_latent is not None:
         return user_specified_latent
     if latent_distribution == "gaussian":
-        return latent_scale * torch.randn(shape).to(config.device)
+        return latent_scale * torch.randn(shape, device=device)
     if latent_distribution == "uniform":
-        return 2 * latent_scale * torch.rand(shape).to(config.device) - latent_scale
+        return 2 * latent_scale * torch.rand(shape, device=device) - latent_scale
 
 
 class IKFlowSolver:
@@ -118,7 +122,6 @@ class IKFlowSolver:
         clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
-        device: str = config.device,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Run the network in reverse to generate samples conditioned on a pose y
 
@@ -178,8 +181,13 @@ class IKFlowSolver:
             latent is None
         ), f"latent must either be a torch.Tensor or None (got {type(latent)})."
         assert not refine_solutions, f"refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
+        if "cuda" in str(config.device):
+            assert "cpu" not in str(
+                y.device
+            ), "Use cuda if available. Note: you need to run self.nn_model.to('cpu') if you really want to use the cpu"
 
         n = y.shape[0] if n is None else n
+        device = y.device
 
         with torch.inference_mode():
 
@@ -188,13 +196,11 @@ class IKFlowSolver:
                 conditional = torch.cat(
                     [y.expand((n, 7)), torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1
                 )
-                # conditional = torch.zeros(n, self.dim_cond, dtype=DEFAULT_TORCH_DTYPE, device=device)
-                # conditional[:, 0:7] = y.expand(n, 7)
             else:
                 conditional = torch.cat([y, torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1)
 
             # Get latent
-            latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
+            latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width), device)
             return self._run_inference(latent, conditional, t0, clamp_to_joint_limits, return_detailed)
 
     def generate_exact_ik_solutions(
@@ -205,7 +211,6 @@ class IKFlowSolver:
         latent_scale: float = 1.0,
         clamp_to_joint_limits: bool = True,
         return_detailed: bool = False,
-        device: str = config.device,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
 
@@ -221,6 +226,7 @@ class IKFlowSolver:
         rot_error_threshold = 0.1
         n = target_poses.shape[0]
         n_tiled = n * repeat_count
+        device = target_poses.device
 
         def check_converged(qs, target_poses):
             # check error
@@ -248,7 +254,7 @@ class IKFlowSolver:
             target_poses_tiled = conditional_tiled[:, 0:7]
 
             # Get latent
-            latent = draw_latent(latent, latent_distribution, latent_scale, (n_tiled, self._network_width))
+            latent = draw_latent(latent, latent_distribution, latent_scale, (n_tiled, self._network_width), device)
 
             solutions_0 = self._run_inference(latent, conditional_tiled, t0, clamp_to_joint_limits, return_detailed)
             q = solutions_0.clone()
