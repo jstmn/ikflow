@@ -87,13 +87,17 @@ class IKFlowSolver:
         t0: float,
         clamp_to_joint_limits: bool,
         return_detailed: bool,
+        verbsosity: int = 0,
     ):
         """Run the network."""
         assert latent.shape[0] == conditional.shape[0], f"{len(latent)} != {len(conditional)}"
 
         # Run model, format and return output
+        t0 = time()
         output_rev, _ = self.nn_model(latent, c=conditional, rev=True)
         solutions = output_rev[:, 0 : self.ndof]
+        if verbsosity > 0:
+            print(f"generated {len(solutions)} solutions in {time() - t0:.5f} seconds")
 
         if clamp_to_joint_limits:
             solutions = self.robot.clamp_to_joint_limits(solutions)
@@ -202,48 +206,31 @@ class IKFlowSolver:
                 latent = draw_latent(latent_distribution, latent_scale, (n, self._network_width), device)
             return self._run_inference(latent, conditional, t0, clamp_to_joint_limits, return_detailed)
 
-    def generate_exact_ik_solutions(
+    def _check_converged(self, qs, target_poses, pos_error_threshold, rot_error_threshold):
+        # check error
+        pose_realized = self.robot.forward_kinematics_batch(qs)
+        pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
+        rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
+        converged = pos_errors.max().item() < pos_error_threshold and rot_errors.max().item() < rot_error_threshold
+        return converged, pos_errors, rot_errors
+
+    def _generate_exact_ik_solutions(
         self,
         target_poses: torch.Tensor,
-        latent: Optional[torch.Tensor] = None,
-        latent_distribution: str = "gaussian",
-        latent_scale: float = 1.0,
-        clamp_to_joint_limits: bool = True,
-        return_detailed: bool = False,
-    ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
-        """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
+        repeat_count: int,
+        n_opt_steps_max: int,
+        pos_error_threshold: float,
+        rot_error_threshold: float,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
 
-        Note: Currently y must be [batch x 7]
-        """
-        assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
-        assert not return_detailed, f"return_detailed is not supported for generate_exact_ik_solutions()"
+        latent_distribution = "gaussian"
+        latent_scale = 1.0
+
         t0 = time()
-
-        raise NotImplementedError(
-            "todo: try a 2 stage approach: repeate_count=1 with 2/3 opt steps, then repeat with repeat_count=5+ for"
-            " remaining target poses that don't have a solution"
-        )
-
-        repeat_count = 10  # converged in  iterations
-        n_opt_steps_max = 3  # repeat_count = 3 -> 0.1855297088623047 s, repeat_count = 2 -> 0.14786219596862793 s
-
-        pos_error_threshold = mm_to_m(1)
-        rot_error_threshold = 0.1
         n = target_poses.shape[0]
         n_tiled = n * repeat_count
         device = target_poses.device
-        print("pos_error_threshold:", pos_error_threshold)
-        print("rot_error_threshold:", rot_error_threshold)
 
-        def check_converged(qs, target_poses):
-            # check error
-            pose_realized = self.robot.forward_kinematics_batch(qs)
-            pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
-            rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
-            converged = pos_errors.max().item() < pos_error_threshold and rot_errors.max().item() < rot_error_threshold
-            return converged, pos_errors, rot_errors
-
-        torch.set_printoptions(linewidth=300, precision=7, sci_mode=False)
 
         with torch.inference_mode():
 
@@ -255,30 +242,30 @@ class IKFlowSolver:
             target_poses_tiled = conditional_tiled[:, 0:7]
 
             # Get latent
-            if latent is None:
-                latent = draw_latent(latent_distribution, latent_scale, (n_tiled, self._network_width), device)
+            latent = draw_latent(latent_distribution, latent_scale, (n_tiled, self._network_width), device)
 
             # Get seeds
-            solutions_0 = self._run_inference(latent, conditional_tiled, t0, clamp_to_joint_limits, return_detailed)
+            solutions_0 = self._run_inference(latent, conditional_tiled, t0, True, False, verbsosity=1)
             q = solutions_0.clone()
-            print("solutions_0:", solutions_0)
+            # print("solutions_0:", solutions_0)
 
-            # idxs = [j + torch.arange(0, q.shape[0], n, device=device) for j in range(n)]
-
+            assert False, "todo: remove converged idxs from q after each iteration"
             converged = False
-
             for i in range(n_opt_steps_max):
-                print("\ni:", i)
+                # print("\ni:", i)
 
                 # qprev = q.clone()
                 q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
                 # print("diff:", q - qprev)
 
-                _, pos_errors, rot_errors = check_converged(q, target_poses_tiled)
+                _, pos_errors, rot_errors = self._check_converged(
+                    q, target_poses_tiled, pos_error_threshold, rot_error_threshold
+                )
                 valids = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
                 # print(" ", valids)
                 # print(" ", pos_errors)
                 # print(" ", rot_errors)
+                # print("rot_error_threshold:", rot_error_threshold)
                 # print()
 
                 converged_notes = torch.zeros(n, dtype=torch.bool, device=device)
@@ -289,7 +276,7 @@ class IKFlowSolver:
                     valids_j = valids[idxs]
                     converged_notes[j] = valids_j.any().item()
 
-                print("converged_notes:", converged_notes.sum(), "/", converged_notes.numel())
+                # print("converged_notes:", converged_notes.sum(), "/", converged_notes.numel())
                 converged = converged_notes.all().item()
                 if converged:
                     break
@@ -303,14 +290,11 @@ class IKFlowSolver:
                         False,
                     )
                 )
-                return q[0:n, :]
+                # return q[0:n, :]
+            else:
+                print(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
 
-            # converged
-            print(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
             valid_idxs = torch.nonzero(valids)  # torch.Size([6, 1])
-            # print("valid_idxs:", valid_idxs)
-            # print("valid_idxs.shape:", valid_idxs.shape)
-
             sols = torch.zeros(n, self.ndof, dtype=torch.float32, device=device)
 
             for i in range(valid_idxs.shape[0]):
@@ -318,7 +302,52 @@ class IKFlowSolver:
                 sol_idx = idx % n
                 # print(i, idx, sol_idx)
                 sols[sol_idx, :] = q[idx, :]
-            return sols
+            return sols, converged_notes
+
+    def generate_exact_ik_solutions(
+        self,
+        target_poses: torch.Tensor,
+        pos_error_threshold: float = mm_to_m(1),
+        rot_error_threshold: float = 0.1,
+        return_detailed: bool = False,
+    ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
+        """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
+
+        Note: Currently y must be [batch x 7]
+        """
+        assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
+        assert not return_detailed, f"return_detailed is not supported for generate_exact_ik_solutions()"
+
+        t0 = time()
+        repeat_count = 1
+        retry_repeat_count = 7
+        n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
+
+        with torch.inference_mode():
+
+            solutions, valids = self._generate_exact_ik_solutions(
+                target_poses, repeat_count, n_opt_steps_max, pos_error_threshold, rot_error_threshold
+            )
+
+            if valids.all().item():
+                print("All solutions converged, returning")
+                return solutions
+
+            print("Some solutions did not converge, trying again with larger repeat_count")
+
+            missing_target_poses = target_poses[torch.logical_not(valids), :]
+            print("missing_target_poses:", missing_target_poses.shape)
+
+            solutions2, valids2 = self._generate_exact_ik_solutions(
+                missing_target_poses, retry_repeat_count, n_opt_steps_max, pos_error_threshold, rot_error_threshold
+            )
+            solutions[torch.logical_not(valids), :] = solutions2
+            if valids2.all().item():
+                print(make_text_green_or_red(f"All missing target poses solutions converged, returning ({time() - t0} sec)", True))
+                return solutions
+
+            print(make_text_green_or_red(f"Missing target poses not found, returning ({time() - t0} sec)", False))
+            assert False
 
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""
