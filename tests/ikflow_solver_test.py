@@ -45,19 +45,20 @@ class IkflowSolverTest(unittest.TestCase):
             n_solutions, only_non_self_colliding=True, tqdm_enabled=False
         )
         target_poses = torch.tensor(target_poses, device=device, dtype=torch.float32)
-        solutions = ikflow_solver.generate_exact_ik_solutions(
+        solutions, valid_solutions = ikflow_solver.generate_exact_ik_solutions(
             target_poses,
             pos_error_threshold=POS_ERROR_THRESHOLD,
             rot_error_threshold=ROT_ERROR_THRESHOLD,
             repeat_counts=repeat_counts,
-        ).clone()
+        )
 
         # evaluate solutions
         pose_realized = robot.forward_kinematics_batch(solutions)
         torch.testing.assert_close(pose_realized[:, 0:3], target_poses[:, 0:3], atol=POS_ERROR_THRESHOLD, rtol=1e-2)
         rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
         self.assertLess(rot_errors.max().item(), ROT_ERROR_THRESHOLD)
-        torch.testing.assert_close(solutions, robot.clamp_to_joint_limits(solutions))
+        torch.testing.assert_close(solutions, robot.clamp_to_joint_limits(solutions.clone()))
+        assert valid_solutions.sum().item() == n_solutions
 
     def test_solve_multiple_poses(self):
 
