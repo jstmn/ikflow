@@ -211,7 +211,7 @@ class IKFlowSolver:
         pose_realized = self.robot.forward_kinematics_batch(qs)
         pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
         rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
-        converged = pos_errors.max().item() < pos_error_threshold and rot_errors.max().item() < rot_error_threshold
+        converged = pos_errors.max() < pos_error_threshold and rot_errors.max() < rot_error_threshold
         return converged, pos_errors, rot_errors
 
     def _generate_exact_ik_solutions(
@@ -222,6 +222,7 @@ class IKFlowSolver:
         pos_error_threshold: float,
         rot_error_threshold: float,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """TODO: it may be faster to run LMA on the cpu, then move the solutions back to the gpu"""
 
         latent_distribution = "gaussian"
         latent_scale = 1.0
@@ -230,7 +231,6 @@ class IKFlowSolver:
         n = target_poses.shape[0]
         n_tiled = n * repeat_count
         device = target_poses.device
-
 
         with torch.inference_mode():
 
@@ -249,7 +249,7 @@ class IKFlowSolver:
             q = solutions_0.clone()
             # print("solutions_0:", solutions_0)
 
-            assert False, "todo: remove converged idxs from q after each iteration"
+            # assert False, "todo: remove converged idxs from q after each iteration"
             converged = False
             for i in range(n_opt_steps_max):
                 # print("\ni:", i)
@@ -307,6 +307,7 @@ class IKFlowSolver:
     def generate_exact_ik_solutions(
         self,
         target_poses: torch.Tensor,
+        repeat_counts: Tuple[int] = (1, 3, 15),
         pos_error_threshold: float = mm_to_m(1),
         rot_error_threshold: float = 0.1,
         return_detailed: bool = False,
@@ -319,32 +320,41 @@ class IKFlowSolver:
         assert not return_detailed, f"return_detailed is not supported for generate_exact_ik_solutions()"
 
         t0 = time()
-        repeat_count = 1
-        retry_repeat_count = 7
         n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
+
+        n_retries = len(repeat_counts)
 
         with torch.inference_mode():
 
+            repeat_count = repeat_counts[0]
             solutions, valids = self._generate_exact_ik_solutions(
                 target_poses, repeat_count, n_opt_steps_max, pos_error_threshold, rot_error_threshold
             )
-
-            if valids.all().item():
+            if valids.all():
                 print("All solutions converged, returning")
                 return solutions
 
-            print("Some solutions did not converge, trying again with larger repeat_count")
+            for i in range(1, n_retries):
+                retry_repeat_count = repeat_counts[i]
+                print("Some solutions did not converge, trying again with new repeat_count")
+                print(f"retry_repeat_count: {retry_repeat_count}")
 
-            missing_target_poses = target_poses[torch.logical_not(valids), :]
-            print("missing_target_poses:", missing_target_poses.shape)
+                missing_target_poses = target_poses[torch.logical_not(valids), :]
+                print("missing_target_poses:", missing_target_poses.shape)
 
-            solutions2, valids2 = self._generate_exact_ik_solutions(
-                missing_target_poses, retry_repeat_count, n_opt_steps_max, pos_error_threshold, rot_error_threshold
-            )
-            solutions[torch.logical_not(valids), :] = solutions2
-            if valids2.all().item():
-                print(make_text_green_or_red(f"All missing target poses solutions converged, returning ({time() - t0} sec)", True))
-                return solutions
+                new_solutions, new_solution_valids = self._generate_exact_ik_solutions(
+                    missing_target_poses, retry_repeat_count, n_opt_steps_max, pos_error_threshold, rot_error_threshold
+                )
+                solutions[torch.logical_not(valids), :] = new_solutions
+                valids[torch.logical_not(valids)] = new_solution_valids  # update the valid idxs
+
+                if new_solutions.all():
+                    print(
+                        make_text_green_or_red(
+                            f"All missing target poses solutions converged, returning ({time() - t0} sec)", True
+                        )
+                    )
+                    return solutions
 
             print(make_text_green_or_red(f"Missing target poses not found, returning ({time() - t0} sec)", False))
             assert False

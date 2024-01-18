@@ -4,8 +4,9 @@ import os
 
 import torch
 
-# from jrl.config import DEVICE as device
-device = "cpu"
+from jrl.config import DEVICE as device
+
+# device = "cpu"
 
 
 DEFAULT_TORCH_DTYPE = torch.float32

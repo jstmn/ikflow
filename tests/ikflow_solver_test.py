@@ -31,8 +31,9 @@ class IkflowSolverTest(unittest.TestCase):
         model_name = "panda__full__lp191_5.25m"
         POS_ERROR_THRESHOLD = 0.001
         ROT_ERROR_THRESHOLD = 0.01
-        device = "cpu"
-        n_solutions = 1000
+        # device = "cpu"
+        device = config.device
+        n_solutions = 5000
 
         ikflow_solver, _ = get_ik_solver(model_name)
         robot = ikflow_solver.robot
@@ -43,7 +44,9 @@ class IkflowSolverTest(unittest.TestCase):
             n_solutions, only_non_self_colliding=True, tqdm_enabled=False
         )
         target_poses = torch.tensor(target_poses, device=device, dtype=torch.float32)
-        solutions = ikflow_solver.generate_exact_ik_solutions(target_poses, pos_error_threshold=POS_ERROR_THRESHOLD, rot_error_threshold=ROT_ERROR_THRESHOLD).clone()
+        solutions = ikflow_solver.generate_exact_ik_solutions(
+            target_poses, pos_error_threshold=POS_ERROR_THRESHOLD, rot_error_threshold=ROT_ERROR_THRESHOLD
+        ).clone()
 
         # evaluate solutions
         pose_realized = robot.forward_kinematics_batch(solutions)
