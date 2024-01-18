@@ -33,19 +33,23 @@ class IkflowSolverTest(unittest.TestCase):
         ROT_ERROR_THRESHOLD = 0.01
         # device = "cpu"
         device = config.device
-        n_solutions = 5000
+        n_solutions = 1000
+        repeat_counts = (1, 3, 10)
 
         ikflow_solver, _ = get_ik_solver(model_name)
         robot = ikflow_solver.robot
 
-        set_seed()
+        set_seed(3)
         torch.set_printoptions(linewidth=300, precision=7, sci_mode=False)
         _, target_poses = ikflow_solver.robot.sample_joint_angles_and_poses(
             n_solutions, only_non_self_colliding=True, tqdm_enabled=False
         )
         target_poses = torch.tensor(target_poses, device=device, dtype=torch.float32)
         solutions = ikflow_solver.generate_exact_ik_solutions(
-            target_poses, pos_error_threshold=POS_ERROR_THRESHOLD, rot_error_threshold=ROT_ERROR_THRESHOLD
+            target_poses,
+            pos_error_threshold=POS_ERROR_THRESHOLD,
+            rot_error_threshold=ROT_ERROR_THRESHOLD,
+            repeat_counts=repeat_counts,
         ).clone()
 
         # evaluate solutions
