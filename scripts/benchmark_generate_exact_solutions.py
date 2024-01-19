@@ -1,6 +1,7 @@
-from typing import Callable
+from typing import Callable, Optional
 from argparse import ArgumentParser
 from time import time
+import pickle
 
 import torch
 import numpy as np
@@ -84,19 +85,22 @@ def benchmark_get_pose_error():
     plt.show()
 
 
-def benchmark_get_exact_ik(model_name: str):
+def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[str] = None):
 
     ikflow_solver, _ = get_ik_solver(model_name)
 
-    batch_sizes = [10, 100, 500, 1000, 2000]
+    batch_sizes = [1, 10, 100, 500, 750, 1000, 2000, 3000, 4000, 5000]
+    # batch_sizes = [1]
     k_retry = 3
-    all_repeat_counts = [(1, 3, 10), (1, 5, 10)]
+    # all_repeat_counts = [(1, 3, 10), (1, 5, 10)]
+    all_repeat_counts = [(1, 3, 10)]
     device = "cuda:0"
 
     curves = []
     labels = []
 
-    for run_lma_on_cpu in [False, True]:
+    # for run_lma_on_cpu in [False, True]:
+    for run_lma_on_cpu in [True]:
         for repeat_counts in all_repeat_counts:
 
             runtimes = []
@@ -140,7 +144,8 @@ def benchmark_get_exact_ik(model_name: str):
                 np.array(success_pcts),
                 np.array(success_pct_stds),
             ))
-            labels.append(f"repeat_counts: {repeat_counts}, run_lma_on_cpu: {run_lma_on_cpu}")
+            # labels.append(f"repeat_counts: {repeat_counts}, run_lma_on_cpu: {run_lma_on_cpu}")
+            labels.append(f"ikflow + lma")
 
     # Plot results
     #
@@ -157,11 +162,33 @@ def benchmark_get_exact_ik(model_name: str):
     axr.set_xlabel("batch size")
     axr.set_ylabel("success pct (%)")
 
+    # Load comparison data from a pickle file
+    if comparison_data_filepath is not None:
+        with open(comparison_data_filepath, "rb") as f:
+            data = pickle.load(f)
+            assert abs(data["position_threshold"] - POS_ERROR_THRESHOLD) < 1e-7
+            assert abs(data["rotation_threshold"] - ROT_ERROR_THRESHOLD) < 1e-7
+            batch_sizes = data["batch_sizes"]
+            runtimes = data["runtimes"]
+            runtime_stds = data["runtime_stds"]
+            success_pcts = data["success_pcts"]
+            success_pct_stds = data["success_pct_stds"]
+            curves.append((
+                np.array(batch_sizes),
+                np.array(runtimes),
+                np.array(runtime_stds),
+                np.array(success_pcts),
+                np.array(success_pct_stds),
+            ))
+            labels.append(data["label"])
+
     colors = evenly_spaced_colors(int(1.5 * len(curves)))
+    max_runtime = 0
 
     for (batch_sizes, runtimes, runtime_stds, success_pcts, success_pct_stds), label, color in zip(
         curves, labels, colors
     ):
+        max_runtime = max(max_runtime, runtimes.max())
         axl.plot(batch_sizes, runtimes, label=label, color=color)
         axl.fill_between(batch_sizes, runtimes - runtime_stds, runtimes + runtime_stds, alpha=0.15, color=color)
         axl.scatter(batch_sizes, runtimes, s=15, color=color)
@@ -173,14 +200,16 @@ def benchmark_get_exact_ik(model_name: str):
         axr.scatter(batch_sizes, success_pcts, s=15, color=color)
 
     # axl.legend()
+    axl.set_ylim(-0.01, max_runtime * 1.1)
     axr.legend()
-    plt.savefig(f"exact_ik_runtime__model2:{model_name}.pdf", bbox_inches="tight")
+    plt.savefig(f"exact_ik_runtime__model:{model_name}.pdf", bbox_inches="tight")
     plt.show()
 
 
 """ Example usage
 
 python scripts/benchmark_generate_exact_solutions.py --model_name=panda__full__lp191_5.25m
+python scripts/benchmark_generate_exact_solutions.py --model_name=panda__full__lp191_5.25m --comparison_data_filepath=ik_runtime_results__curobo.pkl
 
 """
 
@@ -188,7 +217,8 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     parser.add_argument("--model_name", type=str, required=True)
+    parser.add_argument("--comparison_data_filepath", type=str, required=False)
     args = parser.parse_args()
 
     # benchmark_get_pose_error()
-    benchmark_get_exact_ik(args.model_name)
+    benchmark_get_exact_ik(args.model_name, comparison_data_filepath=args.comparison_data_filepath)
