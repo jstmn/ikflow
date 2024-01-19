@@ -1,11 +1,10 @@
 import unittest
-from typing import List, Tuple
 
 import torch
 from jrl.robots import Panda
 import FrEIA.framework as Ff
 
-from ikflow.utils import set_seed
+from ikflow.utils import set_seed, assert_joint_angle_tensor_in_joint_limits
 from ikflow.model import glow_cNF_model, IkflowModelParameters, get_pre_sigmoid_scaling_node
 from ikflow.ikflow_solver import IKFlowSolver
 
@@ -116,12 +115,12 @@ class ModelTest(unittest.TestCase):
         # Test 1: Reverse pass, gaussian noise
         latent = torch.randn((5, 7), device="cuda")
         output_rev, _ = model(latent, c=conditional, rev=True)
-        assert_joint_angle_tensor_in_joint_limits(output_rev, _PANDA.actuated_joints_limits, eps=1e-5)
+        assert_joint_angle_tensor_in_joint_limits(_PANDA.actuated_joints_limits, output_rev, "reverse", eps=1e-5)
 
         # Test 2: Reverse pass, really large gaussian noise
         latent = 1e8 * torch.randn((5, 7), device="cuda")
         output_rev, _ = model(latent, c=conditional, rev=True)
-        assert_joint_angle_tensor_in_joint_limits(output_rev, _PANDA.actuated_joints_limits, eps=1e-5)
+        assert_joint_angle_tensor_in_joint_limits(_PANDA.actuated_joints_limits, output_rev, "reverse", eps=1e-5)
 
     def test_glow_cNF_model(self):
         """Smoke test - checks that glow_cNF_model() returns"""

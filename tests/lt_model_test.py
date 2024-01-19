@@ -1,7 +1,6 @@
 import unittest
 
 
-from ikflow import config
 from ikflow.ikflow_solver import IKFlowSolver
 from jrl.robots import get_robot
 from ikflow.training.lt_model import IkfLitModel
@@ -24,19 +23,23 @@ class LitModelTest(unittest.TestCase):
 
     def test_gradient_calculated(self):
         batch_size = 10
+        device = "cuda:0"
         batch = (
-            torch.randn((batch_size, self.ik_solver.robot.ndof)).to(config.device),
-            torch.randn((batch_size, 7)).to(config.device),
+            torch.randn((batch_size, self.ik_solver.robot.ndof), device=device),
+            torch.randn((batch_size, 7), device=device),
         )
-        fixed_latent = torch.randn((5, self.ik_solver.network_width)).to(config.device)
-        zero_response0 = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)
+        fixed_latent = torch.randn((5, self.ik_solver.network_width), device=device)
+        zero_response0 = self.ik_solver.generate_ik_solutions(
+            torch.zeros(7, device=device, dtype=torch.float32), n=5, latent=fixed_latent
+        )
         optimizer = torch.optim.Adadelta(self.model.nn_model.parameters(), lr=self.model.hparams.learning_rate)
-
         self.model.zero_grad()
         loss = self.model.training_step(batch, 0)
         loss.backward()
         optimizer.step()
-        zero_response_f = self.ik_solver.solve([0] * 7, n=5, latent=fixed_latent)
+        zero_response_f = self.ik_solver.generate_ik_solutions(
+            torch.zeros(7, device=device, dtype=torch.float32), n=5, latent=fixed_latent
+        )
         self.assertFalse(torch.allclose(zero_response0, zero_response_f))
 
     def test_lit_model_has_params(self):

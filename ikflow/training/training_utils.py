@@ -62,7 +62,7 @@ def get_checkpoint_dir(robot_name: str) -> str:
 #     joint_types = robot.actuated_joint_types
 
 #     for i, target_pose in enumerate(target_poses):
-#         solutions = self.solve(target_pose, k)  # (k, n_dofs)
+#         solutions = self.generate_ik_solutions(target_pose, k)  # (k, n_dofs)
 #         realized_poses = robot.forward_kinematics(solutions.cpu().detach().numpy())
 #         errors_xyz = realized_poses[:, 0:3] - target_pose[0:3]
 #         q_target = np.tile(target_pose[3:7], (k, 1))

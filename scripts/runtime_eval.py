@@ -26,7 +26,7 @@ def calculate_ave_runtime(ik_solver: IKFlowSolver, n_samples: int):
         for i in range(30):
             pose = np.random.random(7)
             t0 = time()
-            ik_solver.solve(pose, n_samples)
+            ik_solver.generate_ik_solutions(pose, n_samples)
             sample_times.append(time() - t0)
     sample_time_100 = 1000 * np.mean(sample_times)  # to milleseconds
     sample_time_100_std = np.std(sample_times)

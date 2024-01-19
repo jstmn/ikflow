@@ -229,7 +229,9 @@ class IkfLitModel(LightningModule):
         del batch_idx
         _, y = batch
         ee_pose_target = y.cpu().detach().numpy()[0]
-        solutions, model_runtime = self.solve(ee_pose_target, self.hparams.samples_per_pose, return_runtime=True)
+        solutions, model_runtime = self.generate_ik_solutions(
+            ee_pose_target, self.hparams.samples_per_pose, return_runtime=True
+        )
         l2_errors, ang_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
             self.ik_solver.robot, ee_pose_target, solutions
         )
@@ -325,7 +327,9 @@ class IkfLitModel(LightningModule):
         # Ignoring table logging for now
         # self.log_ik_solutions_to_wandb_table()
 
-    def solve(self, y: Tuple[float], m: int, return_runtime: bool = False) -> Tuple[torch.Tensor, float]:
+    def generate_ik_solutions(
+        self, y: Tuple[float], m: int, return_runtime: bool = False
+    ) -> Tuple[torch.Tensor, float]:
         """
         Run the network in reverse to generate samples conditioned on a pose y
                 y: endpose [x, y, z, q0, q1, q2, q3]

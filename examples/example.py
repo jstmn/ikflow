@@ -3,7 +3,7 @@ import argparse
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
 
-import numpy as np
+import torch
 
 set_seed()
 
@@ -36,14 +36,14 @@ if __name__ == "__main__":
     The following code is for when you want to run IKFlow on a single target poses. In this example we are getting 
     number_of_solutions=5 solutions for the target pose.
     """
-    target_pose = np.array(
-        [0.5, 0.5, 0.5, 1, 0, 0, 0]
+    target_pose = torch.tensor(
+        [0.5, 0.5, 0.5, 1, 0, 0, 0], device="cpu"
     )  # Note: quaternions format for ikflow is [w x y z] (I have learned this the hard way...)
     number_of_solutions = 5
 
     # -> Get some unrefined solutions
-    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve(
-        target_pose, number_of_solutions, refine_solutions=False, return_detailed=True
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = (
+        ik_solver.generate_ik_solutions(target_pose, number_of_solutions, return_detailed=True)
     )
     print(
         "\nGot {} ikflow solutions in {} ms. Solution L2 errors = {} (cm)".format(
@@ -52,8 +52,8 @@ if __name__ == "__main__":
     )
 
     # -> Get some refined solutions
-    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve(
-        target_pose, number_of_solutions, refine_solutions=True, return_detailed=True
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = (
+        ik_solver.generate_exact_ik_solutions(target_pose[None, :], number_of_solutions)
     )
     print(
         "Got {} refined ikflow solutions in {} ms. Solution L2 errors = {} (cm)".format(
@@ -63,20 +63,22 @@ if __name__ == "__main__":
 
     """MULTIPLE TARGET-POSES
 
-    The following code is for when you want to run IKFlow on multiple target poses at once. The only difference is that 
-    you need to call `solve_n_poses` instead of `solve`.
+    The following code is for when you want to run IKFlow on multiple target poses at once.
     """
-    target_poses = np.array([
-        [0.25, 0, 0.5, 1, 0, 0, 0],
-        [0.35, 0, 0.5, 1, 0, 0, 0],
-        [0.45, 0, 0.5, 1, 0, 0, 0],
-        [0.55, 0, 0.5, 1, 0, 0, 0],
-        [0.65, 0, 0.5, 1, 0, 0, 0],
-    ])
+    target_poses = torch.tensor(
+        [
+            [0.25, 0, 0.5, 1, 0, 0, 0],
+            [0.35, 0, 0.5, 1, 0, 0, 0],
+            [0.45, 0, 0.5, 1, 0, 0, 0],
+            [0.55, 0, 0.5, 1, 0, 0, 0],
+            [0.65, 0, 0.5, 1, 0, 0, 0],
+        ],
+        device="cpu",
+    )
 
     # -> unrefined solutions
-    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve_n_poses(
-        target_poses, refine_solutions=False, return_detailed=True
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = (
+        ik_solver.generate_ik_solutions(target_poses, refine_solutions=False, return_detailed=True)
     )
     print(
         "\nGot {} ikflow solutions in {} ms. The L2 error of the solutions = {} (cm)".format(
@@ -85,8 +87,8 @@ if __name__ == "__main__":
     )
 
     # -> refined solutions
-    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.solve_n_poses(
-        target_poses, refine_solutions=True, return_detailed=True
+    solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = (
+        ik_solver.generate_exact_ik_solutions(target_poses, return_detailed=True)
     )
     print(
         "Got {} refined ikflow solutions in {} ms. The L2 error of the solutions = {} (cm)".format(

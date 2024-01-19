@@ -1,9 +1,10 @@
-from typing import List, Tuple, Optional, Union
+from typing import Tuple, Optional, Union, Callable
 import pickle
 from time import time
 
+from jrl.math_utils import geodesic_distance_between_quaternions
+from jrl.utils import mm_to_m, make_text_green_or_red
 from jrl.robots import Robot
-import numpy as np
 import torch
 
 from ikflow import config
@@ -13,18 +14,19 @@ from ikflow.evaluation_utils import evaluate_solutions, SOLUTION_EVALUATION_RESU
 
 
 def draw_latent(
-    user_specified_latent: torch.Tensor, latent_distribution: str, latent_scale: float, shape: Tuple[int, int]
+    latent_distribution: str,
+    latent_scale: float,
+    shape: Tuple[int, int],
+    device: str,
 ):
     """Draw a sample from the latent noise distribution for running inference"""
     assert latent_distribution in ["gaussian", "uniform"]
     assert latent_scale > 0
     assert len(shape) == 2
-    if user_specified_latent is not None:
-        return user_specified_latent
     if latent_distribution == "gaussian":
-        return latent_scale * torch.randn(shape).to(config.device)
+        return latent_scale * torch.randn(shape, device=device)
     if latent_distribution == "uniform":
-        return 2 * latent_scale * torch.rand(shape).to(config.device) - latent_scale
+        return 2 * latent_scale * torch.rand(shape, device=device) - latent_scale
 
 
 class IKFlowSolver:
@@ -69,14 +71,6 @@ class IKFlowSolver:
         """
         return self.dim_cond
 
-    # TODO(@jstmn): Unit test this function
-    def refine_solutions(
-        self,
-        ikflow_solutions: torch.Tensor,
-        target_pose: Union[List[float], np.ndarray],
-        positional_tolerance: float = 1e-3,
-        out_device=config.device,
-    ) -> Tuple[torch.Tensor, float]:
         """Refine a batch of IK solutions using the klampt IK solver
         Args:
             ikflow_solutions (torch.Tensor): A batch of IK solutions of the form [batch x n_dofs]
@@ -85,108 +79,66 @@ class IKFlowSolver:
         Returns:
             torch.Tensor: A batch of IK refined solutions [batch x n_dofs]
         """
-        t0 = time()
-        b = ikflow_solutions.shape[0]
-        if isinstance(target_pose, list):
-            target_pose = np.array(target_pose)
-        if isinstance(target_pose, np.ndarray) and len(target_pose.shape) == 2:
-            assert target_pose.shape[0] == b, f"target_pose.shape ({target_pose.shape[0]}) != [{b} x {self.ndof}]"
 
-        ikflow_solutions_np = ikflow_solutions.detach().cpu().numpy()
-        refined = ikflow_solutions_np.copy()
-        is_single_pose = (len(target_pose.shape) == 1) or (target_pose.shape[0] == 1)
-        pose = target_pose
-
-        for i in range(b):
-            if not is_single_pose:
-                pose = target_pose[i]
-            ik_sol = self._robot.inverse_kinematics_klampt(
-                pose, seed=ikflow_solutions_np[i], positional_tolerance=positional_tolerance
-            )
-            if ik_sol is not None:
-                refined[i] = ik_sol
-
-        return torch.tensor(refined, device=out_device, dtype=DEFAULT_TORCH_DTYPE)
-
-    def _solve_return_helper(
+    def _run_inference(
         self,
-        conditional: torch.Tensor,
         latent: torch.Tensor,
-        clamp_to_joint_limits: bool,
-        refine_solutions: bool,
-        return_detailed: bool,
+        conditional: torch.Tensor,
         t0: float,
+        clamp_to_joint_limits: bool,
+        return_detailed: bool,
     ):
-        """Internal function to call IKFlow, and format and return the output"""
-        assert latent.shape[0] == conditional.shape[0]
-        assert latent.shape[1] == self._network_width
-        assert conditional.shape[1] == self.dim_cond
+        """Run the network."""
+        assert latent.shape[0] == conditional.shape[0], f"{len(latent)} != {len(conditional)}"
 
-        # Run model
+        # Run model, format and return output
+        t0 = time()
         output_rev, _ = self.nn_model(latent, c=conditional, rev=True)
         solutions = output_rev[:, 0 : self.ndof]
 
         if clamp_to_joint_limits:
             solutions = self.robot.clamp_to_joint_limits(solutions)
 
-        # Refine if requested
-        if refine_solutions:
-            target_pose_s = conditional.detach().cpu().numpy()[:, 0:7]
-            solutions = self.refine_solutions(solutions, target_pose_s)
-
         # Format and return output
         if return_detailed:
-            l2_errors, angular_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
+            pos_errors, rot_errors, joint_limits_exceeded, self_collisions = evaluate_solutions(
                 self.robot, conditional[:, 0:7], solutions
             )
-            return solutions, l2_errors, angular_errors, joint_limits_exceeded, self_collisions, time() - t0
+            return solutions, pos_errors, rot_errors, joint_limits_exceeded, self_collisions, time() - t0
         return solutions
-
-    def _validate_solve_input(
-        self,
-        latent: Optional[torch.Tensor] = None,
-        latent_distribution: str = "gaussian",
-        latent_scale: float = 1.0,
-        refine_solutions: bool = False,
-        return_detailed: bool = False,
-    ):
-        assert isinstance(latent_distribution, str)
-        assert isinstance(latent_scale, float)
-        assert isinstance(latent, torch.Tensor) or (
-            latent is None
-        ), f"latent must either be a torch.Tensor or None (got {type(latent)})."
-        assert isinstance(refine_solutions, bool)
-        assert isinstance(return_detailed, bool)
 
     # ------------------------------------------------------------------------------------------------------------------
     # --- Public methods
     #
 
-    def solve(
+    def generate_ik_solutions(
         self,
-        y: List[float],
-        n: int,
+        y: torch.Tensor,
+        n: Optional[int],
         latent: Optional[torch.Tensor] = None,
         latent_distribution: str = "gaussian",
         latent_scale: float = 1.0,
         clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
-        device: str = config.device,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Run the network in reverse to generate samples conditioned on a pose y
 
-        Example usage(s):
-            solutions = ikflow_solver.solve(
-                target_pose, number_of_solutions, refine_solutions=True, return_detailed=False
+        Example usages, single target pose:
+            solutions = ikflow_solver.generate_ik_solutions(target_pose, number_of_solutions, return_detailed=False)
+            solutions, pos_errors, rot_errors, joint_limits_exceeded, self_colliding, runtime = ikflow_solver.generate_ik_solutions(
+                target_pose, number_of_solutions, return_detailed=True
             )
-            solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ikflow_solver.solve(
-                target_pose, number_of_solutions, refine_solutions=False, return_detailed=True
+        Example usages, batched target poses:
+            solutions = ikflow_solver.generate_ik_solutions(target_poses, None, return_detailed=False)
+            solutions, pos_errors, rot_errors, joint_limits_exceeded, self_colliding, runtime = ikflow_solver.generate_ik_solutions(
+                target_pose, number_of_solutions, return_detailed=True
             )
 
         Args:
-            y (List[float]): Target endpose of the form [x, y, z, q0, q1, q2, q3]
-            n (int): The number of solutions to return
+            y (List[float]): A torch.Tensor that is either a single target pose with dimension [7], with the form
+                                [x, y, z, q0, q1, q2, q3], or a batch of target poses with dimensions [batch x 7]
+            n (int): The number of solutions to return if y is a single pose
             latent Optional[torch.Tensor]: A [ n x network_width ] tensor that contains the n latent vectors to pass
                                             through the network. If None, the latent vectors are drawn from the
                                             distribution 'latent_distribution' with scale 'latent_scale'.
@@ -214,66 +166,257 @@ class IKFlowSolver:
                 - float: The runtime of the operation
         """
         t0 = time()
-        assert len(y) == 7, (
-            f"IKFlowSolver.solve() expects a 1d list or numpy array of length 7 (got {y}). This means you probably want"
-            " to call solve_n_poses() instead"
-        )
-        self._validate_solve_input(latent, latent_distribution, latent_scale, refine_solutions, return_detailed)
+        assert isinstance(y, torch.Tensor), f"y must be a torch.Tensor (got {type(y)})."
+        if y.numel() == 7:
+            print("numel == 7")
+            assert isinstance(n, int)
+            assert n > 0
+        else:
+            assert y.shape[1] == 7, f"y must be of shape [7] or [n x 7], got {y.shape}"
 
-        # TODO: Figure out how to use this as a decorator. Currently getting the error 'TypeError: __call__() takes 2
-        # positional arguments but 6 were given'
+        assert isinstance(latent_distribution, str)
+        assert isinstance(latent_scale, float)
+        assert isinstance(latent, torch.Tensor) or (
+            latent is None
+        ), f"latent must either be a torch.Tensor or None (got {type(latent)})."
+        assert not refine_solutions, f"refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
+        if "cuda" in str(config.device):
+            assert "cpu" not in str(
+                y.device
+            ), "Use cuda if available. Note: you need to run self.nn_model.to('cpu') if you really want to use the cpu"
+
+        n = y.shape[0] if n is None else n
+        device = y.device
+
         with torch.inference_mode():
-            # Get latent
-            # (:, 0:3) is x, y, z, (:, 3:7) is quat
-            conditional = torch.zeros(n, self.dim_cond, device=device, dtype=DEFAULT_TORCH_DTYPE)
-            conditional[:, 0:3] = torch.tensor(y[:3])
-            conditional[:, 3 : 3 + 4] = torch.tensor(y[3:])
 
-            # Get latent
-            latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
-
-            # Run model, format and return output
-            return self._solve_return_helper(
-                conditional, latent, clamp_to_joint_limits, refine_solutions, return_detailed, t0
-            )
-
-    def solve_n_poses(
-        self,
-        ys: np.array,
-        latent: Optional[torch.Tensor] = None,
-        latent_distribution: str = "gaussian",
-        latent_scale: float = 1.0,
-        clamp_to_joint_limits: bool = True,
-        refine_solutions: bool = False,
-        return_detailed: bool = False,
-        device: str = config.device,
-    ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
-        """Same as solve(), but with a batch of target poses.
-        ys: [batch x 7]
-        """
-        t0 = time()
-        assert ys.shape[1] == 7
-        self._validate_solve_input(latent, latent_distribution, latent_scale, refine_solutions, return_detailed)
-        n = ys.shape[0]
-
-        # TODO: Figure out how to use this as a decorator. Currently getting the error 'TypeError: __call__() takes 2
-        # positional arguments but 6 were given'
-        with torch.inference_mode():
             # Get conditional
-            # Note: No code change required here to handle using/not using softflow.
-            conditional = torch.zeros(n, self.dim_cond, dtype=torch.float32, device=device)
-            if isinstance(ys, torch.Tensor):
-                conditional[:, 0:7] = ys
+            if y.numel() == 7:
+                conditional = torch.cat(
+                    [y.expand((n, 7)), torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1
+                )
             else:
-                conditional[:, 0:7] = torch.tensor(ys, dtype=torch.float32)
+                conditional = torch.cat([y, torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1)
 
             # Get latent
-            latent = draw_latent(latent, latent_distribution, latent_scale, (n, self._network_width))
+            if latent is None:
+                latent = draw_latent(latent_distribution, latent_scale, (n, self._network_width), device)
+            return self._run_inference(latent, conditional, t0, clamp_to_joint_limits, return_detailed)
 
-            # Run model, format and return output
-            return self._solve_return_helper(
-                conditional, latent, clamp_to_joint_limits, refine_solutions, return_detailed, t0
+    def _calculate_pose_error(self, qs: torch.Tensor, target_poses: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        # check error
+        pose_realized = self.robot.forward_kinematics_batch(qs)
+        pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
+        rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
+        return pos_errors, rot_errors
+
+    def _generate_exact_ik_solutions(
+        self,
+        target_poses: torch.Tensor,
+        repeat_count: int,
+        n_opt_steps_max: int,
+        pos_error_threshold: float,
+        rot_error_threshold: float,
+        printc: Callable[[str], None],
+        run_lma_on_cpu: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Note: it's faster to run LMA on the cpu, then move the solutions back to the gpu
+
+        prev refers to _generate_exact_ik_solutions_slow()
+
+        Timing (cpu):
+
+            --> n_solutions = 500
+
+                this: "Failed to converge after 3 iterations (410/500 valid) (0.2568323612213135 seconds)"
+                prev: "Failed to converge after 3 iterations (410/500 valid) (0.27968668937683105 seconds)" # 8.89854%
+
+            --> n_solutions = 1000
+
+                this: "Failed to converge after 3 iterations (838/1000 valid) (0.37751317024230957 seconds)"
+                prev: "Failed to converge after 3 iterations (838/1000 valid) (0.5498697757720947 seconds)" # 45.6558%
+
+            --> n_solutions = 5000
+
+                this: "Failed to converge after 3 iterations (4283/5000 valid) (1.6686820983886719 seconds)"
+                prev: "Failed to converge after 3 iterations (4280/5000 valid) (2.366809606552124 seconds)" # 41.8371%
+
+        Timing (cuda):
+
+            --> n_solutions = 1000
+
+                this: 0.23626351356506348 seconds
+                    t_lma:   0.13701748847961426
+                    t_ikf:   0.010305643081665039
+                    t_other: 0.08887577056884766
+
+                prev: 0.5188534259796143 seconds
+                    t_lma:   0.23550701141357422
+                    t_ikf:   0.009996891021728516
+                    t_other: 0.335827112197876
+        """
+
+        latent_distribution = "gaussian"
+        latent_scale = 1.0
+
+        t0 = time()
+        n = target_poses.shape[0]
+        n_tiled = n * repeat_count
+        device = target_poses.device
+        device_0 = device
+
+        do_run_entirely_on_cpu = run_lma_on_cpu and n < 750
+
+        t_lma = 0
+        t_ikf = 0
+
+        with torch.inference_mode():
+
+            # Get seeds
+            t01 = time()
+            conditional = torch.cat(
+                [target_poses, torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1
             )
+            conditional_tiled = conditional.repeat((repeat_count, 1))
+            target_poses_tiled = conditional_tiled[:, 0:7]
+            latent = draw_latent(latent_distribution, latent_scale, (n_tiled, self._network_width), device)
+            q = self._run_inference(latent, conditional_tiled, t0, True, False)
+            t_ikf += time() - t01
+
+            if run_lma_on_cpu and do_run_entirely_on_cpu:
+                q = q.cpu()
+                target_poses_tiled = target_poses_tiled.cpu()
+                device = "cpu"
+
+            t02 = time()
+            final_solutions = torch.zeros(n, self.ndof, dtype=torch.float32, device=device)
+            final_valids = torch.zeros(n, dtype=torch.bool, device=device)
+            n_invalid = n
+
+            for i in range(n_opt_steps_max):
+                # printc("\ni:", i)
+                assert len(q) == n_invalid * repeat_count
+                # printc("  final_valids:      ", final_valids)
+                # printc("  final_solutions:   ", final_valids)
+                # printc("  target_poses_tiled:", target_poses_tiled.shape)
+                # printc("  q:                 ", q.shape)
+
+                t02 = time()
+                if run_lma_on_cpu and not do_run_entirely_on_cpu:
+                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled.cpu(), q.cpu())
+                    q = q.to(device)
+                else:
+                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
+                t_lma += time() - t02
+                pos_errors, rot_errors = self._calculate_pose_error(q, target_poses_tiled)
+                valids_i_tiled = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
+                # printc(f"  valids_i_tiled:   ", valids_i_tiled)
+                # printc("  ", pos_errors)
+                # printc("  ", rot_errors)
+                # printc()
+
+                # TODO: use torch.mod()
+                valids_i = torch.zeros(n_invalid, dtype=torch.bool, device=device)
+                sols_i = torch.zeros((n_invalid, self.ndof), dtype=torch.float32, device=device)
+
+                valid_idxs = torch.nonzero(valids_i_tiled)
+                for j in range(valid_idxs.shape[0]):
+                    idx = valid_idxs[j, 0]
+                    sol_idx = idx % n_invalid
+                    sols_i[sol_idx, :] = q[idx, :]
+                    valids_i[sol_idx] = True
+
+                final_solutions[torch.logical_not(final_valids)] = sols_i
+                final_valids[torch.logical_not(final_valids)] = valids_i
+                # printc("  valids_i:", valids_i)
+
+                if final_valids.all():
+                    printc(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
+                    return final_solutions.to(device_0), final_valids.to(device_0)
+
+                q = q[torch.logical_not(valids_i).repeat((repeat_count)), :]
+                target_poses_tiled = target_poses_tiled[torch.logical_not(valids_i).repeat((repeat_count)), :]
+                n_invalid = n - final_valids.sum().item()
+
+            # Didn't converge
+            t_other = time() - t0 - t_lma - t_ikf
+            printc("  t_lma:  ", t_lma)
+            printc("  t_ikf:  ", t_ikf)
+            printc("  t_other:", t_other)
+            printc(
+                make_text_green_or_red(
+                    f"\nFailed to converge after {i+1} iterations"
+                    f" ({final_valids.sum().item()}/{final_valids.numel()} valid) ({time() - t0} seconds)",
+                    False,
+                )
+            )
+            return final_solutions.to(device_0), final_valids.to(device_0)
+
+    def generate_exact_ik_solutions(
+        self,
+        target_poses: torch.Tensor,
+        repeat_counts: Tuple[int] = (1, 3, 10),
+        pos_error_threshold: float = mm_to_m(1),
+        rot_error_threshold: float = 0.1,
+        verbsosity: int = 0,
+        run_lma_on_cpu: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
+
+        NOTE: returned solutions may be self colliding
+        """
+        assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
+
+        t0 = time()
+        n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
+        n_retries = len(repeat_counts)
+
+        def printc(s, *args, **kwargs):
+            if verbsosity > 0:
+                print(s, *args, **kwargs)
+
+        with torch.inference_mode():
+
+            repeat_count = repeat_counts[0]
+            solutions, valids = self._generate_exact_ik_solutions(
+                target_poses,
+                repeat_count,
+                n_opt_steps_max,
+                pos_error_threshold,
+                rot_error_threshold,
+                printc,
+                run_lma_on_cpu,
+            )
+
+            if valids.all():
+                printc("All solutions converged, returning")
+                return solutions, valids
+
+            for i in range(1, n_retries):
+                retry_repeat_count = repeat_counts[i]
+                missing_target_poses = target_poses[torch.logical_not(valids), :]
+                new_solutions, new_solution_valids = self._generate_exact_ik_solutions(
+                    missing_target_poses,
+                    retry_repeat_count,
+                    n_opt_steps_max,
+                    pos_error_threshold,
+                    rot_error_threshold,
+                    printc,
+                    run_lma_on_cpu,
+                )
+                solutions[torch.logical_not(valids), :] = new_solutions
+                valids[torch.logical_not(valids)] = new_solution_valids  # update the valid idxs
+
+                if new_solutions.all():
+                    printc(
+                        make_text_green_or_red(
+                            f"All missing target poses solutions converged, returning ({time() - t0} sec)", True
+                        )
+                    )
+                    return solutions, valids
+
+            printc(make_text_green_or_red(f"Missing target poses not found, returning ({time() - t0} sec)", False))
+            return solutions, valids
 
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""

@@ -66,18 +66,20 @@ fetch_arm__large__mh186_9.25m:
 
 
 
+# TODO: add weights back once Iiwa7 is added to Jrl (currently ommited because missing capsules)
+
 # ===========================================================
 # === Iiwa7
 # 
 
-iiwa7_full_temp_nsc_tpm:
-  nb_nodes:               12
-  dim_latent_space:       10
-  coeff_fn_config:        3
-  coeff_fn_internal_size: 1024
-  rnvp_clamp:             2.5
-  robot_name:             'iiwa7'
-  model_weights_url:      'https://storage.googleapis.com/ikflow_models/iiwa7/iiwa7__serene-snowball-78__global_step%3D10.75M.pkl'
+# iiwa7_full_temp_nsc_tpm:
+#   nb_nodes:               12
+#   dim_latent_space:       10
+#   coeff_fn_config:        3
+#   coeff_fn_internal_size: 1024
+#   rnvp_clamp:             2.5
+#   robot_name:             'iiwa7'
+#   model_weights_url:      'https://storage.googleapis.com/ikflow_models/iiwa7/iiwa7__serene-snowball-78__global_step%3D10.75M.pkl'
 
 
 # ===========================================================
