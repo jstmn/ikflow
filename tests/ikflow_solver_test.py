@@ -1,4 +1,5 @@
 import unittest
+from time import time
 
 import torch
 from jrl.robots import Panda
@@ -24,6 +25,32 @@ def _assert_different(t1: torch.Tensor, t2: torch.Tensor):
 
 
 class IkflowSolverTest(unittest.TestCase):
+
+    # python tests/ikflow_solver_test.py IkflowSolverTest.test___calculate_pose_error
+    def test___calculate_pose_error(self):
+        model_name = "panda__full__lp191_5.25m"
+        n_solutions = 1000
+
+        ikflow_solver, _ = get_ik_solver(model_name)
+        # ikflow_solver._calculate_pose_error(qs, target_poses)
+
+        print("Number of solutions, CPU, CUDA")
+        for n_solutions in [1, 10, 100, 1000, 5000]:
+            qs, target_poses = ikflow_solver.robot.sample_joint_angles_and_poses(n_solutions)
+            qs_cpu = torch.tensor(qs, device="cpu", dtype=torch.float32)
+            qs_cu = torch.tensor(qs, device="cuda:0", dtype=torch.float32)
+            target_poses_cpu = torch.tensor(target_poses, device="cpu", dtype=torch.float32)
+            target_poses_cu = torch.tensor(target_poses, device="cuda:0", dtype=torch.float32)
+
+            t0 = time()
+            ikflow_solver._calculate_pose_error(qs_cpu, target_poses_cpu)
+            t_cpu = time() - t0
+
+            t0 = time()
+            ikflow_solver._calculate_pose_error(qs_cu, target_poses_cu)
+            t_cuda = time() - t0
+
+            print(n_solutions, "\t", round(1000 * t_cpu, 6), "\t", round(1000 * t_cuda, 6))
 
     # pytest tests/ikflow_solver_test.py -k 'test_generate_exact_ik_solutions'
     # python tests/ikflow_solver_test.py IkflowSolverTest.test_generate_exact_ik_solutions

@@ -203,13 +203,12 @@ class IKFlowSolver:
                 latent = draw_latent(latent_distribution, latent_scale, (n, self._network_width), device)
             return self._run_inference(latent, conditional, t0, clamp_to_joint_limits, return_detailed)
 
-    def _check_converged(self, qs, target_poses, pos_error_threshold, rot_error_threshold):
+    def _calculate_pose_error(self, qs: torch.Tensor, target_poses: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         # check error
         pose_realized = self.robot.forward_kinematics_batch(qs)
         pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
         rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
-        converged = pos_errors.max() < pos_error_threshold and rot_errors.max() < rot_error_threshold
-        return converged, pos_errors, rot_errors
+        return pos_errors, rot_errors
 
     def _generate_exact_ik_solutions(
         self,
@@ -219,8 +218,9 @@ class IKFlowSolver:
         pos_error_threshold: float,
         rot_error_threshold: float,
         printc: Callable[[str], None],
+        run_lma_on_cpu: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """TODO: it may be faster to run LMA on the cpu, then move the solutions back to the gpu
+        """Note: it's faster to run LMA on the cpu, then move the solutions back to the gpu
 
         prev refers to _generate_exact_ik_solutions_slow()
 
@@ -263,6 +263,9 @@ class IKFlowSolver:
         n = target_poses.shape[0]
         n_tiled = n * repeat_count
         device = target_poses.device
+        device_0 = device
+
+        do_run_entirely_on_cpu = run_lma_on_cpu and n < 750
 
         t_lma = 0
         t_ikf = 0
@@ -280,6 +283,11 @@ class IKFlowSolver:
             q = self._run_inference(latent, conditional_tiled, t0, True, False)
             t_ikf += time() - t01
 
+            if run_lma_on_cpu and do_run_entirely_on_cpu:
+                q = q.cpu()
+                target_poses_tiled = target_poses_tiled.cpu()
+                device = "cpu"
+
             t02 = time()
             final_solutions = torch.zeros(n, self.ndof, dtype=torch.float32, device=device)
             final_valids = torch.zeros(n, dtype=torch.bool, device=device)
@@ -294,11 +302,13 @@ class IKFlowSolver:
                 # printc("  q:                 ", q.shape)
 
                 t02 = time()
-                q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
+                if run_lma_on_cpu and not do_run_entirely_on_cpu:
+                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled.cpu(), q.cpu())
+                    q = q.to(device)
+                else:
+                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
                 t_lma += time() - t02
-                _, pos_errors, rot_errors = self._check_converged(
-                    q, target_poses_tiled, pos_error_threshold, rot_error_threshold
-                )
+                pos_errors, rot_errors = self._calculate_pose_error(q, target_poses_tiled)
                 valids_i_tiled = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
                 # printc(f"  valids_i_tiled:   ", valids_i_tiled)
                 # printc("  ", pos_errors)
@@ -322,7 +332,7 @@ class IKFlowSolver:
 
                 if final_valids.all():
                     printc(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
-                    return final_solutions, final_valids
+                    return final_solutions.to(device_0), final_valids.to(device_0)
 
                 q = q[torch.logical_not(valids_i).repeat((repeat_count)), :]
                 target_poses_tiled = target_poses_tiled[torch.logical_not(valids_i).repeat((repeat_count)), :]
@@ -340,7 +350,7 @@ class IKFlowSolver:
                     False,
                 )
             )
-            return final_solutions, final_valids
+            return final_solutions.to(device_0), final_valids.to(device_0)
 
     def generate_exact_ik_solutions(
         self,
@@ -349,6 +359,7 @@ class IKFlowSolver:
         pos_error_threshold: float = mm_to_m(1),
         rot_error_threshold: float = 0.1,
         verbsosity: int = 0,
+        run_lma_on_cpu: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
 
@@ -368,7 +379,13 @@ class IKFlowSolver:
 
             repeat_count = repeat_counts[0]
             solutions, valids = self._generate_exact_ik_solutions(
-                target_poses, repeat_count, n_opt_steps_max, pos_error_threshold, rot_error_threshold, printc
+                target_poses,
+                repeat_count,
+                n_opt_steps_max,
+                pos_error_threshold,
+                rot_error_threshold,
+                printc,
+                run_lma_on_cpu,
             )
 
             if valids.all():
@@ -385,6 +402,7 @@ class IKFlowSolver:
                     pos_error_threshold,
                     rot_error_threshold,
                     printc,
+                    run_lma_on_cpu,
                 )
                 solutions[torch.logical_not(valids), :] = new_solutions
                 valids[torch.logical_not(valids)] = new_solution_valids  # update the valid idxs
