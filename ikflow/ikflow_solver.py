@@ -355,7 +355,7 @@ class IKFlowSolver:
     def generate_exact_ik_solutions(
         self,
         target_poses: torch.Tensor,
-        repeat_counts: Tuple[int] = (1, 3, 15),
+        repeat_counts: Tuple[int] = (1, 3, 10),
         pos_error_threshold: float = mm_to_m(1),
         rot_error_threshold: float = 0.1,
         verbsosity: int = 0,

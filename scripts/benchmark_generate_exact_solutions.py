@@ -90,7 +90,6 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
     ikflow_solver, _ = get_ik_solver(model_name)
 
     batch_sizes = [1, 10, 100, 500, 750, 1000, 2000, 3000, 4000, 5000]
-    # batch_sizes = [1]
     k_retry = 3
     # all_repeat_counts = [(1, 3, 10), (1, 5, 10)]
     all_repeat_counts = [(1, 3, 10)]
