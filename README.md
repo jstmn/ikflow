@@ -54,6 +54,8 @@ python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.
 
 **> Example 2: Use IKFlow to generate exact IK solutions for the Franka Panda**
 
+Additional examples are provided in examples/example.py. This file includes examples of collision checking and pose error calculation, among other utilities.
+
 ```
 ik_solver, _ = get_ik_solver("panda__full__lp191_5.25m")
 target_poses = torch.tensor(
@@ -80,18 +82,6 @@ python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_na
 ![ikflow solutions for oscillating target pose](../media/ikflow__fetcharm__oscillating-target.gif?raw=true)
 
 Run an interactive notebook: `jupyter notebook notebooks/robot_visualizations.ipynb`
-
-**> Example 3: Run IKFlow yourself**
-
-Example code for how to run IKFlow is provided in `examples/example.py`. A sample excerpt:
-``` python
-ik_solver, _ = get_ik_solver(args.model_name)
-target_pose = np.array([0.5, 0.5, 0.5, 1, 0, 0, 0]) # x, y, z, qw, qx, qy, qz
-number_of_solutions = 5
-solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = ik_solver.generate_ik_solutions(
-  target_pose, number_of_solutions, refine_solutions=False, return_detailed=True
-)
-```
 
 
 ## Notes
