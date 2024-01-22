@@ -1,0 +1,45 @@
+# Pycache
+__pycache__/
+
+# Virtual Environments
+venv/
+
+# IDE Config
+.vscode/
+
+# Third party folders
+wandb/
+artifacts/
+
+# Unit testing generated files
+tests/
+
+# Pytl training data
+checkpoints/
+training_logs/
+old/
+notes_to_self
+notes
+
+# Datasets
+datasets/*/
+
+# Slurm log files
+*.out
+SBATCH_train.sh
+SBATCH_resume_train.sh
+SBATCH_script.sh
+SBATCH_wandb_sweep.sh
+
+sourcewandbenvvars
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+lr_scheduler_scrathpad.py
+
+*.pkl
+
+dist/
+ikflow.egg-info
+build/
+*.pdf
