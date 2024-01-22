@@ -4,6 +4,12 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
+Runtime curve for getting *exact* IK solutions for the Franka Panda (maximum positional/rotational error: 1mm, .572 deg).
+
+![alt text](../media/exact_ik_runtime__model:panda__full__lp191_5.25m.png?raw=true)
+
+
+
 ## Setup - inference only
 
 ``` bash
@@ -39,14 +45,33 @@ poetry shell
 
 ## Getting started
 
-**> Example 1: Use IKFlow to generate IK solutions for the Franka Panda arm**
+**> Example 1: Use IKFlow to generate approximate IK solutions for the Franka Panda**
 
-Evaluate the pretrained IKFlow model for the Franka Panda arm. Note that this was the same model whose performance was presented in the IKFlow paper. Note that the value for `model_name` - in this case `panda_tpm` should match an entry in `model_descriptions.yaml` 
+Evaluate a pretrained IKFlow model for the Franka Panda arm. Note that the value for `model_name` - in this case `panda__full__lp191_5.25m` should match an entry in `model_descriptions.yaml` 
 ```
 python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m
 ```
 
-**> Example 2: Visualize the solutions returned by the `fetch_arm__large__mh186_9.25m` model**
+**> Example 2: Use IKFlow to generate exact IK solutions for the Franka Panda**
+
+```
+ik_solver, _ = get_ik_solver("panda__full__lp191_5.25m")
+target_poses = torch.tensor(
+    [
+        [0.25, 0, 0.5, 1, 0, 0, 0],
+        [0.35, 0, 0.5, 1, 0, 0, 0],
+        [0.45, 0, 0.5, 1, 0, 0, 0],
+    ],
+    device=device,
+)
+solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = (
+    ik_solver.generate_ik_solutions(target_poses, n=len(target_poses), refine_solutions=False, return_detailed=True)
+)
+solutions, _ = ik_solver.generate_exact_ik_solutions(target_poses)
+```
+
+
+**> Example 3: Visualize the solutions returned by the `fetch_arm__large__mh186_9.25m` model**
 
 Run the following:
 ```

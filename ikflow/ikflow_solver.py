@@ -111,6 +111,7 @@ class IKFlowSolver:
     # --- Public methods
     #
 
+    # TODO: refactor to generate_approximate_ik_solutions_single_pose() and generate_approximate_ik_solutions_multi_pose()
     def generate_ik_solutions(
         self,
         y: torch.Tensor,
@@ -168,7 +169,6 @@ class IKFlowSolver:
         t0 = time()
         assert isinstance(y, torch.Tensor), f"y must be a torch.Tensor (got {type(y)})."
         if y.numel() == 7:
-            print("numel == 7")
             assert isinstance(n, int)
             assert n > 0
         else:
@@ -358,21 +358,23 @@ class IKFlowSolver:
         repeat_counts: Tuple[int] = (1, 3, 10),
         pos_error_threshold: float = mm_to_m(1),
         rot_error_threshold: float = 0.1,
-        verbsosity: int = 0,
-        run_lma_on_cpu: bool = False,
+        verbosity: int = 0,
+        run_lma_on_cpu: bool = True,
+        return_detailed: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
 
         NOTE: returned solutions may be self colliding
         """
         assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
-
+        assert isinstance(repeat_counts, tuple), f"repeat_counts must be a tuple, got {type(repeat_counts)}"
+        assert not return_detailed, f"return_detailed is not currently supported for generate_exact_ik_solutions()"
         t0 = time()
         n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
         n_retries = len(repeat_counts)
 
         def printc(s, *args, **kwargs):
-            if verbsosity > 0:
+            if verbosity > 0:
                 print(s, *args, **kwargs)
 
         with torch.inference_mode():
