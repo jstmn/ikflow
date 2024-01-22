@@ -4,7 +4,7 @@ Normalizing flows for Inverse Kinematics. Open source implementation to the pape
 [![arxiv.org](https://img.shields.io/badge/cs.RO-%09arXiv%3A2111.08933-red)](https://arxiv.org/abs/2111.08933)
 
 
-Runtime curve for getting *exact* IK solutions for the Franka Panda (maximum positional/rotational error: 1mm, .572 deg).
+Runtime curve for getting *exact* IK solutions for the Franka Panda (maximum positional/rotational error: 1mm, .572 deg):
 
 ![alt text](../media/exact_ik_runtime__model:panda__full__lp191_5.25m.png?raw=true)
 
