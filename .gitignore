@@ -47,3 +47,4 @@ dist/
 ikflow.egg-info
 build/
 *.pdf
+*.png

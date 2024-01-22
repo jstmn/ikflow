@@ -149,17 +149,21 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
     # Plot results
     #
     fig, (axl, axr) = plt.subplots(1, 2, figsize=(18, 8))
-    fig.suptitle(f"Levenberg-Marquardt IK Convergence")
+    fig.suptitle(
+        "Number of Solutions vs. Runtime for IKFlow + Levenberg-Marquardt IK Solution Generation"
+        f" ({POS_ERROR_THRESHOLD} m, {ROT_ERROR_THRESHOLD} rad tol)",
+        fontsize=16,
+    )
 
     axl.set_title(f"Runtime")
     axl.grid(alpha=0.2)
-    axl.set_xlabel("batch size")
-    axl.set_ylabel("runtime (s)")
+    axl.set_xlabel("Number of Solutions")
+    axl.set_ylabel("Runtime (s)")
 
     axr.set_title(f"Success Pct")
     axr.grid(alpha=0.2)
-    axr.set_xlabel("batch size")
-    axr.set_ylabel("success pct (%)")
+    axr.set_xlabel("Number of Solutions")
+    axr.set_ylabel("Success percentage (%)")
 
     # Load comparison data from a pickle file
     if comparison_data_filepath is not None:
@@ -202,6 +206,7 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
     axl.set_ylim(-0.01, max_runtime * 1.1)
     axr.legend()
     plt.savefig(f"exact_ik_runtime__model:{model_name}.pdf", bbox_inches="tight")
+    plt.savefig(f"exact_ik_runtime__model:{model_name}.png", bbox_inches="tight")
     plt.show()
 
 

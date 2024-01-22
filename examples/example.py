@@ -56,7 +56,7 @@ if __name__ == "__main__":
     solutions, _ = ik_solver.generate_exact_ik_solutions(target_pose.expand((number_of_solutions, 7)))
     print(
         "Got {} exact ikflow solutions in {} ms. Solution positional errors = {} (cm)".format(
-            len(solutions), round(runtime * 1000, 3), '(TODO)'
+            len(solutions), round(runtime * 1000, 3), "(TODO)"
         )
     )
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     solutions, _ = ik_solver.generate_exact_ik_solutions(target_poses)
     print(
         "Got {} exact ikflow solutions in {} ms. The positional error of the solutions = {} (cm)".format(
-            len(solutions), round(runtime * 1000, 3), '(TODO)'
+            len(solutions), round(runtime * 1000, 3), "(TODO)"
         )
     )
 

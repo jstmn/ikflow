@@ -360,7 +360,7 @@ class IKFlowSolver:
         rot_error_threshold: float = 0.1,
         verbosity: int = 0,
         run_lma_on_cpu: bool = True,
-        return_detailed: bool = False
+        return_detailed: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
 
