@@ -66,9 +66,6 @@ target_poses = torch.tensor(
     ],
     device=device,
 )
-solutions, l2_errors, angular_errors, joint_limits_exceeded, self_colliding, runtime = (
-    ik_solver.generate_ik_solutions(target_poses, n=len(target_poses), refine_solutions=False, return_detailed=True)
-)
 solutions, _ = ik_solver.generate_exact_ik_solutions(target_poses)
 ```
 
