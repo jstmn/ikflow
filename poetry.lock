@@ -1985,54 +1985,40 @@ files = [
 
 [[package]]
 name = "klampt"
-version = "0.9.0"
+version = "0.9.1"
 description = "Python API to Klamp't, a package for robot modeling, simulating, planning, optimization, and visualization"
 optional = false
 python-versions = "*"
 files = [
-    {file = "Klampt-0.9.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:a4c794f9ab2f5f2d5d7d2fc00168252e02c7c3e84e5c49c4776166836ac57b84"},
-    {file = "Klampt-0.9.0-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:8b0f7baa2344be2b26c3d800fb85e46d41d6da4c2537f1faa06ca1354d05a253"},
-    {file = "Klampt-0.9.0-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:b563a528f4484f2ec3a0af1676ff736cb9e09f73be0e36de79bfc1621628c0a8"},
-    {file = "Klampt-0.9.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:7592bbb0a123623aa4b2a87f7c901f5568c5375af4799831dfabd77ecac6e71b"},
-    {file = "Klampt-0.9.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e3289aafa380194d322b9004e246b1bf2f6a317de7758ba4471d67e5bff939b1"},
-    {file = "Klampt-0.9.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1a3d24675c76be739ec64118f9c0225214f5b792b226e1efb1966d8f8141b00f"},
-    {file = "Klampt-0.9.0-cp310-cp310-win32.whl", hash = "sha256:2df24dcf24369ed4f0496fe5125beaf70858dffb73bf0fb2f901be99b2a25f70"},
-    {file = "Klampt-0.9.0-cp310-cp310-win_amd64.whl", hash = "sha256:0fd5107e4732d11d65620f52b1d5c341782b0fef7b3683b7af7835f5e9446015"},
-    {file = "Klampt-0.9.0-cp311-cp311-win32.whl", hash = "sha256:69331f1f1c7532e1a3de875bd45c146b2a445e2ba1feaa554f287519e2fe5fc9"},
-    {file = "Klampt-0.9.0-cp311-cp311-win_amd64.whl", hash = "sha256:5688e0cc18205f97f232514bd63c0ba45c8d8d9a1a5016afda326bbfe44fc540"},
-    {file = "Klampt-0.9.0-cp35-cp35m-macosx_10_9_x86_64.whl", hash = "sha256:db8ec238b51043c80bf887a4d3df88fc36e35fc81f3e0af96c9ff8bd76054eea"},
-    {file = "Klampt-0.9.0-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:9227bb61edd9dfabf45cac2400fd374c6bacc3d5d467be22bee669d33119d7be"},
-    {file = "Klampt-0.9.0-cp35-cp35m-win32.whl", hash = "sha256:41c39782790319bb981e87811fc5bf6dc6b8ad20ed22209f9e23e2a5b81a5def"},
-    {file = "Klampt-0.9.0-cp35-cp35m-win_amd64.whl", hash = "sha256:a77f8db52fa5965280deb74ccb3e89120fa60d9a0881d9a34fa045972f7cad4e"},
-    {file = "Klampt-0.9.0-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:9dcdc6172006f41f5c2993751ff1645cd269c35d9f3d170b97d05e2eb7540069"},
-    {file = "Klampt-0.9.0-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:34d6fd449c214a8185e503ce5597902e8bc6bb82b803140e64f75652dbb98a00"},
-    {file = "Klampt-0.9.0-cp36-cp36m-win32.whl", hash = "sha256:d291361dd96f3b067984e5922f6d623e2039b40158a0e51f0f4f0a7c631c37d5"},
-    {file = "Klampt-0.9.0-cp36-cp36m-win_amd64.whl", hash = "sha256:4b198ba9fd7004a0cfeeb6540b85bbaa140a1736db2466ca1f8d8ae863e267e3"},
-    {file = "Klampt-0.9.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:945066d1651c3ab8984fba45d36d9aa0f4c552140242f5754078eccdcaa3e666"},
-    {file = "Klampt-0.9.0-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:9197998b65b10c755e54ba354dc5cbd122d3e3ad8fdcf08dafb52d7e849d015c"},
-    {file = "Klampt-0.9.0-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:88c33fb6a4779ef9b92090f7d3aa603244d5095fa9e618ac3b460017c61d985c"},
-    {file = "Klampt-0.9.0-cp37-cp37m-win32.whl", hash = "sha256:5ff7da1744cbffc99d6b2fd1be11b38f64e55b01d34821441c6809ae1939e5f0"},
-    {file = "Klampt-0.9.0-cp37-cp37m-win_amd64.whl", hash = "sha256:1112be6f478824398f0a253c43082bb648d6feb7fcc657ee9ac0e76a05cab2f4"},
-    {file = "Klampt-0.9.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:d99f42d1662587c5c76b749dc9fad4fca621aa02b7d5fc38082ad8e04a78b3ad"},
-    {file = "Klampt-0.9.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:af778ac72be59980c808d10a4ed79b926ef998e54fe2a351a0f8dc34e2c213be"},
-    {file = "Klampt-0.9.0-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:e2354bfab1bac38443b6c237ac6f70d78890424786a35be66b97a4f16c71c4f5"},
-    {file = "Klampt-0.9.0-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:cfaf1d48e5c7dc86955a83ef14e66bdcd159b9201415e4aa9f82c57b97d80f38"},
-    {file = "Klampt-0.9.0-cp38-cp38-win32.whl", hash = "sha256:4c58f9c9a920b56b8ebb9e55a858ce2bf9713a8c639f21545ac059b56d869517"},
-    {file = "Klampt-0.9.0-cp38-cp38-win_amd64.whl", hash = "sha256:53cf0a44689cc2f83681c98ba82c9dac4f4d919ec978dc2072db1f8f5bef6978"},
-    {file = "Klampt-0.9.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:d259360e9f2b3cfda05b863e61ad832412f666e0e5451fcf154493a38e09748e"},
-    {file = "Klampt-0.9.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:eb6157ed33e4b3dcf6bb876ed4197ba596a420d4a7a131b8419b2e4baa847188"},
-    {file = "Klampt-0.9.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:2fa62697326dbae68172f6eb19380b05574d9fc196625f25a7417ce9d31b70bc"},
-    {file = "Klampt-0.9.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:88f2f81cd2a8743f0f56503d503e5a721d6b1049094c8cf1ebc88c97bc4b69bc"},
-    {file = "Klampt-0.9.0-cp39-cp39-win32.whl", hash = "sha256:465b04028c906bfd7a1f6933a87126520464fb401d07530f0c2f4d938e0b65f4"},
-    {file = "Klampt-0.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:51e37ce1c6737165177c4fc8e3f535fa9d86ece5ba55dbd0942db7e79120d4b9"},
-    {file = "Klampt-0.9.0-pp37-pypy37_pp73-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:ea98db6e58643b55eb0a2a2ba7fe594a0601bb276a12af71451e18729271e3cd"},
-    {file = "Klampt-0.9.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ff2341e07f1b43f84c5faaad058c30324bf268ca053b2dc1649783ca8baea381"},
-    {file = "Klampt-0.9.0-pp38-pypy38_pp73-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:a9d6dc422bee427ac6fdf916ee721424d349c1c7ce590189c3e73d48b7199603"},
-    {file = "Klampt-0.9.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d39f41fa7dfab9018c1252bea28bbc9de3dfe82aa8de43a5bcfbfded63bbe28a"},
+    {file = "Klampt-0.9.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4d4ce89ba1f341b807ebf82b6ddece58a381932d2f23aabf0b87c2e8ed6f8617"},
+    {file = "Klampt-0.9.1-cp310-cp310-win32.whl", hash = "sha256:60a17ad2563cb944baec8092e6c40d5be41e3a1e5d0014aac168b0ed8f523adb"},
+    {file = "Klampt-0.9.1-cp310-cp310-win_amd64.whl", hash = "sha256:9823a7bd48551c5fcb610bac183556fde62a1cd599c993e12b60cfc2370d4635"},
+    {file = "Klampt-0.9.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8e52e81038c0838f0c80a33dbd6a7c2b458937c0828c66d1ada3f0bdd74c314e"},
+    {file = "Klampt-0.9.1-cp311-cp311-win32.whl", hash = "sha256:b046765a888b79a111315b5f826bb1b34b1d5a85a791d0aa1f30bf7e4680dc54"},
+    {file = "Klampt-0.9.1-cp311-cp311-win_amd64.whl", hash = "sha256:af8969dd88b2ee2af2c9f77d0d32313591e1e2f92287a777193d0b28cda1a2c9"},
+    {file = "Klampt-0.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7624063baed3ff3d1a486173835fea2e75e12deac7d82eeaf24c60f03f702f98"},
+    {file = "Klampt-0.9.1-cp35-cp35m-win32.whl", hash = "sha256:a68e5e2ddbbc96e6809e7353612626c202f209ef96ec863284d0ed5d75e36704"},
+    {file = "Klampt-0.9.1-cp35-cp35m-win_amd64.whl", hash = "sha256:051823b8d98ffeff7555d494a7b878e86462afe4d5fbc7e806b73c415f610b28"},
+    {file = "Klampt-0.9.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:16f130a5cc20926b65614497372ff09f66d697918717c527378acd29d9a2aa16"},
+    {file = "Klampt-0.9.1-cp36-cp36m-win32.whl", hash = "sha256:8862c6055939ac1e3c176918f9f7639414d90b8fd07791e3a1229a5100863fba"},
+    {file = "Klampt-0.9.1-cp36-cp36m-win_amd64.whl", hash = "sha256:a0ab9acb6c01605d3479905088bfa5220dd590bb8d42ac9927f00d441782c860"},
+    {file = "Klampt-0.9.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eef0eb94ac026c82b847ad50a1a69d3a18fc0b39c899284fbffeadae2e6f20a7"},
+    {file = "Klampt-0.9.1-cp37-cp37m-win32.whl", hash = "sha256:97a5e41c6c28813fdfeb49b338dc44cd842a2f97953be8df6b37c3ba48bf8f40"},
+    {file = "Klampt-0.9.1-cp37-cp37m-win_amd64.whl", hash = "sha256:19d9d529d329205a60b0e071e2beec3a21fa2ecc1620ba479bda1d8690d49c1c"},
+    {file = "Klampt-0.9.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1ddbbd182f0495b85e938983b31176f15b0018f473a7c10051890e371a6c5866"},
+    {file = "Klampt-0.9.1-cp38-cp38-win32.whl", hash = "sha256:e3a5b0d843d7b4edeee3573c418bb3b971b3d78a5e8d757dde679249d62daad3"},
+    {file = "Klampt-0.9.1-cp38-cp38-win_amd64.whl", hash = "sha256:5d6da3b9d6bf9e228752631c2b94f05ad6f9ac1077e885d71a3adb7fd79417c6"},
+    {file = "Klampt-0.9.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c03e383975bef6014f87575f825a18741cac7a2569d7355f4e9057f65b642a68"},
+    {file = "Klampt-0.9.1-cp39-cp39-win32.whl", hash = "sha256:760a83086967a900858a754dd6355c0196d89d2670cbe48c8603558492106ffe"},
+    {file = "Klampt-0.9.1-cp39-cp39-win_amd64.whl", hash = "sha256:3888849a5afc8386ba5d489808c2f6b76aa807e2e3ef4ba8e859e9eb36185fe2"},
+    {file = "Klampt-0.9.1-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6ee8cc53aee217e85b203b4899ae43888eef0c59397f85c79eb7610c0f0af74f"},
+    {file = "Klampt-0.9.1-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f5def1f341774539d53773b0347c70f27dabdd72ea677537aeaf7d85eef25386"},
+    {file = "Klampt-0.9.1-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d8fd9f035592e7e5617420de9031096514a9678ae60446c44cddc5ca26e0e1a0"},
+    {file = "Klampt-0.9.1-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7ec98709d30e688243e8f257da25676acf63593be06d5255a6bf4b0ed00fee8f"},
 ]
 
 [package.dependencies]
-numpy = "*"
+numpy = ">=1.20.0"
 PyOpenGL = "*"
 
 [[package]]

@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-klampt = "0.9.0"
+klampt = "0.9.1"
 torch = "^2.0.1"
 FrEIA = "^0.2"
 more-itertools = "^9.0.0"
