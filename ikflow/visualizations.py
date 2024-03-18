@@ -13,21 +13,29 @@ import torch
 import torch.optim
 
 from ikflow.ikflow_solver import IKFlowSolver
-from ikflow import config
+from ikflow.config import device, DEFAULT_TORCH_DTYPE
 from ikflow.evaluation_utils import solution_pose_errors
 
 
 _OSCILLATE_LATENT_TARGET_POSES = {
-    Panda.name: np.array([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0]),
-    Fetch.name: np.array([0.45, 0.65, 0.55, 1.0, 0.0, 0.0, 0.0]),
-    Rizon4.name: np.array([0.4, 0.4, 0.45, 1.0, 0.0, 0.0, 0.0]),
+    Panda.name: torch.tensor([0.25, 0.65, 0.45, 1.0, 0.0, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE),
+    Fetch.name: torch.tensor([0.45, 0.65, 0.55, 1.0, 0.0, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE),
+    Rizon4.name: torch.tensor([0.4, 0.4, 0.45, 1.0, 0.0, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE),
 }
 
 _TARGET_POSE_FUNCTIONS = {
-    Panda.name: lambda counter: np.array([0.25 * np.sin(counter / 50), 0.5, 0.25, 1.0, 0.0, 0.0, 0.0]),
-    Fetch.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
-    FetchArm.name: lambda counter: np.array([0.6, 0.15 * np.sin(counter / 50) + 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
-    Rizon4.name: lambda counter: np.array([0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0]),
+    Panda.name: lambda counter: torch.tensor(
+        [0.4 * np.sin(counter / 50), 0.6, 0.75, 0.7071068, -0.7071068, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE
+    ),
+    Fetch.name: lambda counter: torch.tensor(
+        [0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE
+    ),
+    FetchArm.name: lambda counter: torch.tensor(
+        [0.6, 0.15 * np.sin(counter / 50) + 0.5, 0.75, 1.0, 0.0, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE
+    ),
+    Rizon4.name: lambda counter: torch.tensor(
+        [0.25 * np.sin(counter / 50) + 0.5, 0.5, 0.75, 1.0, 0.0, 0.0, 0.0], dtype=DEFAULT_TORCH_DTYPE
+    ),
 }
 
 PI = np.pi
@@ -120,7 +128,7 @@ def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
             vis.add("ee", (so3.from_quaternion(ee_pose[3:]), ee_pose[0:3]), length=0.15, width=2)
         else:
             # (B x 3*(n+1) )
-            x_torch = torch.from_numpy(x_random).float().to(config.device)
+            x_torch = torch.from_numpy(x_random).float().to(device)
             fk = robot.forward_kinematics_batch(x_torch)
             ee_pose = fk[0, 0:3]
             vis.add("ee", (so3.identity(), ee_pose[0:3]), length=0.15, width=2)
@@ -140,7 +148,7 @@ def oscillate_latent(ik_solver: IKFlowSolver):
     title = "Fixed end pose with oscillation through the latent space"
     robot = ik_solver.robot
     target_pose = _OSCILLATE_LATENT_TARGET_POSES[ik_solver.robot.name]
-    rev_input = torch.zeros(1, ik_solver.network_width).to(config.device)
+    rev_input = torch.zeros(1, ik_solver.network_width).to(device)
 
     def setup_fn(worlds):
         del worlds
@@ -210,7 +218,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
     title = "Solutions for oscillating target pose"
     latent = None
     if fixed_latent:
-        latent = torch.randn((nb_sols, ik_solver.network_width)).to(config.device)
+        latent = torch.randn((nb_sols, ik_solver.network_width)).to(device)
 
     robot = ik_solver.robot
     target_pose_fn = _TARGET_POSE_FUNCTIONS[robot.name]
@@ -230,6 +238,12 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         vis.logPlot("solution_error", "angular (deg)", 0)
         vis.setPlotDuration("solution_error", 5)
         vis.setPlotRange("solution_error", 0, 25)
+
+        # update the cameras pose
+        # vp = vis.getViewport()
+        # camera_tf = vp.get_transform()
+        # vis.setViewport(vp)
+        # vp.fit((0, 0.25, 0.5), 1.5)
 
     @dataclass
     class DemoState:
@@ -272,6 +286,8 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
 
 def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
     """Set the end effector to a randomly drawn pose. Generate and visualize `nb_sols` solutions for the pose"""
+
+    raise NotImplementedError("need to fix this function")
 
     def setup_fn(worlds):
         vis.add(f"robot_goal", worlds[0].robot(0))

@@ -107,6 +107,144 @@ class IKFlowSolver:
             return solutions, pos_errors, rot_errors, joint_limits_exceeded, self_collisions, time() - t0
         return solutions
 
+    def _calculate_pose_error(self, qs: torch.Tensor, target_poses: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        # check error
+        pose_realized = self.robot.forward_kinematics_batch(qs)
+        pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
+        rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
+        return pos_errors, rot_errors
+
+    def _generate_exact_ik_solutions(
+        self,
+        target_poses: torch.Tensor,
+        repeat_count: int,
+        n_opt_steps_max: int,
+        pos_error_threshold: float,
+        rot_error_threshold: float,
+        printc: Callable[[str], None],
+        run_lma_on_cpu: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Note: it's faster to run LMA on the cpu, then move the solutions back to the gpu
+
+        prev refers to _generate_exact_ik_solutions_slow()
+
+        Timing (cpu):
+
+            --> n_solutions = 500
+
+                this: "Failed to converge after 3 iterations (410/500 valid) (0.2568323612213135 seconds)"
+                prev: "Failed to converge after 3 iterations (410/500 valid) (0.27968668937683105 seconds)" # 8.89854%
+
+            --> n_solutions = 1000
+
+                this: "Failed to converge after 3 iterations (838/1000 valid) (0.37751317024230957 seconds)"
+                prev: "Failed to converge after 3 iterations (838/1000 valid) (0.5498697757720947 seconds)" # 45.6558%
+
+            --> n_solutions = 5000
+
+                this: "Failed to converge after 3 iterations (4283/5000 valid) (1.6686820983886719 seconds)"
+                prev: "Failed to converge after 3 iterations (4280/5000 valid) (2.366809606552124 seconds)" # 41.8371%
+
+        Timing (cuda):
+
+            --> n_solutions = 1000
+
+                this: 0.23626351356506348 seconds
+                    t_lma:   0.13701748847961426
+                    t_ikf:   0.010305643081665039
+                    t_other: 0.08887577056884766
+
+                prev: 0.5188534259796143 seconds
+                    t_lma:   0.23550701141357422
+                    t_ikf:   0.009996891021728516
+                    t_other: 0.335827112197876
+        """
+
+        latent_distribution = "gaussian"
+        latent_scale = 1.0
+
+        t0 = time()
+        n = target_poses.shape[0]
+        n_tiled = n * repeat_count
+        device = target_poses.device
+        device_0 = device
+
+        do_run_entirely_on_cpu = run_lma_on_cpu and n < 750
+
+        t_lma = 0
+        t_ikf = 0
+
+        with torch.inference_mode():
+
+            # Get seeds
+            t01 = time()
+            conditional = torch.cat(
+                [target_poses, torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1
+            )
+            conditional_tiled = conditional.repeat((repeat_count, 1))
+            target_poses_tiled = conditional_tiled[:, 0:7]
+            latent = draw_latent(latent_distribution, latent_scale, (n_tiled, self._network_width), device)
+            q = self._run_inference(latent, conditional_tiled, t0, True, False)
+            t_ikf += time() - t01
+
+            if run_lma_on_cpu and do_run_entirely_on_cpu:
+                q = q.cpu()
+                target_poses_tiled = target_poses_tiled.cpu()
+                device = "cpu"
+
+            t02 = time()
+            final_solutions = torch.zeros(n, self.ndof, dtype=torch.float32, device=device)
+            final_valids = torch.zeros(n, dtype=torch.bool, device=device)
+            n_invalid = n
+
+            for i in range(n_opt_steps_max):
+                assert len(q) == n_invalid * repeat_count
+                t02 = time()
+                if run_lma_on_cpu and not do_run_entirely_on_cpu:
+                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled.cpu(), q.cpu())
+                    q = q.to(device)
+                else:
+                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
+                t_lma += time() - t02
+                pos_errors, rot_errors = self._calculate_pose_error(q, target_poses_tiled)
+                valids_i_tiled = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
+
+                # TODO: use torch.mod()
+                valids_i = torch.zeros(n_invalid, dtype=torch.bool, device=device)
+                sols_i = torch.zeros((n_invalid, self.ndof), dtype=torch.float32, device=device)
+
+                valid_idxs = torch.nonzero(valids_i_tiled)
+                for j in range(valid_idxs.shape[0]):
+                    idx = valid_idxs[j, 0]
+                    sol_idx = idx % n_invalid
+                    sols_i[sol_idx, :] = q[idx, :]
+                    valids_i[sol_idx] = True
+
+                final_solutions[torch.logical_not(final_valids)] = sols_i
+                final_valids[torch.logical_not(final_valids)] = valids_i
+
+                if final_valids.all():
+                    printc(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
+                    return final_solutions.to(device_0), final_valids.to(device_0)
+
+                q = q[torch.logical_not(valids_i).repeat((repeat_count)), :]
+                target_poses_tiled = target_poses_tiled[torch.logical_not(valids_i).repeat((repeat_count)), :]
+                n_invalid = n - final_valids.sum().item()
+
+            # Didn't converge
+            t_other = time() - t0 - t_lma - t_ikf
+            printc("  t_lma:  ", t_lma)
+            printc("  t_ikf:  ", t_ikf)
+            printc("  t_other:", t_other)
+            printc(
+                make_text_green_or_red(
+                    f"\nFailed to converge after {i+1} iterations"
+                    f" ({final_valids.sum().item()}/{final_valids.numel()} valid) ({time() - t0} seconds)",
+                    False,
+                )
+            )
+            return final_solutions.to(device_0), final_valids.to(device_0)
+
     # ------------------------------------------------------------------------------------------------------------------
     # --- Public methods
     #
@@ -202,155 +340,6 @@ class IKFlowSolver:
             if latent is None:
                 latent = draw_latent(latent_distribution, latent_scale, (n, self._network_width), device)
             return self._run_inference(latent, conditional, t0, clamp_to_joint_limits, return_detailed)
-
-    def _calculate_pose_error(self, qs: torch.Tensor, target_poses: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        # check error
-        pose_realized = self.robot.forward_kinematics_batch(qs)
-        pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
-        rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
-        return pos_errors, rot_errors
-
-    def _generate_exact_ik_solutions(
-        self,
-        target_poses: torch.Tensor,
-        repeat_count: int,
-        n_opt_steps_max: int,
-        pos_error_threshold: float,
-        rot_error_threshold: float,
-        printc: Callable[[str], None],
-        run_lma_on_cpu: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Note: it's faster to run LMA on the cpu, then move the solutions back to the gpu
-
-        prev refers to _generate_exact_ik_solutions_slow()
-
-        Timing (cpu):
-
-            --> n_solutions = 500
-
-                this: "Failed to converge after 3 iterations (410/500 valid) (0.2568323612213135 seconds)"
-                prev: "Failed to converge after 3 iterations (410/500 valid) (0.27968668937683105 seconds)" # 8.89854%
-
-            --> n_solutions = 1000
-
-                this: "Failed to converge after 3 iterations (838/1000 valid) (0.37751317024230957 seconds)"
-                prev: "Failed to converge after 3 iterations (838/1000 valid) (0.5498697757720947 seconds)" # 45.6558%
-
-            --> n_solutions = 5000
-
-                this: "Failed to converge after 3 iterations (4283/5000 valid) (1.6686820983886719 seconds)"
-                prev: "Failed to converge after 3 iterations (4280/5000 valid) (2.366809606552124 seconds)" # 41.8371%
-
-        Timing (cuda):
-
-            --> n_solutions = 1000
-
-                this: 0.23626351356506348 seconds
-                    t_lma:   0.13701748847961426
-                    t_ikf:   0.010305643081665039
-                    t_other: 0.08887577056884766
-
-                prev: 0.5188534259796143 seconds
-                    t_lma:   0.23550701141357422
-                    t_ikf:   0.009996891021728516
-                    t_other: 0.335827112197876
-        """
-
-        latent_distribution = "gaussian"
-        latent_scale = 1.0
-
-        t0 = time()
-        n = target_poses.shape[0]
-        n_tiled = n * repeat_count
-        device = target_poses.device
-        device_0 = device
-
-        do_run_entirely_on_cpu = run_lma_on_cpu and n < 750
-
-        t_lma = 0
-        t_ikf = 0
-
-        with torch.inference_mode():
-
-            # Get seeds
-            t01 = time()
-            conditional = torch.cat(
-                [target_poses, torch.zeros((n, 1), dtype=DEFAULT_TORCH_DTYPE, device=device)], dim=1
-            )
-            conditional_tiled = conditional.repeat((repeat_count, 1))
-            target_poses_tiled = conditional_tiled[:, 0:7]
-            latent = draw_latent(latent_distribution, latent_scale, (n_tiled, self._network_width), device)
-            q = self._run_inference(latent, conditional_tiled, t0, True, False)
-            t_ikf += time() - t01
-
-            if run_lma_on_cpu and do_run_entirely_on_cpu:
-                q = q.cpu()
-                target_poses_tiled = target_poses_tiled.cpu()
-                device = "cpu"
-
-            t02 = time()
-            final_solutions = torch.zeros(n, self.ndof, dtype=torch.float32, device=device)
-            final_valids = torch.zeros(n, dtype=torch.bool, device=device)
-            n_invalid = n
-
-            for i in range(n_opt_steps_max):
-                # printc("\ni:", i)
-                assert len(q) == n_invalid * repeat_count
-                # printc("  final_valids:      ", final_valids)
-                # printc("  final_solutions:   ", final_valids)
-                # printc("  target_poses_tiled:", target_poses_tiled.shape)
-                # printc("  q:                 ", q.shape)
-
-                t02 = time()
-                if run_lma_on_cpu and not do_run_entirely_on_cpu:
-                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled.cpu(), q.cpu())
-                    q = q.to(device)
-                else:
-                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
-                t_lma += time() - t02
-                pos_errors, rot_errors = self._calculate_pose_error(q, target_poses_tiled)
-                valids_i_tiled = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
-                # printc(f"  valids_i_tiled:   ", valids_i_tiled)
-                # printc("  ", pos_errors)
-                # printc("  ", rot_errors)
-                # printc()
-
-                # TODO: use torch.mod()
-                valids_i = torch.zeros(n_invalid, dtype=torch.bool, device=device)
-                sols_i = torch.zeros((n_invalid, self.ndof), dtype=torch.float32, device=device)
-
-                valid_idxs = torch.nonzero(valids_i_tiled)
-                for j in range(valid_idxs.shape[0]):
-                    idx = valid_idxs[j, 0]
-                    sol_idx = idx % n_invalid
-                    sols_i[sol_idx, :] = q[idx, :]
-                    valids_i[sol_idx] = True
-
-                final_solutions[torch.logical_not(final_valids)] = sols_i
-                final_valids[torch.logical_not(final_valids)] = valids_i
-                # printc("  valids_i:", valids_i)
-
-                if final_valids.all():
-                    printc(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
-                    return final_solutions.to(device_0), final_valids.to(device_0)
-
-                q = q[torch.logical_not(valids_i).repeat((repeat_count)), :]
-                target_poses_tiled = target_poses_tiled[torch.logical_not(valids_i).repeat((repeat_count)), :]
-                n_invalid = n - final_valids.sum().item()
-
-            # Didn't converge
-            t_other = time() - t0 - t_lma - t_ikf
-            printc("  t_lma:  ", t_lma)
-            printc("  t_ikf:  ", t_ikf)
-            printc("  t_other:", t_other)
-            printc(
-                make_text_green_or_red(
-                    f"\nFailed to converge after {i+1} iterations"
-                    f" ({final_valids.sum().item()}/{final_valids.numel()} valid) ({time() - t0} seconds)",
-                    False,
-                )
-            )
-            return final_solutions.to(device_0), final_valids.to(device_0)
 
     def generate_exact_ik_solutions(
         self,
