@@ -62,7 +62,7 @@ def calculate_error_stats(
 
     with torch.inference_mode():
         for i in range(testset.shape[0]):
-            ee_pose_target = testset[i]
+            ee_pose_target = torch.tensor(testset[i], dtype=torch.float32)
             samples = ik_solver.generate_ik_solutions(
                 ee_pose_target,
                 samples_per_pose,
@@ -97,7 +97,7 @@ def calculate_runtime_stats(ik_solver: IKFlowSolver, n_solutions: int, k: int, r
     poses = ik_solver.robot.forward_kinematics_klampt(ik_solver.robot.sample_joint_angles(n_solutions * k))
     with torch.inference_mode():
         for k_i in range(k):
-            target_poses = poses[k_i * n_solutions : (k_i + 1) * n_solutions]
+            target_poses = target_poses = torch.tensor(poses[k_i * n_solutions : (k_i + 1) * n_solutions], dtype=torch.float32)
             assert target_poses.shape == (n_solutions, 7)
             t0 = time()
             ik_solver.generate_ik_solutions(target_poses, None, refine_solutions=refine_solutions)[1]
