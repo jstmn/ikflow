@@ -11,9 +11,7 @@ from pytorch_lightning import Trainer, seed_everything
 import wandb
 import torch
 
-from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING, GPU_IDX
-
-assert GPU_IDX >= 0
+from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
 from ikflow import config
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
