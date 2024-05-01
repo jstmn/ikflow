@@ -105,7 +105,7 @@ if __name__ == "__main__":
         logger=wandb_logger,
         callbacks=[checkpoint_callback],
         val_check_interval=run_cfg["eval_every"],
-        devices=[GPU_IDX],
+        devices="auto",
         accelerator="gpu",
         log_every_n_steps=run_cfg["log_every"],
         max_epochs=DEFAULT_MAX_EPOCHS,
