@@ -4,9 +4,6 @@ from time import time
 
 
 from ikflow import config
-from ikflow.config import GPU_IDX
-
-assert GPU_IDX >= 0
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
 from jrl.robots import get_robot
