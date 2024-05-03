@@ -247,7 +247,7 @@ if __name__ == "__main__":
         callbacks=[checkpoint_callback],
         val_check_interval=args.eval_every,
         # gpus=1, # deprecated
-        devices="auto",
+        devices=[GPU_IDX],
         accelerator="gpu",
         log_every_n_steps=args.log_every,
         max_epochs=DEFAULT_MAX_EPOCHS,
