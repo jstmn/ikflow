@@ -27,8 +27,8 @@ class IkfLitDataset(LightningDataModule):
 
         dataset_directory = get_dataset_directory(self._robot_name)
         assert os.path.isdir(dataset_directory), (
-            f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet? (try"
-            f" `python scripts/build_dataset.py --robot_name={robot_name} --training_set_size=10000000`)"
+            f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet? Your probably want to run"
+            f" `python scripts/build_dataset.py --robot_name={robot_name} --training_set_size=10000000 --only_non_self_colliding`)"
         )
         samples_tr_file_path, poses_tr_file_path, samples_te_file_path, poses_te_file_path, _ = get_dataset_filepaths(
             dataset_directory, dataset_tags

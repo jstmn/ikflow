@@ -129,7 +129,7 @@ def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
         else:
             # (B x 3*(n+1) )
             x_torch = torch.from_numpy(x_random).float().to(device)
-            fk = robot.forward_kinematics_batch(x_torch)
+            fk = robot.forward_kinematics(x_torch)
             ee_pose = fk[0, 0:3]
             vis.add("ee", (so3.identity(), ee_pose[0:3]), length=0.15, width=2)
 
@@ -260,8 +260,8 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
         ik_solutions = ik_solver.generate_ik_solutions(_demo_state.target_pose, nb_sols, latent=latent)
         l2_errors, ang_errors = solution_pose_errors(ik_solver.robot, ik_solutions, _demo_state.target_pose)
 
-        _demo_state.ave_l2_error = np.mean(l2_errors) * 1000
-        _demo_state.ave_ang_error = np.rad2deg(np.mean(ang_errors))
+        _demo_state.ave_l2_error = l2_errors.mean().item() * 1000
+        _demo_state.ave_ang_error = np.rad2deg(ang_errors.mean().item())
 
         # Update viz with solutions
         qs = robot._x_to_qs(ik_solutions.detach().cpu().numpy())
@@ -331,7 +331,6 @@ def oscillate_joints(robot: Robot):
 
     def setup_fn(worlds):
         vis.add("robot", worlds[0].robot(0))
-        vis.setColor("robot", 1, 0.1, 0.1, 1)
         assert len(worlds) == 1
 
     def loop_fn(worlds, _demo_state):
@@ -369,6 +368,5 @@ def oscillate_joints(robot: Robot):
         viz_update_fn,
         time_p_loop=time_p_loop,
         title=title,
-        load_terrain=True,
         demo_state=demo_state,
     )

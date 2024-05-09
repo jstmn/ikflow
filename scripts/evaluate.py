@@ -45,7 +45,7 @@ def calculate_error_stats(
     testset: np.ndarray,
     latent_distribution: str,
     latent_scale: float,
-    samples_per_pose: int,
+    solutions_per_pose: int,
     refine_solutions: bool,
     clamp_to_joint_limits: bool,
 ) -> ErrorStats:
@@ -55,33 +55,36 @@ def calculate_error_stats(
     """
     ik_solver.nn_model.eval()
 
-    pos_errs = []
-    rot_errs = []
+    pos_errs = 1e6*torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
+    rot_errs = 1e6*torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
     jlims_exceeded_count = 0
     self_collisions_count = 0
 
     with torch.inference_mode():
         for i in range(testset.shape[0]):
             ee_pose_target = torch.tensor(testset[i], dtype=torch.float32)
-            samples = ik_solver.generate_ik_solutions(
-                ee_pose_target,
-                samples_per_pose,
-                latent_distribution=latent_distribution,
-                latent_scale=latent_scale,
-                clamp_to_joint_limits=clamp_to_joint_limits,
-                refine_solutions=refine_solutions,
-            )
+            if refine_solutions:
+                solutions, _ = ik_solver.generate_exact_ik_solutions(ee_pose_target.repeat(solutions_per_pose, 1))
+            else:
+                solutions = ik_solver.generate_ik_solutions(
+                    ee_pose_target,
+                    solutions_per_pose,
+                    latent_distribution=latent_distribution,
+                    latent_scale=latent_scale,
+                    clamp_to_joint_limits=clamp_to_joint_limits,
+                )
             pos_errors_i, rot_errors_i, joint_limits_exceeded, self_collisions = evaluate_solutions(
-                robot, ee_pose_target, samples
+                robot, ee_pose_target, solutions
             )
-            pos_errs.extend(pos_errors_i)
-            rot_errs.extend(rot_errors_i)
+            pos_errs[i*solutions_per_pose: (i+1)*solutions_per_pose] = pos_errors_i
+            rot_errs[i*solutions_per_pose: (i+1)*solutions_per_pose] = rot_errors_i
             jlims_exceeded_count += joint_limits_exceeded.sum().item()
             self_collisions_count += self_collisions.sum().item()
-    n_total = testset.shape[0] * samples_per_pose
+
+    n_total = testset.shape[0] * solutions_per_pose
     return ErrorStats(
-        float(1000 * np.mean(pos_errs)),
-        float(np.rad2deg(np.mean(rot_errs))),
+        1000 * pos_errs.mean().item(),
+        float(np.rad2deg(rot_errs.mean().item())),
         100 * (jlims_exceeded_count / n_total),
         100 * (self_collisions_count / n_total),
     )
@@ -141,7 +144,7 @@ def evaluate_model(
         testset,
         _DEFAULT_LATENT_DISTRIBUTION,
         _DEFAULT_LATENT_SCALE,
-        args.samples_per_pose,
+        args.solutions_per_pose,
         refine_solutions=args.do_refinement,
         clamp_to_joint_limits=args.clamp_to_joint_limits,
     )
@@ -170,8 +173,10 @@ def evaluate_model(
 
 python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
 
+python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --solutions_per_pose=20
+python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --solutions_per_pose=20 --do_refinement
+
 python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
-python scripts/evaluate.py --testset_size=5 --model_name=panda__full__lp191_5.25m --samples_per_pose=3
 python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
 python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
@@ -180,7 +185,7 @@ python scripts/evaluate.py --testset_size=500 --model_name=rizon4__snowy-brook-2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
-    parser.add_argument("--samples_per_pose", default=50, type=int)
+    parser.add_argument("--solutions_per_pose", default=50, type=int)
     parser.add_argument(
         "--n_solutions_for_runtime",
         default=100,

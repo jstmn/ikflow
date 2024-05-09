@@ -1,20 +1,16 @@
 [tool.poetry]
 name = "ikflow"
-version = "0.0.10"
+version = "0.1.0"
 description = "Open source implementation of the 'IKFlow' inverse kinematics solver"
 authors = ["Jeremy Morgan <jsmorgan6@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-klampt = "0.9.1"
-torch = "^2.0.1"
 FrEIA = "^0.2"
-more-itertools = "^9.0.0"
-jrl = { git = "https://github.com/jstmn/Jrl.git", branch = "master" }
-pynvml = "11.5.0"
-numpy = "^1.24.2"
-pyyaml = "^6.0.1"
+jrl = { git = "https://github.com/jstmn/jrl.git", branch = "master" }
+# pynvml = "11.5.0"
+# pyyaml = "^6.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

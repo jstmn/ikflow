@@ -80,7 +80,7 @@ class IkflowSolverTest(unittest.TestCase):
         )
 
         # evaluate solutions
-        pose_realized = robot.forward_kinematics_batch(solutions)
+        pose_realized = robot.forward_kinematics(solutions)
         torch.testing.assert_close(pose_realized[:, 0:3], target_poses[:, 0:3], atol=POS_ERROR_THRESHOLD, rtol=1e-2)
         rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
         self.assertLess(rot_errors.max().item(), ROT_ERROR_THRESHOLD)

@@ -228,7 +228,9 @@ class IkfLitModel(LightningModule):
     def validation_step(self, batch, batch_idx) -> Dict[str, torch.Tensor]:
         del batch_idx
         _, y = batch
-        ee_pose_target = y.cpu().detach().numpy()[0]
+        ee_pose_target = y[0]
+
+        # Generates m=self.hparams.samples_per_pose solutions for a single pose
         solutions, model_runtime = self.generate_ik_solutions(
             ee_pose_target, self.hparams.samples_per_pose, return_runtime=True
         )
@@ -339,8 +341,8 @@ class IkfLitModel(LightningModule):
 
         # Note: No code change required here to handle using/not using softflow.
         conditional = torch.zeros(m, self.ik_solver.dim_cond)
-        conditional[:, 0:3] = torch.FloatTensor(y[:3])
-        conditional[:, 3 : 3 + 4] = torch.FloatTensor(np.array([y[3:]]))
+        conditional[:, 0:3] = y[:3]
+        conditional[:, 3 : 3 + 4] = y[3:]
         conditional = conditional.to(config.device)
 
         shape = (m, self.dim_tot)

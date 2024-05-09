@@ -71,15 +71,6 @@ class IKFlowSolver:
         """
         return self.dim_cond
 
-        """Refine a batch of IK solutions using the klampt IK solver
-        Args:
-            ikflow_solutions (torch.Tensor): A batch of IK solutions of the form [batch x n_dofs]
-            target_pose (Union[List[float], np.ndarray]): The target endpose(s). Must either be of the form
-                                                            [x, y, z, q0, q1, q2, q3] or be a [batch x 7] numpy array
-        Returns:
-            torch.Tensor: A batch of IK refined solutions [batch x n_dofs]
-        """
-
     def _run_inference(
         self,
         latent: torch.Tensor,
@@ -109,7 +100,7 @@ class IKFlowSolver:
 
     def _calculate_pose_error(self, qs: torch.Tensor, target_poses: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         # check error
-        pose_realized = self.robot.forward_kinematics_batch(qs)
+        pose_realized = self.robot.forward_kinematics(qs)
         pos_errors = torch.norm(pose_realized[:, 0:3] - target_poses[:, 0:3], dim=1)
         rot_errors = geodesic_distance_between_quaternions(target_poses[:, 3:], pose_realized[:, 3:])
         return pos_errors, rot_errors
@@ -201,10 +192,10 @@ class IKFlowSolver:
                 assert len(q) == n_invalid * repeat_count
                 t02 = time()
                 if run_lma_on_cpu and not do_run_entirely_on_cpu:
-                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled.cpu(), q.cpu())
+                    q = self.robot.inverse_kinematics_step_levenburg_marquardt(target_poses_tiled.cpu(), q.cpu())
                     q = q.to(device)
                 else:
-                    q = self.robot.inverse_kinematics_single_step_levenburg_marquardt(target_poses_tiled, q)
+                    q = self.robot.inverse_kinematics_step_levenburg_marquardt(target_poses_tiled, q)
                 t_lma += time() - t02
                 pos_errors, rot_errors = self._calculate_pose_error(q, target_poses_tiled)
                 valids_i_tiled = torch.logical_and(pos_errors < pos_error_threshold, rot_errors < rot_error_threshold)
@@ -253,7 +244,7 @@ class IKFlowSolver:
     def generate_ik_solutions(
         self,
         y: torch.Tensor,
-        n: Optional[int],
+        n: Optional[int] = None,
         latent: Optional[torch.Tensor] = None,
         latent_distribution: str = "gaussian",
         latent_scale: float = 1.0,

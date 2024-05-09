@@ -70,37 +70,30 @@ def solution_pose_errors(
 
     Args:
         robot (Robot): The Robot which contains the FK function we will use
-        solutions (Union[torch.Tensor, np.ndarray]): [n x 7] IK solutions for the given target pose
+        solutions torch.Tensor: [n x 7] IK solutions for the given target pose
         target_pose (np.ndarray): [7] the target pose the IK solutions were generated for
 
     Returns:
         Tuple[np.ndarray, np.ndarray]: The L2, and angular (rad) errors of IK solutions for the given target_pose
     """
-    assert isinstance(
-        target_poses, (np.ndarray, torch.Tensor)
-    ), f"target_poses must be a torch.Tensor or np.ndarray (got {type(target_poses)})"
+    assert isinstance(target_poses, torch.Tensor), f"target_poses must be a torch.Tensor (got {type(target_poses)})"
     assert isinstance(solutions, torch.Tensor), f"solutions must be a torch.Tensor (got {type(solutions)})"
     n_solutions = solutions.shape[0]
     if n_solutions >= 1000:
         print("Heads up: It may be faster to run solution_pose_errors() with pytorch directly on the cpu/gpu")
 
-    if isinstance(target_poses, torch.Tensor):
-        target_poses = target_poses.detach().cpu().numpy()
     target_poses = _get_target_pose_batch(target_poses, solutions.shape[0])
-
-    ee_pose_ikflow = robot.forward_kinematics(solutions[:, 0 : robot.ndof].detach().cpu().numpy())
+    ee_pose_ikflow = robot.forward_kinematics(solutions[:, 0 : robot.ndof])
     rot_output = ee_pose_ikflow[:, 3:]
 
     # Positional Error
-    l2_errors = np.linalg.norm(ee_pose_ikflow[:, 0:3] - target_poses[:, 0:3], axis=1)
+    l2_errors = torch.norm(ee_pose_ikflow[:, 0:3] - target_poses[:, 0:3], dim=1)
     rot_target = target_poses[:, 3:]
     assert rot_target.shape == rot_output.shape
 
     # Surprisingly, this is almost always faster to calculate on the gpu than on the cpu. I would expect the opposite
     # for low number of solutions (< 200).
-    q_target_pt = torch.tensor(rot_target, device=DEVICE, dtype=torch.float32)
-    q_current_pt = torch.tensor(rot_output, device=DEVICE, dtype=torch.float32)
-    ang_errors = geodesic_distance_between_quaternions(q_target_pt, q_current_pt).detach().cpu().numpy()
+    ang_errors = geodesic_distance_between_quaternions(rot_target, rot_output)
     return l2_errors, ang_errors
 
 
@@ -145,9 +138,7 @@ def evaluate_solutions(
             robot, ee_pose_target, samples
         )
     """
-    assert isinstance(
-        target_poses, (np.ndarray, torch.Tensor)
-    ), f"target_poses must be a torch.Tensor or np.ndarray (got {type(target_poses)})"
+    assert isinstance(target_poses, torch.Tensor), f"target_poses must be a torch.Tensor (got {type(target_poses)})"
     assert isinstance(solutions, torch.Tensor), f"solutions must be a torch.Tensor (got {type(solutions)})"
     target_poses = _get_target_pose_batch(target_poses, solutions.shape[0])
     l2_errors, angular_errors = solution_pose_errors(robot, solutions, target_poses)
