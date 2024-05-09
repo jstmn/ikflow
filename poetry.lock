@@ -1603,7 +1603,7 @@ warp-lang = "^0.10.1"
 [package.source]
 type = "git"
 url = "https://github.com/jstmn/jrl.git"
-reference = "master"
+reference = "f06dea0afd79f731bbc4934f902b49ebd6cec336"
 resolved_reference = "f06dea0afd79f731bbc4934f902b49ebd6cec336"
 
 [[package]]
@@ -4945,4 +4945,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "1ce1ecbd811d0cc2966ca68b19e304da41089758fe3774e655805807b1f72fea"
+content-hash = "7e1a1157a71ce8f05ed6f34d5673172aaeaeb163a99d4062cf8bd9f6c6da62e1"

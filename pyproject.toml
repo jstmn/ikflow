@@ -8,10 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 FrEIA = "^0.2"
-jrl = { git = "https://github.com/jstmn/jrl.git", branch = "master" }
-# pynvml = "11.5.0"
-# pyyaml = "^6.0.1"
-
+#jrl = { git = "https://github.com/jstmn/jrl.git", branch = "master" }
+jrl = { git = "https://github.com/jstmn/jrl.git", rev="f06dea0afd79f731bbc4934f902b49ebd6cec336"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"
