@@ -346,7 +346,7 @@ class IkfLitModel(LightningModule):
         conditional = conditional.to(config.device)
 
         shape = (m, self.dim_tot)
-        latent = draw_latent( "gaussian", 1, shape,None)
+        latent = draw_latent("gaussian", 1, shape, None)
         assert latent.shape[0] == m
         assert latent.shape[1] == self.dim_tot
 

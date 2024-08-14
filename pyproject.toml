@@ -9,7 +9,7 @@ readme = "README.md"
 python = ">=3.8.0,<=3.8.19"
 FrEIA = "0.2"
 #jrl = { git = "https://github.com/jstmn/jrl.git", branch = "master" }
-jrl = { git = "https://github.com/jstmn/jrl.git", rev = "590234f0f5275a4568a1b0b779b9e36536d5789d" }
+jrl = { git = "https://github.com/jstmn/jrl.git", rev = "38ac80bf8be7b2a3e05bb9ac10def0c31a859c28" }
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"

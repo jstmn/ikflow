@@ -55,8 +55,8 @@ def calculate_error_stats(
     """
     ik_solver.nn_model.eval()
 
-    pos_errs = 1e6*torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
-    rot_errs = 1e6*torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
+    pos_errs = 1e6 * torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
+    rot_errs = 1e6 * torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
     jlims_exceeded_count = 0
     self_collisions_count = 0
 
@@ -76,8 +76,8 @@ def calculate_error_stats(
             pos_errors_i, rot_errors_i, joint_limits_exceeded, self_collisions = evaluate_solutions(
                 robot, ee_pose_target, solutions
             )
-            pos_errs[i*solutions_per_pose: (i+1)*solutions_per_pose] = pos_errors_i
-            rot_errs[i*solutions_per_pose: (i+1)*solutions_per_pose] = rot_errors_i
+            pos_errs[i * solutions_per_pose : (i + 1) * solutions_per_pose] = pos_errors_i
+            rot_errs[i * solutions_per_pose : (i + 1) * solutions_per_pose] = rot_errors_i
             jlims_exceeded_count += joint_limits_exceeded.sum().item()
             self_collisions_count += self_collisions.sum().item()
 

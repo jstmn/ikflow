@@ -18,7 +18,9 @@ class EvaluationUtilsTest(unittest.TestCase):
         target_pose = torch.tensor([1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], dtype=torch.float32, device="cpu")
         solutions = torch.zeros((1, 7), dtype=torch.float32, device="cpu")
         realized_pose = robot.forward_kinematics(solutions)[0]
-        realized_pose_gt = torch.tensor([0.088, 0.0, 0.926, 0.0, 0.92387953, 0.38268343, 0.0], dtype=torch.float32, device="cpu")
+        realized_pose_gt = torch.tensor(
+            [0.088, 0.0, 0.926, 0.0, 0.92387953, 0.38268343, 0.0], dtype=torch.float32, device="cpu"
+        )
         np.testing.assert_allclose(realized_pose, realized_pose_gt, atol=1e-5)  # sanity check values
 
         # np.sqrt((1 - 0.088 )**2 +  (1 - 0.0 )**2 + (1 - 0.926 )**2 ) = 1.355440887681938

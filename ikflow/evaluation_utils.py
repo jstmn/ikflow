@@ -63,7 +63,7 @@ def pose_errors_cm_deg(
 
 
 def solution_pose_errors(
-    robot: Robot, solutions: torch.Tensor, target_poses: PT_NP_TYPE
+    robot: Robot, solutions: torch.Tensor, target_poses: torch.Tensor
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Return the L2 and angular errors of calculated ik solutions for a given target_pose. Note: this function expects
     multiple solutions but only a single target_pose. All of the solutions are assumed to be for the given target_pose
