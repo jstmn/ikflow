@@ -14,7 +14,7 @@ jrl = { git = "https://github.com/jstmn/jrl.git", branch = "master" }
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"
 pylint = "^2.16.2"
-matplotlib = "^3.7.0"
+matplotlib = ">=3.5.1"
 pytorch-lightning = "1.8.6"
 tensorboard = "2.11.0"
 wandb = "0.13.8"
