@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11"
 FrEIA = "0.2"
-jrl = { git = "https://github.com/jstmn/jrl.git", branch = "master" }
+jrl = { git = "https://github.com/jstmn/jrl.git" }
 
 
 [tool.poetry.group.dev.dependencies]
