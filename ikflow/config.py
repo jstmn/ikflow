@@ -1,16 +1,12 @@
 """Global configuration"""
 
 import os
-
 import torch
 
-from jrl.config import DEVICE as device
-
-# device = "cpu"
-
+from jrl.config import DEVICE
 
 DEFAULT_TORCH_DTYPE = torch.float32
-print(f"ikflow/config.py | Using device: '{device}'")
+print(f"ikflow/config.py | Using device: '{DEVICE}'")
 
 # ~/.cache/ikflow/
 DEFAULT_DATA_DIR = os.path.join(os.path.expanduser("~"), ".cache/ikflow/")

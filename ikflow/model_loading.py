@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 import yaml
 import os
 from urllib.request import urlretrieve
@@ -57,7 +57,9 @@ def model_filename(url: str) -> str:
     return url.split("/")[-1]
 
 
-def get_ik_solver(model_name: str, robot: Optional[Robot] = None) -> Tuple[IKFlowSolver, IkflowModelParameters]:
+def get_ik_solver(
+    model_name: str, robot: Optional[Robot] = None, compile_model: Optional[Dict] = None
+) -> Tuple[IKFlowSolver, IkflowModelParameters]:
     """Build and return the `IKFlowSolver` for the given model. The input `model_name` should match and index in `model_descriptions.yaml`
 
     Returns:
@@ -83,7 +85,7 @@ def get_ik_solver(model_name: str, robot: Optional[Robot] = None) -> Tuple[IKFlo
     # Build IKFlowSolver and set weights
     hyper_parameters = IkflowModelParameters()
     hyper_parameters.__dict__.update(hparams)
-    ik_solver = IKFlowSolver(hyper_parameters, robot)
+    ik_solver = IKFlowSolver(hyper_parameters, robot, compile_model=compile_model)
     ik_solver.load_state_dict(model_weights_filepath)
     return ik_solver, hyper_parameters
 
