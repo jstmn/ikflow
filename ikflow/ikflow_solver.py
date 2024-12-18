@@ -430,12 +430,12 @@ class IKFlowSolver:
                 self._model_weights_loaded = True
 
                 # Generate solutions so that torch.compile can do its thing
-                y = torch.randn(500, 7, device=DEVICE, dtype=DEFAULT_TORCH_DTYPE)
-
-                for i in [10, 20, 50, 100, 75, 150, 499]:
-                    t0 = time()
-                    self.generate_ik_solutions(y[0:i])
-                    print(f"Ran generate_ik_solutions((y[0:{i}], 7)) in {time()-t0:5f}")
+                if self._do_compile_model:
+                    y = torch.randn(500, 7, device=DEVICE, dtype=DEFAULT_TORCH_DTYPE)
+                    for i in [10, 20, 50, 100, 75, 150, 499]:
+                        t0 = time()
+                        self.generate_ik_solutions(y[0:i])
+                        print(f"Ran generate_ik_solutions(y[0:{i}], 7) in {time()-t0:5f}")
 
             except pickle.UnpicklingError as e:
                 print(f"Error loading state dict from {state_dict_filename}: {e}")
