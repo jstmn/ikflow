@@ -35,11 +35,10 @@ export PYOPENGL_PLATFORM=osmesa # this needs to be run every time you run a visu
 sudo apt-get install -y qt5-default build-essential qtcreator
 ```
 
-Lastly, install with pip:
+Lastly, install with uv:
 ``` bash
 git clone https://github.com/jstmn/ikflow.git && cd ikflow
-poetry install --with dev
-poetry shell
+uv sync
 ```
 
 
@@ -49,7 +48,7 @@ poetry shell
 
 Evaluate a pretrained IKFlow model for the Franka Panda arm. Note that the value for `model_name` - in this case `panda__full__lp191_5.25m` should match an entry in `model_descriptions.yaml` 
 ```
-python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m
+uv run python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m
 ```
 
 **> Example 2: Use IKFlow to generate exact IK solutions for the Franka Panda**
@@ -74,7 +73,7 @@ solutions, _ = ik_solver.generate_exact_ik_solutions(target_poses)
 
 Run the following:
 ```
-python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_name=oscillate_target
+uv run python scripts/visualize.py --model_name=fetch_arm__large__mh186_9.25m --demo_name=oscillate_target
 ```
 ![ikflow solutions for oscillating target pose](../media/ikflow__fetcharm__oscillating-target.gif?raw=true)
 
@@ -91,7 +90,7 @@ The training code uses [Pytorch Lightning](https://www.pytorchlightning.ai/) to 
 
 First, create a dataset for the robot:
 ```
-python scripts/build_dataset.py --robot_name=panda --training_set_size=25000000 --only_non_self_colliding
+uv run python scripts/build_dataset.py --robot_name=panda --training_set_size=25000000 --only_non_self_colliding
 ```
 
 Then start a training run:
@@ -103,7 +102,7 @@ wandb login
 export WANDB_PROJECT=ikflow 
 export WANDB_ENTITY=<your wandb entity name>
 
-python scripts/train.py \
+uv run python scripts/train.py \
     --robot_name=panda \
     --nb_nodes=12 \
     --batch_size=128 \

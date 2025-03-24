@@ -115,7 +115,7 @@ def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
     robot = ik_solver.robot
 
     def setup_fn(worlds):
-        vis.add(f"robot", worlds[0].robot(0))
+        vis.add("robot", worlds[0].robot(0))
 
     def loop_fn(worlds, _demo_state):
         x_random = robot.sample_joint_angles(1)
@@ -152,7 +152,7 @@ def oscillate_latent(ik_solver: IKFlowSolver):
 
     def setup_fn(worlds):
         del worlds
-        vis.add(f"robot", robot._klampt_robot)
+        vis.add("robot", robot._klampt_robot)
 
         # Axis
         vis.add("coordinates", coordinates.manager())
@@ -198,9 +198,9 @@ def oscillate_latent(ik_solver: IKFlowSolver):
     def viz_update_fn(worlds, _demo_state):
         del worlds
         for i in range(3):
-            vis.logPlot(f"joint_vector", f"joint_{i}", _demo_state.last_joint_vector[i])
+            vis.logPlot("joint_vector", f"joint_{i}", _demo_state.last_joint_vector[i])
         for i in range(3):
-            vis.logPlot(f"latent_vector", f"latent_{i}", _demo_state.last_latent[i])
+            vis.logPlot("latent_vector", f"latent_{i}", _demo_state.last_latent[i])
 
     demo_state = DemoState(
         counter=0, last_joint_vector=np.zeros(robot.ndof), last_latent=np.zeros(ik_solver.network_width)
@@ -289,9 +289,10 @@ def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
 
     raise NotImplementedError("need to fix this function")
 
+    robot = ik_solver.robot
     def setup_fn(worlds):
-        vis.add(f"robot_goal", worlds[0].robot(0))
-        vis.setColor(f"robot_goal", 0.5, 1, 1, 0)
+        vis.add("robot_goal", worlds[0].robot(0))
+        vis.setColor("robot_goal", 0.5, 1, 1, 0)
 
         for i in range(1, nb_sols + 1):
             vis.add(f"robot_{i}", worlds[i].robot(0))
@@ -299,14 +300,14 @@ def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
 
     def loop_fn(worlds, _demo_state):
         # Get random sample
-        random_sample = self.robot.sample_joint_angles(1)
-        random_sample_q = self.robot._x_to_qs(random_sample)
+        random_sample = robot.sample_joint_angles(1)
+        random_sample_q = robot._x_to_qs(random_sample)
         worlds[0].robot(0).setConfig(random_sample_q[0])
-        target_pose = self.robot.forward_kinematics_klampt(random_sample)[0]
+        target_pose = robot.forward_kinematics_klampt(random_sample)[0]
 
         # Get solutions to pose of random sample
-        ik_solutions = self.ik_solver.generate_ik_solutions(target_pose, nb_sols)
-        qs = self.robot._x_to_qs(ik_solutions)
+        ik_solutions = ik_solver.generate_ik_solutions(target_pose, nb_sols)
+        qs = robot._x_to_qs(ik_solutions)
         for i in range(nb_sols):
             worlds[i + 1].robot(0).setConfig(qs[i])
 
@@ -316,7 +317,7 @@ def random_target_pose(ik_solver: IKFlowSolver, nb_sols=5):
     def viz_update_fn(worlds, _demo_state):
         return
 
-    self._run_demo(nb_sols + 1, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
+    _run_demo(robot, nb_sols + 1, setup_fn, loop_fn, viz_update_fn, time_p_loop=time_p_loop, title=title)
 
 
 def oscillate_joints(robot: Robot):

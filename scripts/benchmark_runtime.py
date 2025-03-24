@@ -7,10 +7,8 @@ import torch
 import pandas as pd
 import matplotlib.pyplot as plt
 from jrl.utils import set_seed
-from jrl.math_utils import geodesic_distance_between_quaternions
 
 from ikflow.model_loading import get_ik_solver
-from ikflow.evaluation_utils import solution_pose_errors
 from ikflow.ikflow_solver import IKFlowSolver
 
 torch.set_printoptions(linewidth=200, precision=6, sci_mode=False)
@@ -34,12 +32,14 @@ ROT_ERROR_THRESHOLD = 0.01
 def solve_ikflow(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
     ikflow_solver.generate_ik_solutions(target_poses)
 
+
 def solve_klampt(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
     n_failed = 0
     for i in range(len(target_poses)):
         q_i = ikflow_solver.robot.inverse_kinematics_klampt(target_poses[i])
         if q_i is None:
             n_failed += 1
+
 
 def solve_klampt_ikflow_seed(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
     qs = ikflow_solver.generate_ik_solutions(target_poses).cpu().numpy()
@@ -50,19 +50,19 @@ def solve_klampt_ikflow_seed(ikflow_solver: IKFlowSolver, target_poses: torch.Te
         if q_i is None:
             n_failed += 1
 
+
 def solve_lma(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
     ikflow_solver.generate_exact_ik_solutions(target_poses, run_lma_on_cpu=True)
 
 
 """ Example 
 
-python scripts/benchmark_runtime.py --model_name=panda__full__lp191_5.25m
+uv run python scripts/benchmark_runtime.py --model_name=panda__full__lp191_5.25m
 
 TODO: report success pct as well. klampt / lma are going to have a different % exact solutions generated
 """
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument(
         "--model_name", type=str, required=True, help="Name of the saved model (see ikflow/model_descriptions.yaml)"
@@ -73,12 +73,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(
         columns=["method", "number of solutions", "total runtime (ms)", "runtime std", "runtime per solution (ms)"]
     )
-    method_names = [
-        "ikflow - NOT EXACT",
-        "klampt",
-        "ikflow with levenberg-marquardt",
-        "klampt with ikflow seeds"
-    ]
+    method_names = ["ikflow - NOT EXACT", "klampt", "ikflow with levenberg-marquardt", "klampt with ikflow seeds"]
 
     ikflow_solver, _ = get_ik_solver(args.model_name)
 

@@ -32,9 +32,9 @@ def draw_latent(
 class IKFlowSolver:
     def __init__(self, hyper_parameters: IkflowModelParameters, robot: Robot):
         """Initialize an IKFlowSolver."""
-        assert isinstance(
-            hyper_parameters, IkflowModelParameters
-        ), f"Error - hyper_parameters should be IkflowModelParameters type, is {type(hyper_parameters)}"
+        assert isinstance(hyper_parameters, IkflowModelParameters), (
+            f"Error - hyper_parameters should be IkflowModelParameters type, is {type(hyper_parameters)}"
+        )
         assert isinstance(robot, Robot), f"Error - robot should be Robot type, is {type(robot)}"
 
         # Add 'sigmoid_on_output' if IkflowModelParameters instance doesn't have it. This will be the case when loading
@@ -43,9 +43,9 @@ class IKFlowSolver:
             hyper_parameters.sigmoid_on_output = False
 
         if hyper_parameters.softflow_enabled:
-            assert (
-                not hyper_parameters.sigmoid_on_output
-            ), f"sigmoid_on_output and softflow are incompatible, disable one or the other"
+            assert not hyper_parameters.sigmoid_on_output, (
+                "sigmoid_on_output and softflow are incompatible, disable one or the other"
+            )
         self._robot = robot
         self.dim_cond = 7
         if hyper_parameters.softflow_enabled:
@@ -166,7 +166,6 @@ class IKFlowSolver:
         t_ikf = 0
 
         with torch.inference_mode():
-
             # Get seeds
             t01 = time()
             conditional = torch.cat(
@@ -215,7 +214,7 @@ class IKFlowSolver:
                 final_valids[torch.logical_not(final_valids)] = valids_i
 
                 if final_valids.all():
-                    printc(make_text_green_or_red(f"Converged after {i+1} iterations ({time() - t0} seconds)", True))
+                    printc(make_text_green_or_red(f"Converged after {i + 1} iterations ({time() - t0} seconds)", True))
                     return final_solutions.to(device_0), final_valids.to(device_0)
 
                 q = q[torch.logical_not(valids_i).repeat((repeat_count)), :]
@@ -229,7 +228,7 @@ class IKFlowSolver:
             printc("  t_other:", t_other)
             printc(
                 make_text_green_or_red(
-                    f"\nFailed to converge after {i+1} iterations"
+                    f"\nFailed to converge after {i + 1} iterations"
                     f" ({final_valids.sum().item()}/{final_valids.numel()} valid) ({time() - t0} seconds)",
                     False,
                 )
@@ -305,20 +304,19 @@ class IKFlowSolver:
 
         assert isinstance(latent_distribution, str)
         assert isinstance(latent_scale, float)
-        assert isinstance(latent, torch.Tensor) or (
-            latent is None
-        ), f"latent must either be a torch.Tensor or None (got {type(latent)})."
-        assert not refine_solutions, f"refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
+        assert isinstance(latent, torch.Tensor) or (latent is None), (
+            f"latent must either be a torch.Tensor or None (got {type(latent)})."
+        )
+        assert not refine_solutions, "refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
         if "cuda" in str(config.device):
-            assert "cpu" not in str(
-                y.device
-            ), "Use cuda if available. Note: you need to run self.nn_model.to('cpu') if you really want to use the cpu"
+            assert "cpu" not in str(y.device), (
+                "Use cuda if available. Note: you need to run self.nn_model.to('cpu') if you really want to use the cpu"
+            )
 
         n = y.shape[0] if n is None else n
         device = y.device
 
         with torch.inference_mode():
-
             # Get conditional
             if y.numel() == 7:
                 conditional = torch.cat(
@@ -348,7 +346,7 @@ class IKFlowSolver:
         """
         assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
         assert isinstance(repeat_counts, tuple), f"repeat_counts must be a tuple, got {type(repeat_counts)}"
-        assert not return_detailed, f"return_detailed is not currently supported for generate_exact_ik_solutions()"
+        assert not return_detailed, "return_detailed is not currently supported for generate_exact_ik_solutions()"
         t0 = time()
         n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
         n_retries = len(repeat_counts)
@@ -358,7 +356,6 @@ class IKFlowSolver:
                 print(s, *args, **kwargs)
 
         with torch.inference_mode():
-
             repeat_count = repeat_counts[0]
             solutions, valids = self._generate_exact_ik_solutions(
                 target_poses,

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 import argparse
 from time import time
 import sys
@@ -55,8 +55,8 @@ def calculate_error_stats(
     """
     ik_solver.nn_model.eval()
 
-    pos_errs = 1e6*torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
-    rot_errs = 1e6*torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
+    pos_errs = 1e6 * torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
+    rot_errs = 1e6 * torch.ones(testset.shape[0] * solutions_per_pose, dtype=torch.float32)
     jlims_exceeded_count = 0
     self_collisions_count = 0
 
@@ -76,8 +76,8 @@ def calculate_error_stats(
             pos_errors_i, rot_errors_i, joint_limits_exceeded, self_collisions = evaluate_solutions(
                 robot, ee_pose_target, solutions
             )
-            pos_errs[i*solutions_per_pose: (i+1)*solutions_per_pose] = pos_errors_i
-            rot_errs[i*solutions_per_pose: (i+1)*solutions_per_pose] = rot_errors_i
+            pos_errs[i * solutions_per_pose : (i + 1) * solutions_per_pose] = pos_errors_i
+            rot_errs[i * solutions_per_pose : (i + 1) * solutions_per_pose] = rot_errors_i
             jlims_exceeded_count += joint_limits_exceeded.sum().item()
             self_collisions_count += self_collisions.sum().item()
 
@@ -109,7 +109,7 @@ def calculate_runtime_stats(ik_solver: IKFlowSolver, n_solutions: int, k: int, r
 
 
 def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats: RuntimeStats):
-    print(f"\n----------------------------------------")
+    print("\n----------------------------------------")
     print(f"> Results for {args.model_name.upper()}")
     print(f"\n  solutions clamped to joint limits: {args.clamp_to_joint_limits}")
     print(f"  non-self-colliding testset:        {args.non_self_colliding_dataset}")
@@ -124,7 +124,7 @@ def pp_results(args: argparse.Namespace, error_stats: ErrorStats, runtime_stats:
         f" {round(runtime_stats.runtime_std, 4)} ms for {runtime_stats.nb_solutions} solutions"
     )
     print(
-        f"                                 {round(runtime_stats.mean_runtime_ms/runtime_stats.nb_solutions, 4)} ms"
+        f"                                 {round(runtime_stats.mean_runtime_ms / runtime_stats.nb_solutions, 4)} ms"
         " per solution"
     )
 
@@ -171,16 +171,16 @@ def evaluate_model(
 
 """ Example usage
 
-python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
+uv run python scripts/evaluate.py --testset_size=500 --n_solutions_for_runtime=100 --all
 
-python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --solutions_per_pose=20
-python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --solutions_per_pose=20 --do_refinement
+uv run python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --solutions_per_pose=20
+uv run python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --solutions_per_pose=20 --do_refinement
 
-python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
-python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
-python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
-python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
-python scripts/evaluate.py --testset_size=500 --model_name=rizon4__snowy-brook-208__global_step=2.75M
+uv run python scripts/evaluate.py --testset_size=500 --model_name=fetch_arm_full_temp
+uv run python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
+uv run python scripts/evaluate.py --testset_size=5 --model_name=fetch_full_temp_nsc_tpm
+uv run python scripts/evaluate.py --testset_size=500 --model_name=panda__full__lp191_5.25m --do_refinement
+uv run python scripts/evaluate.py --testset_size=500 --model_name=rizon4__snowy-brook-208__global_step=2.75M
 """
 
 if __name__ == "__main__":
@@ -230,7 +230,7 @@ if __name__ == "__main__":
         with open("model_performances.md", "w") as f:
             for line in current_lines:
                 f.write(line)
-            cli_input = "python " + " ".join(sys.argv)
+            cli_input = "uv run python " + " ".join(sys.argv)
             dt = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             f.write(f"\n\n**{dt}** | Generated with `{cli_input}`\n\n")
             f.write(df.to_markdown())

@@ -5,8 +5,8 @@ from jrl.robots import get_robot
 
 """ Example usage
 
-python scripts/visualize_robot.py --robot_name=panda
-python scripts/visualize_robot.py --robot_name=fetch
+uv run python scripts/visualize_robot.py --robot_name=panda
+uv run python scripts/visualize_robot.py --robot_name=fetch
 """
 
 if __name__ == "__main__":

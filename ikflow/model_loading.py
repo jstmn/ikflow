@@ -72,9 +72,9 @@ def get_ik_solver(model_name: str, robot: Optional[Robot] = None) -> Tuple[IKFlo
     assert isinstance(hparams, dict), f"model_hyperparameters must be a Dict, got {type(hparams)}"
 
     model_weights_filepath = download_model(model_weights_url)
-    assert os.path.isfile(
-        model_weights_filepath
-    ), f"File '{model_weights_filepath}' was not found. Unable to load model weights"
+    assert os.path.isfile(model_weights_filepath), (
+        f"File '{model_weights_filepath}' was not found. Unable to load model weights"
+    )
 
     if robot is None:
         robot = get_robot(robot_name)

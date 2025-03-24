@@ -59,9 +59,9 @@ def benchmark_get_pose_error():
 
     # Plot results
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    fig.suptitle(f"Levenberg-Marquardt IK Convergence")
+    fig.suptitle("Levenberg-Marquardt IK Convergence")
 
-    ax.set_title(f"Runtime")
+    ax.set_title("Runtime")
     ax.grid(alpha=0.2)
     ax.set_xlabel("batch size")
     ax.set_ylabel("runtime (s)")
@@ -81,12 +81,11 @@ def benchmark_get_pose_error():
     ax.scatter(batch_sizes, ts_cu, s=15, color=colors[1])
 
     ax.legend()
-    plt.savefig(f"get_pose_error_runtime_curve.pdf", bbox_inches="tight")
+    plt.savefig("get_pose_error_runtime_curve.pdf", bbox_inches="tight")
     plt.show()
 
 
 def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[str] = None):
-
     ikflow_solver, _ = get_ik_solver(model_name)
 
     batch_sizes = [1, 10, 100, 500, 750, 1000, 2000, 3000, 4000, 5000]
@@ -101,14 +100,12 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
     # for run_lma_on_cpu in [False, True]:
     for run_lma_on_cpu in [True]:
         for repeat_counts in all_repeat_counts:
-
             runtimes = []
             success_pcts = []
             runtime_stds = []
             success_pct_stds = []
 
             for batch_size in batch_sizes:
-
                 sub_runtimes = []
                 sub_success_pcts = []
 
@@ -136,15 +133,17 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
 
                 print(f"batch_size: {batch_size}, runtime: {runtimes[-1]:.3f}s")
 
-            curves.append((
-                np.array(batch_sizes),
-                np.array(runtimes),
-                np.array(runtime_stds),
-                np.array(success_pcts),
-                np.array(success_pct_stds),
-            ))
+            curves.append(
+                (
+                    np.array(batch_sizes),
+                    np.array(runtimes),
+                    np.array(runtime_stds),
+                    np.array(success_pcts),
+                    np.array(success_pct_stds),
+                )
+            )
             # labels.append(f"repeat_counts: {repeat_counts}, run_lma_on_cpu: {run_lma_on_cpu}")
-            labels.append(f"ikflow + lma")
+            labels.append("ikflow + lma")
 
     # Plot results
     #
@@ -155,12 +154,12 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
         fontsize=16,
     )
 
-    axl.set_title(f"Runtime")
+    axl.set_title("Runtime")
     axl.grid(alpha=0.2)
     axl.set_xlabel("Number of Solutions")
     axl.set_ylabel("Runtime (s)")
 
-    axr.set_title(f"Success Pct")
+    axr.set_title("Success Pct")
     axr.grid(alpha=0.2)
     axr.set_xlabel("Number of Solutions")
     axr.set_ylabel("Success percentage (%)")
@@ -176,13 +175,15 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
             runtime_stds = data["runtime_stds"]
             success_pcts = data["success_pcts"]
             success_pct_stds = data["success_pct_stds"]
-            curves.append((
-                np.array(batch_sizes),
-                np.array(runtimes),
-                np.array(runtime_stds),
-                np.array(success_pcts),
-                np.array(success_pct_stds),
-            ))
+            curves.append(
+                (
+                    np.array(batch_sizes),
+                    np.array(runtimes),
+                    np.array(runtime_stds),
+                    np.array(success_pcts),
+                    np.array(success_pct_stds),
+                )
+            )
             labels.append(data["label"])
 
     colors = evenly_spaced_colors(int(1.5 * len(curves)))
@@ -212,13 +213,12 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
 
 """ Example usage
 
-python scripts/benchmark_generate_exact_solutions.py --model_name=panda__full__lp191_5.25m
-python scripts/benchmark_generate_exact_solutions.py --model_name=panda__full__lp191_5.25m --comparison_data_filepath=ik_runtime_results__curobo.pkl
+uv run python scripts/benchmark_generate_exact_solutions.py --model_name=panda__full__lp191_5.25m
+uv run python scripts/benchmark_generate_exact_solutions.py --model_name=panda__full__lp191_5.25m --comparison_data_filepath=ik_runtime_results__curobo.pkl
 
 """
 
 if __name__ == "__main__":
-
     parser = ArgumentParser()
     parser.add_argument("--model_name", type=str, required=True)
     parser.add_argument("--comparison_data_filepath", type=str, required=False)

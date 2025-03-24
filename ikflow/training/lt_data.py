@@ -28,7 +28,7 @@ class IkfLitDataset(LightningDataModule):
         dataset_directory = get_dataset_directory(self._robot_name)
         assert os.path.isdir(dataset_directory), (
             f"Directory '{dataset_directory}' doesn't exist - have you created the dataset for this robot yet? Your probably want to run"
-            f" `python scripts/build_dataset.py --robot_name={robot_name} --training_set_size=10000000 --only_non_self_colliding`)"
+            f" `uv run python scripts/build_dataset.py --robot_name={robot_name} --training_set_size=10000000 --only_non_self_colliding`)"
         )
         samples_tr_file_path, poses_tr_file_path, samples_te_file_path, poses_te_file_path, _ = get_dataset_filepaths(
             dataset_directory, dataset_tags
@@ -39,29 +39,36 @@ class IkfLitDataset(LightningDataModule):
         self._endpoints_te = torch.load(poses_te_file_path).to(device)
 
         self._sum_joint_limit_range = get_sum_joint_limit_range(self._samples_tr)
+        self.allow_zero_length_dataloader_with_multiple_devices = False
 
     def add_dataset_hashes_to_cfg(self, cfg: Dict):
-        cfg.update({
-            "dataset_hashes": str([
-                self._samples_tr.sum().item(),
-                self._endpoints_tr.sum().item(),
-                self._samples_te.sum().item(),
-                self._endpoints_te.sum().item(),
-            ])
-        })
+        cfg.update(
+            {
+                "dataset_hashes": str(
+                    [
+                        self._samples_tr.sum().item(),
+                        self._endpoints_tr.sum().item(),
+                        self._samples_te.sum().item(),
+                        self._endpoints_te.sum().item(),
+                    ]
+                )
+            }
+        )
 
     def log_dataset_sizes(self, epoch=0, batch_nb=0):
         """Log the training and testset size to wandb"""
         assert self._samples_tr.shape[0] == self._endpoints_tr.shape[0]
         assert self._samples_te.shape[0] == self._endpoints_te.shape[0]
-        wandb.log({
-            "epoch": epoch,
-            "batch_nb": batch_nb,
-            "small_dataset": self._use_small_dataset,
-            "sum_joint_limit_range": self._sum_joint_limit_range,
-            "dataset_size_tr": self._samples_tr.shape[0],
-            "dataset_size_te": self._samples_te.shape[0],
-        })
+        wandb.log(
+            {
+                "epoch": epoch,
+                "batch_nb": batch_nb,
+                "small_dataset": self._use_small_dataset,
+                "sum_joint_limit_range": self._sum_joint_limit_range,
+                "dataset_size_tr": self._samples_tr.shape[0],
+                "dataset_size_te": self._samples_te.shape[0],
+            }
+        )
 
     def train_dataloader(self):
         return DataLoader(
