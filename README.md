@@ -9,17 +9,7 @@ Runtime curve for getting *exact* IK solutions for the Franka Panda (maximum pos
 ![alt text](../media/exact_ik_runtime__model:panda__full__lp191_5.25m.png?raw=true)
 
 
-
-## Setup - inference only
-
-``` bash
-git clone https://github.com/jstmn/ikflow.git && cd ikflow
-poetry install --without dev
-poetry shell
-```
-
-
-## Setup - inference, training, and visualization
+## Setup
 
 The following section outlines the setup procedures required to run the visualizer that this project uses. The only supported OS is Ubuntu. Visualization may work on Mac and Windows, I haven't tried it though. For Ubuntu, there are different system wide dependencies for `Ubuntu > 21` and `Ubuntu < 21`. For example, `qt5-default` is not in the apt repository for Ubuntu 21.0+ so can't be installed. See https://askubuntu.com/questions/1335184/qt5-default-not-in-ubuntu-21-04.
 
@@ -39,6 +29,7 @@ Lastly, install with uv:
 ``` bash
 git clone https://github.com/jstmn/ikflow.git && cd ikflow
 uv sync
+uv pip install -e .
 ```
 
 
@@ -96,7 +87,7 @@ uv run python scripts/build_dataset.py --robot_name=panda --training_set_size=25
 Then start a training run:
 ```
 # Login to wandb account - Only needs to be run once
-wandb login
+uv run wandb login
 
 # Set wandb project name and entity
 export WANDB_PROJECT=ikflow 
