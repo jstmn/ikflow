@@ -2,7 +2,7 @@ import argparse
 
 from ikflow.utils import set_seed
 from ikflow.model_loading import get_ik_solver
-from ikflow.config import device
+from ikflow.config import DEVICE
 
 import torch
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     number_of_solutions=5 solutions for the target pose.
     """
     target_pose = torch.tensor(
-        [0.5, 0.5, 0.5, 1, 0, 0, 0], device=device
+        [0.5, 0.5, 0.5, 1, 0, 0, 0], device=DEVICE
     )  # Note: quaternions format for ikflow is [w x y z] (I have learned this the hard way...)
     number_of_solutions = 5
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             [0.55, 0, 0.5, 1, 0, 0, 0],
             [0.65, 0, 0.5, 1, 0, 0, 0],
         ],
-        device=device,
+        device=DEVICE,
     )
 
     # -> approximate solutions

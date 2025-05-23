@@ -13,7 +13,7 @@ import torch
 import torch.optim
 
 from ikflow.ikflow_solver import IKFlowSolver
-from ikflow.config import device, DEFAULT_TORCH_DTYPE
+from ikflow.config import DEVICE, DEFAULT_TORCH_DTYPE
 from ikflow.evaluation_utils import solution_pose_errors
 
 
@@ -128,7 +128,7 @@ def visualize_fk(ik_solver: IKFlowSolver, solver="klampt"):
             vis.add("ee", (so3.from_quaternion(ee_pose[3:]), ee_pose[0:3]), length=0.15, width=2)
         else:
             # (B x 3*(n+1) )
-            x_torch = torch.from_numpy(x_random).float().to(device)
+            x_torch = torch.from_numpy(x_random).float().to(DEVICE)
             fk = robot.forward_kinematics(x_torch)
             ee_pose = fk[0, 0:3]
             vis.add("ee", (so3.identity(), ee_pose[0:3]), length=0.15, width=2)
@@ -148,7 +148,7 @@ def oscillate_latent(ik_solver: IKFlowSolver):
     title = "Fixed end pose with oscillation through the latent space"
     robot = ik_solver.robot
     target_pose = _OSCILLATE_LATENT_TARGET_POSES[ik_solver.robot.name]
-    rev_input = torch.zeros(1, ik_solver.network_width).to(device)
+    rev_input = torch.zeros(1, ik_solver.network_width).to(DEVICE)
 
     def setup_fn(worlds):
         del worlds
@@ -218,7 +218,7 @@ def oscillate_target(ik_solver: IKFlowSolver, nb_sols=5, fixed_latent=True):
     title = "Solutions for oscillating target pose"
     latent = None
     if fixed_latent:
-        latent = torch.randn((nb_sols, ik_solver.network_width)).to(device)
+        latent = torch.randn((nb_sols, ik_solver.network_width)).to(DEVICE)
 
     robot = ik_solver.robot
     target_pose_fn = _TARGET_POSE_FUNCTIONS[robot.name]

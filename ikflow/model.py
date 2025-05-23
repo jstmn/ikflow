@@ -7,7 +7,7 @@ import FrEIA.modules as Fm
 import torch.nn as nn
 import torch
 
-from ikflow import config
+from ikflow.config import DEVICE
 from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.utils import assert_joint_angle_tensor_in_joint_limits
 
@@ -243,8 +243,8 @@ def get_pre_sigmoid_scaling_node(ndim_tot: int, robot: Robot, nodes: List[Ff.Nod
     passed to the sigmoid function.
     """
 
-    M_scaling = torch.eye(ndim_tot, device=config.device)
-    M_offset = torch.zeros(ndim_tot, device=config.device)
+    M_scaling = torch.eye(ndim_tot, device=DEVICE)
+    M_offset = torch.zeros(ndim_tot, device=DEVICE)
 
     output_up = 1.0
     output_low = 0.0
@@ -288,7 +288,7 @@ def get_pre_sigmoid_scaling_node(ndim_tot: int, robot: Robot, nodes: List[Ff.Nod
     )
 
 
-def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, ndim_tot: int):
+def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, ndim_tot: int) -> nn.Module:
     """
     Build an conditional invertible neural network consisting of a sequence of glow coupling layers, and permutation layers
     """
@@ -352,5 +352,5 @@ def glow_cNF_model(params: IkflowModelParameters, robot: Robot, dim_cond: int, n
         nodes.append(glow_node)
 
     model = Ff.GraphINN(nodes + [cond, Ff.OutputNode([nodes[-1].out0], name="output")], verbose=_VERBOSE)
-    model.to(config.device)
+    model.to(DEVICE)
     return model

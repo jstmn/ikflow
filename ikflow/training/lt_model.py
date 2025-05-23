@@ -48,7 +48,7 @@ class IkfLitModel(LightningModule):
 
         self.ik_solver = ik_solver
         self.nn_model = ik_solver.nn_model
-        self.nn_model.to(config.device)
+        self.nn_model.to(DEVICE)
         self.base_hparams = base_hparams
         self.ndof = self.ik_solver.robot.ndof
         self.dim_tot = self.base_hparams.dim_latent_space
@@ -128,12 +128,12 @@ class IkfLitModel(LightningModule):
     def ml_loss_fn(self, batch):
         """Maximum likelihood loss"""
         x, y = batch
-        y = y.to(config.device)
-        x = x.to(config.device)
+        y = y.to(DEVICE)
+        x = x.to(DEVICE)
 
         batch_size = y.shape[0]
         if self.dim_tot > self.ndof:
-            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.ndof)).to(config.device)
+            pad_x = 0.001 * torch.randn((batch_size, self.dim_tot - self.ndof)).to(DEVICE)
 
             # padding must be in (-SIGMOID_SCALING_ABS_MAX, SIGMOID_SCALING_ABS_MAX). This value will be scaled to these
             # bounds and then passed through inverse sigmoid. If they are outside of these bounds, inverse-sigmoid will
@@ -344,7 +344,7 @@ class IkfLitModel(LightningModule):
         conditional = torch.zeros(m, self.ik_solver.dim_cond)
         conditional[:, 0:3] = y[:3]
         conditional[:, 3 : 3 + 4] = y[3:]
-        conditional = conditional.to(config.device)
+        conditional = conditional.to(DEVICE)
 
         shape = (m, self.dim_tot)
         latent = draw_latent("gaussian", 1, shape, None)

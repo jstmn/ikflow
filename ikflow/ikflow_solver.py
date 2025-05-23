@@ -1,14 +1,14 @@
-from typing import Tuple, Optional, Union, Callable
+from typing import Tuple, Optional, Union, Callable, Dict
 import pickle
 from time import time
+import warnings
 
 from jrl.math_utils import geodesic_distance_between_quaternions
 from jrl.utils import mm_to_m, make_text_green_or_red
 from jrl.robots import Robot
 import torch
 
-from ikflow import config
-from ikflow.config import DEFAULT_TORCH_DTYPE
+from ikflow.config import DEVICE, DEFAULT_TORCH_DTYPE
 from ikflow.model import IkflowModelParameters, glow_cNF_model
 from ikflow.evaluation_utils import evaluate_solutions, SOLUTION_EVALUATION_RESULT_TYPE
 
@@ -30,12 +30,13 @@ def draw_latent(
 
 
 class IKFlowSolver:
-    def __init__(self, hyper_parameters: IkflowModelParameters, robot: Robot):
+    def __init__(self, hyper_parameters: IkflowModelParameters, robot: Robot, compile_model: Optional[Dict]):
         """Initialize an IKFlowSolver."""
-        assert isinstance(hyper_parameters, IkflowModelParameters), (
-            f"Error - hyper_parameters should be IkflowModelParameters type, is {type(hyper_parameters)}"
-        )
-        assert isinstance(robot, Robot), f"Error - robot should be Robot type, is {type(robot)}"
+        assert isinstance(
+            hyper_parameters, IkflowModelParameters
+        ), f"hyper_parameters should be a IkflowModelParameters type, is {type(hyper_parameters)}"
+        assert isinstance(robot, Robot), f"robot should be a Robot type, is {type(robot)}"
+        assert isinstance(compile_model, (type(None), Dict))
 
         # Add 'sigmoid_on_output' if IkflowModelParameters instance doesn't have it. This will be the case when loading
         # from training runs from before this parameter was added
@@ -52,8 +53,18 @@ class IKFlowSolver:
             self.dim_cond = 8  # [x, ... q3, softflow_scale]   (softflow_scale should be 0 for inference)
         self._network_width = hyper_parameters.dim_latent_space
 
-        # Note: Changing `nn_model` to `_nn_model` may break the logic in 'download_model_from_wandb_checkpoint.py'
+        self._do_compile_model = compile_model is not None
+        self._model_weights_loaded = False
         self.nn_model = glow_cNF_model(hyper_parameters, self._robot, self.dim_cond, self._network_width)
+        if self._do_compile_model:
+            warnings.warn(
+                "Compiling the ikflow model is not recommended. There are very minor inference speed reduction gains"
+                " (~1 ms), at the cost of a ~15s delay on the first model inference."
+            )
+            self.nn_model = torch.compile(
+                self.nn_model, **compile_model
+            )  # modes: 'default', 'reduce-overhead' (2 more)
+
         self.ndof = self.robot.ndof
 
     @property
@@ -295,6 +306,7 @@ class IKFlowSolver:
                 - float: The runtime of the operation
         """
         t0 = time()
+        assert self._model_weights_loaded, f"Model weights have not been loaded. Call load_state_dict(...)"
         assert isinstance(y, torch.Tensor), f"y must be a torch.Tensor (got {type(y)})."
         if y.numel() == 7:
             assert isinstance(n, int)
@@ -304,14 +316,12 @@ class IKFlowSolver:
 
         assert isinstance(latent_distribution, str)
         assert isinstance(latent_scale, float)
-        assert isinstance(latent, torch.Tensor) or (latent is None), (
-            f"latent must either be a torch.Tensor or None (got {type(latent)})."
-        )
-        assert not refine_solutions, "refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
-        if "cuda" in str(config.device):
-            assert "cpu" not in str(y.device), (
-                "Use cuda if available. Note: you need to run self.nn_model.to('cpu') if you really want to use the cpu"
-            )
+        assert isinstance(latent, torch.Tensor) or (
+            latent is None
+        ), f"latent must either be a torch.Tensor or None (got {type(latent)})."
+        assert not refine_solutions, f"refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
+        if "cuda" in str(DEVICE):
+            assert "cpu" not in str(y.device), f"Cuda is available ('{DEVICE}'), but target_poses are on {y.device}"
 
         n = y.shape[0] if n is None else n
         device = y.device
@@ -340,13 +350,14 @@ class IKFlowSolver:
         run_lma_on_cpu: bool = True,
         return_detailed: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Same as generate_ik_solutions() but optimizes solutions using Levenberg-Marquardt after they're generated.
+        """Same as generate_ik_solutions() but refines solutions using Levenberg-Marquardt after they're generated.
 
         NOTE: returned solutions may be self colliding
         """
         assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
         assert isinstance(repeat_counts, tuple), f"repeat_counts must be a tuple, got {type(repeat_counts)}"
-        assert not return_detailed, "return_detailed is not currently supported for generate_exact_ik_solutions()"
+        assert not return_detailed, f"return_detailed is not currently supported for generate_exact_ik_solutions()"
+        assert self._model_weights_loaded, f"Model weights have not been loaded. Call load_state_dict(...)"
         t0 = time()
         n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
         n_retries = len(repeat_counts)
@@ -399,9 +410,30 @@ class IKFlowSolver:
 
     def load_state_dict(self, state_dict_filename: str):
         """Set the nn_models state_dict"""
+
         with open(state_dict_filename, "rb") as f:
             try:
-                self.nn_model.load_state_dict(pickle.load(f))
+                state_dict = pickle.load(f)
+
+                if self._do_compile_model:
+                    # the keys in compiled models are prepended with '_orig_mod.' for some reason i'm not aware of
+                    new_state_dict = {}
+                    for k, v in state_dict.items():
+                        assert not k.startswith("_orig_mod.")
+                        new_state_dict[f"_orig_mod.{k}"] = v
+                    state_dict = new_state_dict
+
+                self.nn_model.load_state_dict(state_dict)
+                self._model_weights_loaded = True
+
+                # Generate solutions so that torch.compile can do its thing
+                if self._do_compile_model:
+                    y = torch.randn(500, 7, device=DEVICE, dtype=DEFAULT_TORCH_DTYPE)
+                    for i in [10, 20, 50, 100, 75, 150, 499]:
+                        t0 = time()
+                        self.generate_ik_solutions(y[0:i])
+                        print(f"Ran generate_ik_solutions(y[0:{i}], 7) in {time()-t0:5f}")
+
             except pickle.UnpicklingError as e:
                 print(f"Error loading state dict from {state_dict_filename}: {e}")
                 raise e

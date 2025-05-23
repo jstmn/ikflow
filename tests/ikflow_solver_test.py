@@ -58,7 +58,7 @@ class IkflowSolverTest(unittest.TestCase):
         POS_ERROR_THRESHOLD = 0.001
         ROT_ERROR_THRESHOLD = 0.01
         # device = "cpu"
-        device = config.device
+        device = DEVICE
         n_solutions = 1000
         repeat_counts = (1, 3, 10)
 
@@ -91,26 +91,26 @@ class IkflowSolverTest(unittest.TestCase):
         ikflow_solver = IKFlowSolver(TINY_MODEL_PARAMS, robot)
 
         # Test 1: equal inputs should have equal outputs
-        ys = torch.tensor([[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]], device=config.device, dtype=torch.float32)
+        ys = torch.tensor([[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]], device=DEVICE, dtype=torch.float32)
         latent = torch.tensor(
             [
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
             ],
-            device=config.device,
+            device=DEVICE,
             dtype=torch.float32,
         )
         ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
         torch.testing.assert_close(ikf_sols[0], ikf_sols[1])
 
         # Test 2: different inputs should have equal outputs
-        ys = torch.tensor([[0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0]], device=config.device, dtype=torch.float32)
+        ys = torch.tensor([[0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0]], device=DEVICE, dtype=torch.float32)
         latent = torch.tensor(
             [
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
             ],
-            device=config.device,
+            device=DEVICE,
             dtype=torch.float32,
         )
         ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
