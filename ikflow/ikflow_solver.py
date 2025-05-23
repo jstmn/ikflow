@@ -308,7 +308,7 @@ class IKFlowSolver:
         """
         t0 = time()
         if not allow_uninitialized:
-            assert self._model_weights_loaded, f"Model weights have not been loaded. Call load_state_dict(...)"
+            assert self._model_weights_loaded, "Model weights have not been loaded. Call load_state_dict(...)"
         assert isinstance(y, torch.Tensor), f"y must be a torch.Tensor (got {type(y)})."
         if y.numel() == 7:
             assert isinstance(n, int)
@@ -321,7 +321,7 @@ class IKFlowSolver:
         assert isinstance(latent, torch.Tensor) or (
             latent is None
         ), f"latent must either be a torch.Tensor or None (got {type(latent)})."
-        assert not refine_solutions, f"refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
+        assert not refine_solutions, "refine_solutions is deprecated, use generate_exact_ik_solutions() instead"
         if "cuda" in str(DEVICE):
             assert "cpu" not in str(y.device), f"Cuda is available ('{DEVICE}'), but target_poses are on {y.device}"
 
@@ -358,8 +358,8 @@ class IKFlowSolver:
         """
         assert target_poses.shape[1] == 7, f"target_poses must be of shape [n x 7], got {target_poses.shape}"
         assert isinstance(repeat_counts, tuple), f"repeat_counts must be a tuple, got {type(repeat_counts)}"
-        assert not return_detailed, f"return_detailed is not currently supported for generate_exact_ik_solutions()"
-        assert self._model_weights_loaded, f"Model weights have not been loaded. Call load_state_dict(...)"
+        assert not return_detailed, "return_detailed is not currently supported for generate_exact_ik_solutions()"
+        assert self._model_weights_loaded, "Model weights have not been loaded. Call load_state_dict(...)"
         t0 = time()
         n_opt_steps_max = 3  # repeat_count = 3 ->  s, repeat_count = 2 ->  s
         n_retries = len(repeat_counts)

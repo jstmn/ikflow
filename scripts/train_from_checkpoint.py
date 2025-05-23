@@ -2,29 +2,24 @@ import argparse
 import os
 from time import time
 
+from jrl.config import GPU_IDX
+from jrl.robots import get_robot
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.trainer import Trainer
+from pytorch_lightning import seed_everything
+import wandb
+import torch
 
 from ikflow import config
-from jrl.config import GPU_IDX
-
-assert GPU_IDX >= 0
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
-from jrl.robots import get_robot
 from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.training.lt_data import IkfLitDataset
 from ikflow.utils import get_wandb_project
 
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.trainer import Trainer
-
-# sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
-from pytorch_lightning import seed_everything
-
-import wandb
-import torch
-
+assert GPU_IDX >= 0
 DEFAULT_MAX_EPOCHS = 5000
 SEED = 0
 seed_everything(SEED, workers=True)

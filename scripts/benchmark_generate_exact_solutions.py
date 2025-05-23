@@ -115,7 +115,7 @@ def get_stats(batch_sizes, k_retry, ikflow_solver, device, repeat_counts, run_lm
             sub_runtimes.append(time() - t0)
             sub_success_pcts.append(100 * valid_solution_idxs.sum().item() / batch_size)
             sub_n_found.append(valid_solution_idxs.sum().item())
-            print(f"should not be equal, if not all successful:", solutions.shape[0], valid_solution_idxs.sum().item())
+            print("should not be equal, if not all successful:", solutions.shape[0], valid_solution_idxs.sum().item())
 
         runtimes.append(np.mean(sub_runtimes))
         runtime_stds.append(np.std(sub_runtimes))
@@ -194,16 +194,16 @@ def benchmark_get_exact_ik(model_name: str, comparison_data_filepath: Optional[s
         fontsize=16,
     )
 
-    axl.set_title(f"Runtime")
+    axl.set_title("Runtime")
     axl.grid(alpha=0.2)
     axl.set_xlabel("Number of Solutions")
     axl.set_ylabel("Runtime (s)")
 
-    axr.set_title(f"Success Pct")
+    axr.set_title("Success Pct")
     axr.set_xlabel("Number of Solutions")
     axr.set_ylabel("Success percentage (%)")
 
-    axrr.set_title(f"Number of solutions found")
+    axrr.set_title("Number of solutions found")
     axrr.grid(alpha=0.2)
     axrr.set_xlabel("Number of Solutions Requested")
     axrr.set_ylabel("Number of Solutions Returned")

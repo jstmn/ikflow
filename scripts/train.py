@@ -5,16 +5,12 @@ from jrl.robots import get_robot
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
-
-# sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
 from pytorch_lightning import seed_everything
 import wandb
 import torch
-
 from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
 from jrl.config import GPU_IDX
 
-assert GPU_IDX >= 0
 from ikflow import config
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
@@ -24,6 +20,7 @@ from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.utils import boolean_string, non_private_dict, get_wandb_project
 
 
+assert GPU_IDX >= 0
 DEFAULT_MAX_EPOCHS = 5000
 SEED = 0
 seed_everything(SEED, workers=True)

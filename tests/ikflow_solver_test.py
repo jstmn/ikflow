@@ -6,7 +6,6 @@ from jrl.robots import Panda
 from jrl.math_utils import geodesic_distance_between_quaternions
 from jrl.config import DEVICE
 
-from ikflow import config
 from ikflow.model_loading import get_ik_solver
 from ikflow.utils import set_seed
 from ikflow.model import TINY_MODEL_PARAMS
