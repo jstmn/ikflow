@@ -49,3 +49,7 @@ ikflow.egg-info
 build/
 *.pdf
 *.png
+
+.pytest_cache/
+.ruff_cache/
+.venv/

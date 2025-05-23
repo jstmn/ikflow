@@ -2,29 +2,24 @@ import argparse
 import os
 from time import time
 
+from jrl.config import GPU_IDX
+from jrl.robots import get_robot
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.trainer import Trainer
+from pytorch_lightning import seed_everything
+import wandb
+import torch
 
 from ikflow import config
-from jrl.config import GPU_IDX
-
-assert GPU_IDX >= 0
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
-from jrl.robots import get_robot
 from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.training.lt_model import IkfLitModel
 from ikflow.training.lt_data import IkfLitDataset
 from ikflow.utils import get_wandb_project
 
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.trainer import Trainer
-
-# sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
-from pytorch_lightning import Trainer, seed_everything
-
-import wandb
-import torch
-
+assert GPU_IDX >= 0
 DEFAULT_MAX_EPOCHS = 5000
 SEED = 0
 seed_everything(SEED, workers=True)
@@ -34,7 +29,7 @@ seed_everything(SEED, workers=True)
 _____________
 Example usage
 
-python scripts/train_from_checkpoint.py --wandb_run_id=1vhgo90v
+uv run python scripts/train_from_checkpoint.py --wandb_run_id=1vhgo90v
 """
 
 if __name__ == "__main__":
@@ -55,7 +50,7 @@ if __name__ == "__main__":
     artifact = wandb_run.use_artifact(f"model-{args.wandb_run_id}:best_k")
     t0 = time()
     artifact_dir = artifact.download()
-    print(f"Downloaded artifact '{artifact.name}' in {round(1000*(time() - t0),2)} ms")
+    print(f"Downloaded artifact '{artifact.name}' in {round(1000 * (time() - t0), 2)} ms")
     ckpt_filepath = os.path.join(artifact_dir, "model.ckpt")
     checkpoint = torch.load(ckpt_filepath, map_location=lambda storage, loc: storage)
 

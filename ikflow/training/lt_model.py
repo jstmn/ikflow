@@ -1,14 +1,15 @@
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict
 from time import time
 
 from jrl.robots import Fetch
+from jrl.config import DEVICE
 import wandb
 import numpy as np
 import torch
 from pytorch_lightning.core.module import LightningModule
 
+
 from ikflow.training.training_utils import get_softflow_noise
-from ikflow import config
 from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters
@@ -62,6 +63,8 @@ class IkfLitModel(LightningModule):
         if self.hparams.optimizer_name == "ranger":
             # Important: This property activates manual optimization.
             self.automatic_optimization = False
+
+        self._validation_step_outputs = []
 
     def configure_optimizers(self):
         """Configure the optimizer and learning rate scheduler"""
@@ -219,16 +222,18 @@ class IkfLitModel(LightningModule):
 
         if self.trainer.global_step % self.log_every == 0:
             ave_grad, ave_abs_grad, max_grad = grad_stats(self.parameters())
-            self.safe_log_metrics({
-                "tr/grad_ave": ave_grad,
-                "tr/grad_abs_ave": ave_abs_grad,
-                "tr/grad_max": max_grad,
-            })
+            self.safe_log_metrics(
+                {
+                    "tr/grad_ave": ave_grad,
+                    "tr/grad_abs_ave": ave_abs_grad,
+                    "tr/grad_max": max_grad,
+                }
+            )
 
     def validation_step(self, batch, batch_idx) -> Dict[str, torch.Tensor]:
         del batch_idx
         _, y = batch
-        ee_pose_target = y[0]
+        ee_pose_target = y[0]  # TODO: Evaluate on all poses in batch at once instead of one at a time
 
         # Generates m=self.hparams.samples_per_pose solutions for a single pose
         solutions, model_runtime = self.generate_ik_solutions(
@@ -261,14 +266,13 @@ class IkfLitModel(LightningModule):
             "joint_limits_exceeded": joint_limits_exceeded_clamped,
             "self_collisions": self_collisions_clamped,
         }
+        self._validation_step_outputs.append(result)
         return result
 
-    def validation_epoch_end(self, validation_step_outputs: List[Dict[str, torch.Tensor]]):
-        """_summary_
+    def on_validation_epoch_end(self):
+        """ """
+        validation_step_outputs = self._validation_step_outputs
 
-        Args:
-            validation_step_outputs (_type_): _description_
-        """
         results_clamped = [result["clamped"] for result in validation_step_outputs]
         results_non_clamped = [result["non_clamped"] for result in validation_step_outputs]
         model_runtimes = [pred["model_runtime"] for pred in validation_step_outputs]
@@ -325,9 +329,7 @@ class IkfLitModel(LightningModule):
         # self.global_step converted to float because of the following warning:
         #   "UserWarning: You called `self.log('global_step', ...)` in your `validation_epoch_end` but the value needs to be floating point. Converting it to torch.float32."
         self.log("global_step", float(self.global_step))
-
-        # Ignoring table logging for now
-        # self.log_ik_solutions_to_wandb_table()
+        self._validation_step_outputs = []
 
     def generate_ik_solutions(
         self, y: Tuple[float], m: int, return_runtime: bool = False

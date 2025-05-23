@@ -156,9 +156,9 @@ def _get_tags(args):
 """
 # Build dataset
 
-python scripts/build_dataset.py --robot_name=fetch --training_set_size=25000000 --only_non_self_colliding
-python scripts/build_dataset.py --robot_name=panda --training_set_size=25000000 --only_non_self_colliding
-python scripts/build_dataset.py --robot_name=fetch_arm --training_set_size=25000000 --only_non_self_colliding
+uv run python scripts/build_dataset.py --robot_name=fetch --training_set_size=25000000 --only_non_self_colliding
+uv run python scripts/build_dataset.py --robot_name=panda --training_set_size=25000000 --only_non_self_colliding
+uv run python scripts/build_dataset.py --robot_name=fetch_arm --training_set_size=25000000 --only_non_self_colliding
 """
 
 

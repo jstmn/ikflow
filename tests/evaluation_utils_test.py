@@ -34,13 +34,15 @@ class EvaluationUtilsTest(unittest.TestCase):
     def test_calculate_joint_limits_exceeded(self):
         """Test that calculate_joint_limits_exceeded() is working as expected"""
 
-        configs = torch.tensor([
-            [0, 0, 0],
-            [0, 0, 0],
-            [-2, 0, 0],
-            [0, -1.999, 0],
-            [0, 2.0001, 0],
-        ])
+        configs = torch.tensor(
+            [
+                [0, 0, 0],
+                [0, 0, 0],
+                [-2, 0, 0],
+                [0, -1.999, 0],
+                [0, 2.0001, 0],
+            ]
+        )
         joint_limits = [
             (-1, 1),
             (-2, 2),

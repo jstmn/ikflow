@@ -11,7 +11,7 @@ set_seed()
 
 """ Usage 
 
-python examples/example.py --model_name=panda__full__lp191_5.25m
+uv run python examples/example.py --model_name=panda__full__lp191_5.25m
 
 """
 

@@ -4,8 +4,8 @@ from time import time
 import torch
 from jrl.robots import Panda
 from jrl.math_utils import geodesic_distance_between_quaternions
+from jrl.config import DEVICE
 
-from ikflow import config
 from ikflow.model_loading import get_ik_solver
 from ikflow.utils import set_seed
 from ikflow.model import TINY_MODEL_PARAMS
@@ -25,8 +25,7 @@ def _assert_different(t1: torch.Tensor, t2: torch.Tensor):
 
 
 class IkflowSolverTest(unittest.TestCase):
-
-    # python tests/ikflow_solver_test.py IkflowSolverTest.test___calculate_pose_error
+    # uv run python tests/ikflow_solver_test.py IkflowSolverTest.test___calculate_pose_error
     def test___calculate_pose_error(self):
         model_name = "panda__full__lp191_5.25m"
         n_solutions = 1000
@@ -53,7 +52,7 @@ class IkflowSolverTest(unittest.TestCase):
             print(n_solutions, "\t", round(1000 * t_cpu, 6), "\t", round(1000 * t_cuda, 6))
 
     # pytest tests/ikflow_solver_test.py -k 'test_generate_exact_ik_solutions'
-    # python tests/ikflow_solver_test.py IkflowSolverTest.test_generate_exact_ik_solutions
+    # uv run python tests/ikflow_solver_test.py IkflowSolverTest.test_generate_exact_ik_solutions
     def test_generate_exact_ik_solutions(self):
         model_name = "panda__full__lp191_5.25m"
         POS_ERROR_THRESHOLD = 0.001
@@ -88,7 +87,6 @@ class IkflowSolverTest(unittest.TestCase):
         assert valid_solutions.sum().item() == n_solutions
 
     def test_solve_multiple_poses(self):
-
         robot = Panda()
         ikflow_solver = IKFlowSolver(TINY_MODEL_PARAMS, robot)
 
@@ -102,7 +100,7 @@ class IkflowSolverTest(unittest.TestCase):
             device=DEVICE,
             dtype=torch.float32,
         )
-        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
+        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False, allow_uninitialized=True)
         torch.testing.assert_close(ikf_sols[0], ikf_sols[1])
 
         # Test 2: different inputs should have equal outputs
@@ -115,7 +113,7 @@ class IkflowSolverTest(unittest.TestCase):
             device=DEVICE,
             dtype=torch.float32,
         )
-        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
+        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False, allow_uninitialized=True)
         _assert_different(ikf_sols[0][None, :], ikf_sols[1][None, :])
 
 

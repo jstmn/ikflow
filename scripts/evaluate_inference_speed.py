@@ -35,7 +35,7 @@ def calculate_ave_runtime(ik_solver: IKFlowSolver, n_samples: int):
 
 """ Example usage
 
-python scripts/runtime_eval.py \
+uv run python scripts/runtime_eval.py \
     --nb_nodes_range 4 6 8 10 12 14
 """
 

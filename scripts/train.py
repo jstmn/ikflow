@@ -1,20 +1,16 @@
 import argparse
 import os
 
-from jrl.robots import get_robot, Robot
+from jrl.robots import get_robot
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.trainer import Trainer
-
-# sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
-from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning import seed_everything
 import wandb
 import torch
-
 from ikflow.config import DATASET_TAG_NON_SELF_COLLIDING
 from jrl.config import GPU_IDX
 
-assert GPU_IDX >= 0
 from ikflow import config
 from ikflow.model import IkflowModelParameters
 from ikflow.ikflow_solver import IKFlowSolver
@@ -24,6 +20,7 @@ from ikflow.training.training_utils import get_checkpoint_dir
 from ikflow.utils import boolean_string, non_private_dict, get_wandb_project
 
 
+assert GPU_IDX >= 0
 DEFAULT_MAX_EPOCHS = 5000
 SEED = 0
 seed_everything(SEED, workers=True)
@@ -62,21 +59,23 @@ DEFAULT_CHECKPOINT_EVERY = 250000
 _____________
 Example usage
 
+ROBOT=fr3
+
 # Smoke test - wandb enabled
-python scripts/train.py \
-    --robot_name=panda \
+uv run python scripts/train.py \
+    --robot_name=$ROBOT \
     --nb_nodes=6 \
     --batch_size=128 \
     --learning_rate=0.0005 \
-    --log_every=250 \
-    --eval_every=100 \
-    --val_set_size=250 \
-    --checkpoint_every=500
+    --log_every=125 \
+    --eval_every=50 \
+    --val_set_size=20 \
+    --checkpoint_every=250
 
 
 # Smoke test - wandb enabled, with sigmoid clamping
-python scripts/train.py \
-    --robot_name=panda \
+uv run python scripts/train.py \
+    --robot_name=$ROBOT \
     --nb_nodes=6 \
     --batch_size=64 \
     --learning_rate=0.0005 \
@@ -90,8 +89,8 @@ python scripts/train.py \
 
 
 # Smoke test - wandb disabled
-python scripts/train.py \
-    --robot_name=fetch \
+uv run python scripts/train.py \
+    --robot_name=$ROBOT \
     --log_every=25 \
     --batch_size=64 \
     --eval_every=100 \
@@ -100,8 +99,8 @@ python scripts/train.py \
     --disable_wandb
 
 # Test the learning rate scheduler
-python scripts/train.py \
-    --robot_name=panda \
+uv run python scripts/train.py \
+    --robot_name=$ROBOT \
     --learning_rate=0.01 \
     --gamma=0.5 \
     --step_lr_every=10 \
@@ -110,7 +109,7 @@ python scripts/train.py \
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="cinn w/ softflow CLI")
+    parser = argparse.ArgumentParser(prog="IKFlow training script")
 
     # Note: WandB saves artifacts by the run ID (i.e. '34c2gimi') not the run name ('dashing-forest-33'). This is
     # slightly annoying because you need to click on a run to get its ID.
@@ -162,9 +161,9 @@ if __name__ == "__main__":
     if args.dataset_tags is None:
         args.dataset_tags = []
 
-    assert (
-        DATASET_TAG_NON_SELF_COLLIDING in args.dataset_tags
-    ), "The 'non-self-colliding' dataset should be specified (for now)"
+    assert DATASET_TAG_NON_SELF_COLLIDING in args.dataset_tags, (
+        "The 'non-self-colliding' dataset should be specified (for now)"
+    )
     assert args.optimizer in ["ranger", "adadelta", "adamw"]
     assert 0 <= args.lambd and args.lambd <= 1
 

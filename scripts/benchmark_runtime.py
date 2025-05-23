@@ -7,10 +7,8 @@ import torch
 import pandas as pd
 import matplotlib.pyplot as plt
 from jrl.utils import set_seed
-from jrl.math_utils import geodesic_distance_between_quaternions
 
 from ikflow.model_loading import get_ik_solver
-from ikflow.evaluation_utils import solution_pose_errors
 from ikflow.ikflow_solver import IKFlowSolver
 
 torch.set_printoptions(linewidth=200, precision=6, sci_mode=False)
@@ -59,13 +57,12 @@ def solve_lma(ikflow_solver: IKFlowSolver, target_poses: torch.Tensor):
 
 """ Example 
 
-python scripts/benchmark_runtime.py --model_name=panda__full__lp191_5.25m
+uv run python scripts/benchmark_runtime.py --model_name=panda__full__lp191_5.25m
 
 TODO: report success pct as well. klampt / lma are going to have a different % exact solutions generated
 """
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(prog="evaluate.py - evaluates IK models")
     parser.add_argument(
         "--model_name", type=str, required=True, help="Name of the saved model (see ikflow/model_descriptions.yaml)"

@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 
-from ikflow import config
 
 
 def MMD_multiscale(x, y, c_list, a_list, reduce=True):
@@ -29,9 +28,9 @@ def MMD_multiscale(x, y, c_list, a_list, reduce=True):
     dyy = torch.clamp(ry.t() + ry - 2.0 * yy, 0, np.inf)
     dxy = torch.clamp(rx.t() + ry - 2.0 * xy, 0, np.inf)
 
-    XX = torch.zeros(xx.shape).to(DEVICE)
-    YY = torch.zeros(xx.shape).to(DEVICE)
-    XY = torch.zeros(xx.shape).to(DEVICE)
+    XX = torch.zeros(xx.shape).to(xx.device)
+    YY = torch.zeros(xx.shape).to(xx.device)
+    XY = torch.zeros(xx.shape).to(xx.device)
 
     for C, a in zip(c_list, a_list):
         XX += C**a * ((C + dxx) / a) ** -a

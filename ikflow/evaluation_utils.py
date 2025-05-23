@@ -5,7 +5,7 @@ import torch
 
 from jrl.robot import Robot
 from jrl.math_utils import geodesic_distance_between_quaternions
-from jrl.config import DEVICE, PT_NP_TYPE
+from jrl.config import PT_NP_TYPE
 
 """ Description of 'SOLUTION_EVALUATION_RESULT_TYPE':
 - torch.Tensor: [n] tensor of positional errors of the IK solutions. The error is the L2 norm of the realized poses of

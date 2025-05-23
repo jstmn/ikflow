@@ -15,12 +15,12 @@ def get_wandb_project() -> Tuple[str, str]:
 
     wandb_project = os.getenv("WANDB_PROJECT")
     wandb_entity = os.getenv("WANDB_ENTITY")
-    assert (
-        wandb_project is not None
-    ), "The 'WANDB_PROJECT' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
-    assert (
-        wandb_entity is not None
-    ), "The 'WANDB_ENTITY' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
+    assert wandb_project is not None, (
+        "The 'WANDB_PROJECT' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
+    )
+    assert wandb_entity is not None, (
+        "The 'WANDB_ENTITY' environment variable is not set (try `export WANDB_PROJECT=<your wandb project name>`)"
+    )
     return wandb_entity, wandb_project
 
 
@@ -86,7 +86,7 @@ def set_seed(seed=0):
 def cuda_info():
     """Printout the current cuda status"""
     cuda_available = torch.cuda.is_available()
-    print(f"\n____________\ncuda_info()")
+    print("\n____________\ncuda_info()")
     print(f"cuda_available: {cuda_available}")
 
     if cuda_available:
