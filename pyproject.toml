@@ -27,6 +27,13 @@ dependencies = [
 [tool.setuptools.packages]
 find = { include = ["ikflow"], exclude = ["media", "examples", "notebooks"] }
 
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+ikflow = ["model_descriptions.yaml", "**/*.xml", "**/*.off", "**/*.obj"]
+
+
 [tool.ruff]
 line-length = 120
 lint.ignore = ["E741"]
