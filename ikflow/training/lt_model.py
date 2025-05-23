@@ -2,13 +2,14 @@ from typing import Tuple, Dict
 from time import time
 
 from jrl.robots import Fetch
+from jrl.config import DEVICE
 import wandb
 import numpy as np
 import torch
 from pytorch_lightning.core.module import LightningModule
 
+
 from ikflow.training.training_utils import get_softflow_noise
-from ikflow import config
 from ikflow.config import SIGMOID_SCALING_ABS_MAX
 from ikflow.ikflow_solver import IKFlowSolver, draw_latent
 from ikflow.model import IkflowModelParameters

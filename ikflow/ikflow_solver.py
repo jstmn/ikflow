@@ -30,7 +30,7 @@ def draw_latent(
 
 
 class IKFlowSolver:
-    def __init__(self, hyper_parameters: IkflowModelParameters, robot: Robot, compile_model: Optional[Dict]):
+    def __init__(self, hyper_parameters: IkflowModelParameters, robot: Robot, compile_model: Optional[Dict] = None):
         """Initialize an IKFlowSolver."""
         assert isinstance(
             hyper_parameters, IkflowModelParameters
@@ -261,6 +261,7 @@ class IKFlowSolver:
         clamp_to_joint_limits: bool = True,
         refine_solutions: bool = False,
         return_detailed: bool = False,
+        allow_uninitialized: bool = False,
     ) -> Union[torch.Tensor, SOLUTION_EVALUATION_RESULT_TYPE]:
         """Run the network in reverse to generate samples conditioned on a pose y
 
@@ -306,7 +307,8 @@ class IKFlowSolver:
                 - float: The runtime of the operation
         """
         t0 = time()
-        assert self._model_weights_loaded, f"Model weights have not been loaded. Call load_state_dict(...)"
+        if not allow_uninitialized:
+            assert self._model_weights_loaded, f"Model weights have not been loaded. Call load_state_dict(...)"
         assert isinstance(y, torch.Tensor), f"y must be a torch.Tensor (got {type(y)})."
         if y.numel() == 7:
             assert isinstance(n, int)

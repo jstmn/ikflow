@@ -4,6 +4,7 @@ from time import time
 import torch
 from jrl.robots import Panda
 from jrl.math_utils import geodesic_distance_between_quaternions
+from jrl.config import DEVICE
 
 from ikflow import config
 from ikflow.model_loading import get_ik_solver
@@ -100,7 +101,7 @@ class IkflowSolverTest(unittest.TestCase):
             device=DEVICE,
             dtype=torch.float32,
         )
-        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
+        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False, allow_uninitialized=True)
         torch.testing.assert_close(ikf_sols[0], ikf_sols[1])
 
         # Test 2: different inputs should have equal outputs
@@ -113,7 +114,7 @@ class IkflowSolverTest(unittest.TestCase):
             device=DEVICE,
             dtype=torch.float32,
         )
-        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False)
+        ikf_sols = ikflow_solver.generate_ik_solutions(ys, None, latent=latent, refine_solutions=False, allow_uninitialized=True)
         _assert_different(ikf_sols[0][None, :], ikf_sols[1][None, :])
 
 
